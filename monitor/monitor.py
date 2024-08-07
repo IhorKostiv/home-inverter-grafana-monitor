@@ -30,7 +30,7 @@ if INVERTER_MODEL not in SUPPORTED_INVERTERS:
 #inverter: UPS = SUPPORTED_INVERTERS[INVERTER_MODEL](USB_DEVICE)
 #sample = inverter.sample()
 
-print("Measured: {0}".format(sample))
+#print("Measured: {0}".format(sample))
 
 json_body = [
     {
