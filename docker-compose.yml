@@ -5,7 +5,7 @@ services:
       context: monitor
     restart: always
     environment:
-      DB_HOST: influxdb
+      DB_HOST: localhost
       DB_PORT: 8086
       DB_USERNAME: root
       DB_PASSWORD: root
