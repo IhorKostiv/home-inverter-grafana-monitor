@@ -12,7 +12,7 @@ SUPPORTED_INVERTERS = {
     "must-ph18-5248": must_ph18_5248.MustPH185248
 }
 
-USB_DEVICE = os.environ.get("USB_DEVICE", "/dev/ttyUSB0")
+#USB_DEVICE = os.environ.get("USB_DEVICE", "/dev/ttyUSB0")
 
 DB_HOST = os.environ.get("DB_HOST", "influxdb")
 DB_PORT = int(os.environ.get("DB_PORT", "8086"))
@@ -27,8 +27,8 @@ if INVERTER_MODEL not in SUPPORTED_INVERTERS:
     print("Unknown inverter model model: {0}".format(INVERTER_MODEL))
     exit(1)
 
-inverter: UPS = SUPPORTED_INVERTERS[INVERTER_MODEL](USB_DEVICE)
-sample = inverter.sample()
+#inverter: UPS = SUPPORTED_INVERTERS[INVERTER_MODEL](USB_DEVICE)
+#sample = inverter.sample()
 
 print("Measured: {0}".format(sample))
 
@@ -36,19 +36,19 @@ json_body = [
     {
         "measurement": "logs",
         "tags": {
-            "host": INVERTER_MODEL,
-            "state": sample.state
+            "host": "test", #INVERTER_MODEL,
+            "state": 0 #sample.state
         },
         "fields": {
-            "bat_volts": sample.bat_volts,
-            "bat_amps": sample.bat_amps,
-            "soc": sample.soc,
-            "ac": sample.ac,
-            "load_percent": sample.load_percent,
-            "output_va": sample.output_va,
-            "output_w": sample.output_w,
-            "temp": sample.temp,
-            "discharge": sample.discharge
+            "bat_volts": 25, #sample.bat_volts,
+            "bat_amps": 7, #sample.bat_amps,
+            "soc": 0, #sample.soc,
+            "ac": 220, #sample.ac,
+            "load_percent": 3, #sample.load_percent,
+            "output_va": 1234, #sample.output_va,
+            "output_w": 1233, #sample.output_w,
+            "temp": 36, #sample.temp,
+            "discharge": 1235, #sample.discharge
         }
     }
 ]
