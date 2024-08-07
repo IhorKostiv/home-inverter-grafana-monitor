@@ -4,10 +4,7 @@ services:
     build:
       context: monitor
     restart: always
-    devices:
-      - "/dev/ttyUSB0:/dev/ttyUSB0"
     environment:
-      USB_DEVICE: "/dev/ttyUSB0"
       DB_HOST: influxdb
       DB_PORT: 8086
       DB_USERNAME: root
