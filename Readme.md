@@ -16,7 +16,7 @@ How to use:
    ```
 5. Clone this repo
    ```bash
-   git clone https://github.com/desertkun/home-inverter-grafana-monitor.git
+   git clone https://github.com/IhorKostiv/home-inverter-grafana-monitor
    cd home-inverter-grafana-monitor
    ```
 6. Change `INVERTER_MODEL` on the [compose file](./docker-compose.yml) according to your model.
