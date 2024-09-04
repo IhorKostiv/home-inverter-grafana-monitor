@@ -24,7 +24,7 @@ services:
       DOCKER_INFLUXDB_INIT_PASSWORD: root
       DOCKER_INFLUXDB_INIT_ORG: org
       DOCKER_INFLUXDB_INIT_BUCKET: bucket
-      DOCKER_INFLUXDB_INIT_RETENTION: 30d
+      DOCKER_INFLUXDB_INIT_RETENTION: 365d
       INFLUXDB_DB: ups
     volumes:
       - "metrics:/var/lib/influxdb"
