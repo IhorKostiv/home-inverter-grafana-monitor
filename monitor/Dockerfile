@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-RUN apk add --update --no-cache python3 py3-pip gcc python3-dev musl-dev
+RUN apk add --update --no-cache python3 py3-pip gcc g++ python3-dev musl-dev
 RUN pip3 install --no-cache --upgrade pip setuptools minimalmodbus influxdb influxdb-client[ciso] --break-system-packages
 
 RUN mkdir /monitor
