@@ -12,7 +12,7 @@ SUPPORTED_INVERTERS = {
     "must-ph18-5248": must_ph18_5248.MustPH185248
 }
 
-#USB_DEVICE = os.environ.get("USB_DEVICE", "/dev/ttyUSB0")
+USB_DEVICE = os.environ.get("USB_DEVICE", "/dev/ttyUSB0")
 
 DB_HOST = os.environ.get("DB_HOST", "influxdb")
 DB_PORT = int(os.environ.get("DB_PORT", "8086"))
@@ -27,10 +27,10 @@ if INVERTER_MODEL not in SUPPORTED_INVERTERS:
     print("Unknown inverter model model: {0}".format(INVERTER_MODEL))
     exit(1)
 
-#inverter: UPS = SUPPORTED_INVERTERS[INVERTER_MODEL](USB_DEVICE)
-#sample = inverter.sample()
+inverter: UPS = SUPPORTED_INVERTERS[INVERTER_MODEL](USB_DEVICE)
+sample = inverter.sample()
 
-#print("Measured: {0}".format(sample))
+print("Measured: {0}".format(sample))
 
 json_body = [
     {
