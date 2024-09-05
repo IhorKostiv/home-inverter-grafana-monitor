@@ -36,19 +36,19 @@ json_body = [
     {
         "measurement": "logs",
         "tags": {
-            "host": "test", #INVERTER_MODEL,
-            "state": 0 #sample.state
+            "host": INVERTER_MODEL,
+            "state": sample.state
         },
         "fields": {
-            "bat_volts": 25, #sample.bat_volts,
-            "bat_amps": 7, #sample.bat_amps,
-            "soc": 0, #sample.soc,
-            "ac": 220, #sample.ac,
-            "load_percent": 3, #sample.load_percent,
-            "output_va": 1234, #sample.output_va,
-            "output_w": 1233, #sample.output_w,
-            "temp": 36, #sample.temp,
-            "discharge": 1235, #sample.discharge
+            "bat_volts": sample.bat_volts,
+            "bat_amps": sample.bat_amps,
+            "soc": sample.soc,
+            "ac": sample.ac,
+            "load_percent": sample.load_percent,
+            "output_va": sample.output_va,
+            "output_w": sample.output_w,
+            "temp": sample.temp,
+            "discharge": sample.discharge
         }
     }
 ]
