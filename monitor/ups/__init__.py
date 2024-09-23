@@ -1,29 +1,47 @@
+from time import strftime
 import minimalmodbus
 from dataclasses import dataclass
 
 
 @dataclass
 class Sample(object):
-    # battery voltage
-    bat_volts: int
-    # battery amperage used
-    bat_amps: int
-    # battery state of charge
-    soc: int
-    # input ac voltage
-    ac: int
-    # systa load in percents
-    load_percent: int
-    # load voltage
-    output_va: int
-    # load power
-    output_w: float
-    # inverter temperature
-    temp: int
-    # accumulated used power, 100W per
-    discharge: int
-    # inverter state
-    state: str
+    pvWorkState: str
+    pvMpptState: str
+    pvChargingState: str
+    pvVoltage: float
+    pvBatteryVoltage: float
+    pvChargerCurrent: float
+    pvChargerPower: int
+    pvRadiatorTemperature: int
+    pvBatteryRelay: str
+    pvRelay: str
+    pvError: str
+    pvWarning: str
+    pvAccumulatedPower: float
+
+    iWorkState: str
+    iBatteryVoltage: float
+    iVoltage: float
+    iGridVoltage: float
+    iPInverter: int
+    iPGrid: int
+    iPLoad: int
+    iLoadPercent: int
+    iSInverter: int
+    iSGrid: int
+    iSLoad: int 
+    iRadiatorTemperature: int
+    iRelayState: str
+    iGridRelayState: str
+    iLoadRelayState: str
+    iAccumulatedLoadPower: float
+    iAccumulatedDischargerPower: float
+    iAccumulatedSelfusePower: float
+    iError:  str
+    iWarning: str
+    iBattPower: int
+    iBattCurrent: int
+ #   iBatterySOC: int
 
 
 class UPS(object):

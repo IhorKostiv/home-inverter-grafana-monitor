@@ -12,7 +12,10 @@ How to use:
    curl -fsSL https://get.docker.com -o get-docker.sh
    chmod +x get-docker.sh
    ./get-docker.sh
-   pip3 install docker-compose
+   pip install "cython<3.0.0" wheel --break-system-packages
+   pip install "pyyaml==5.4.1" --no-build-isolation --break-system-packages
+   pip3 install docker-compose --break-system-packages
+   pip install docker==6.1.3 --break-system-packages
    ```
 5. Clone this repo
    ```bash

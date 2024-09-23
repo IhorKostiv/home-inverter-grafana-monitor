@@ -1,5 +1,6 @@
 from ups import UPS, greenCell
 
+
 inverter: UPS = greenCell.GreenCell("/dev/ttyUSB0")
 sample = inverter.sample()
 

@@ -4,6 +4,8 @@ services:
     build:
       context: monitor
     restart: always
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
     environment:
       DB_HOST: home-inverter-grafana-monitor_influxdb_1
       DB_PORT: 8086
