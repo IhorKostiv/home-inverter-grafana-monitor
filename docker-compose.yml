@@ -12,7 +12,7 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: root
       DB_NAME: ups
-      INVERTER_MODEL: "must-pv1800"
+      INVERTER_MODEL: "GreenCell"
     depends_on:
       - influxdb
     tmpfs:
@@ -26,7 +26,7 @@ services:
       DOCKER_INFLUXDB_INIT_PASSWORD: root
       DOCKER_INFLUXDB_INIT_ORG: org
       DOCKER_INFLUXDB_INIT_BUCKET: bucket
-      DOCKER_INFLUXDB_INIT_RETENTION: 365d
+      DOCKER_INFLUXDB_INIT_RETENTION: 30d
       INFLUXDB_DB: ups
     volumes:
       - "metrics:/var/lib/influxdb"
