@@ -34,21 +34,46 @@ print("Measured: {0}".format(sample))
 
 json_body = [
     {
-        "measurement": "logs",
+        "measurement": "inverter",
         "tags": {
-            "host": INVERTER_MODEL,
-            "state": sample.state
+            "model": INVERTER_MODEL,
+            "pvWorkState": sample.pvWorkState,
+            "pvMpptState": sample.pvMpptState,
+            "pvChargingState": sample.pvChargingState,
+            "pvBatteryRelay": sample.pvBatteryRelay,
+            "pvRelay": sample.pvRelay,
+            "pvError": sample.pvError,
+            "pvWarning": sample.pvWarning,
+            "iWorkState": sample.iWorkState,
+            "iRelayState": sample.iRelayState,
+            "iGridRelayState": sample.iGridRelayState,
+            "iLoadRelayState": sample.iLoadRelayState,
+            "iError": sample.iError,
+            "iWarning": sample.iWarning
         },
         "fields": {
-            "bat_volts": sample.bat_volts,
-            "bat_amps": sample.bat_amps,
-            "soc": sample.soc,
-            "ac": sample.ac,
-            "load_percent": sample.load_percent,
-            "output_va": sample.output_va,
-            "output_w": sample.output_w,
-            "temp": sample.temp,
-            "discharge": sample.discharge
+            "pvVoltage": sample.pvVoltage,
+            "pvBatteryVoltage": sample.pvBatteryVoltage,
+            "pvChargerCurrent": sample.pvChargerCurrent,
+            "pvChargerPower": sample.pvChargerPower,
+            "pvRadiatorTemperature": sample.pvRadiatorTemperature,
+            "pvAccumulatedPower": sample.pvAccumulatedPower,
+            "iBatteryVoltage": sample.iBatteryVoltage,
+            "iVoltage": sample.iVoltage,
+            "iGridVoltage": sample.iGridVoltage,
+            "iPInverter": sample.iPInverter,
+            "iPGrid": sample.iPGrid,
+            "iPLoad": sample.iPLoad,
+            "iLoadPercent": sample.iLoadPercent,
+            "iSInverter": sample.iSInverter,
+            "iSGrid": sample.iSGrid,
+            "iSLoad": sample.iSLoad,
+            "iRadiatorTemperature": sample.iRadiatorTemperature,
+            "iAccumulatedLoadPower": sample.iAccumulatedLoadPower,
+            "iAccumulatedDischargerPower": sample.iAccumulatedDischargerPower,
+            "iAccumulatedSelfusePower": sample.iAccumulatedSelfusePower,
+            "iBattPower": sample.iBattPower,
+            "iBattCurrent": sample.iBattCurrent
         }
     }
 ]
