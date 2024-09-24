@@ -6,6 +6,7 @@ sample = inverter.sample()
 
 print("Measured: {0}".format(sample))
 
+INVERTER_MODEL = os.environ.get("INVERTER_MODEL", "GreenCell")
 json_body = [
     {
         "measurement": "inverter",
