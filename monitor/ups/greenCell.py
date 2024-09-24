@@ -217,7 +217,7 @@ class GreenCell(UPS):
                                                       # 25210: ["Inverter current", 0.1, "A"],
                                                       # 25211: ["Grid current", 0.1, "A"],
                                                       # 25212: ["Load current", 0.1, "A"],
-      iPInverter = soc[13]	                          # 25213: ["Inverter power(P)", 1, "W"],
+      iPInverter = soc[13]	                      # 25213: ["Inverter power(P)", 1, "W"],
       iPGrid = soc[14]                                # 25214: ["Grid power(P)", 1, "W"],
       iPLoad = soc[15]                                # 25215: ["Load power(P)", 1, "W"],
       iLoadPercent = soc[16]                          # 25216: ["Load percent", 1, "%"],
