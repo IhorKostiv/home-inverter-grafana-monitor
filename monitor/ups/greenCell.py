@@ -186,13 +186,11 @@ class GreenCell(UPS):
       }
 
       self.scc.clear_buffers_before_each_transaction = True
-#      self.scc.debug = True
+      #      self.scc.debug = True
       pv = self.scc.read_registers(15200, 22)
       print("PV Message: ", pv)
       
-      pvWorkState = pvWorkStates[pv[1]]                      # 15201
-      pvMpptState = mpptStates[pv[2]]                        # 15202
-      pvChargingState = chargingStates[pv[3]]                # 15203
+      pvWorkState = pvWorkStates[pv[1]] + ", " + mpptStates[pv[2]] + ", " + chargingStates[pv[3]]   # 15201 15202 15203
       pvVoltage = pv[5] / 10.0                               # 15205
       pvBatteryVoltage = pv[6] / 10.0                        # 15206
       pvChargerCurrent = pv[7] / 10.0	                     # 15207
@@ -203,11 +201,11 @@ class GreenCell(UPS):
       pvError = bitmaskText(False, pv[13], pvErrors)         # 15213
       pvWarning = bitmaskText(False, pv[14], pvWarnings)     # 15214
       pvAccumulatedPower = (pv[17] * 1000) + (pv[18] / 10.0) # 15217 mWh, 15218  .1KWh
-
+          
       time.sleep(0.02)
       soc = self.scc.read_registers(25200, 75)
       print("Invertor Message: ", soc)
-      
+       
       iWorkState = inverterWorkStates[soc[1]]         # 25201
       iBatteryVoltage = soc[5] / 10.0                 # 25205: ["Battery voltage", 0.1, "V"],        
       iVoltage = soc[6] / 10.0                        # 25206: ["Inverter voltage", 0.1, "V"],
@@ -217,7 +215,7 @@ class GreenCell(UPS):
                                                       # 25210: ["Inverter current", 0.1, "A"],
                                                       # 25211: ["Grid current", 0.1, "A"],
                                                       # 25212: ["Load current", 0.1, "A"],
-      iPInverter = soc[13]	                      # 25213: ["Inverter power(P)", 1, "W"],
+      iPInverter = soc[13]	                          # 25213: ["Inverter power(P)", 1, "W"],
       iPGrid = soc[14]                                # 25214: ["Grid power(P)", 1, "W"],
       iPLoad = soc[15]                                # 25215: ["Load power(P)", 1, "W"],
       iLoadPercent = soc[16]                          # 25216: ["Load percent", 1, "%"],
@@ -249,70 +247,33 @@ class GreenCell(UPS):
       iAccumulatedLoadPower = (soc[53] * 1000) + (soc[54] / 10.0)  # 25253: ["Accumulated load power high", 1, "kWh"],
                                                       # 25254: ["Accumulated load power low", 0.1, "kWh"],
       iAccumulatedSelfusePower = (soc[55] * 1000) + (soc[56] / 10.0 )    # 25255: ["Accumulated self_use power high", 1000, "kWh"],
-                                   # 25256: ["Accumulated self_use power low", 0.1, "kWh"],
+                                                      # 25256: ["Accumulated self_use power low", 0.1, "kWh"],
                                                       # 25257: ["Accumulated PV_sell power high", 1, "kWh"],
                                                       # 25258: ["Accumulated PV_sell power low", 0.1, "kWh"],
                                                       # 25259: ["Accumulated grid_charger power high", 1, "kWh"],
                                                       # 25260: ["Accumulated grid_charger power low", 0.1, "kWh"],
-      iError = ""
       iError = bitmaskText(False, soc[61], iError1s)            # 25261	Error message 1
       iError += bitmaskText(iError != "", soc[62], iError2s)    # 25262	Error message 2
       iError += bitmaskText(iError != "", soc[63], iError3s)    # 25263	Error message 3
-      iWarning = ""
       iWarning = bitmaskText(False, soc[65], iWarning1s)           # 25265	Warning message 1
       iWarning += bitmaskText(iWarning != "", soc[66], iWarning2s) # 25266	Warning message 2
                                                       # 25271: ["Hardware version", 1, ""],
                                                       # 25272: ["Software version", 1, ""],
       iBattPower = bitmaskNegative(soc[73])           # 25273: ["Battery power", 1, "W"],
       iBattCurrent = bitmaskNegative(soc[74])         # 25274: ["Battery current", 1, "A"],
-
-      # normally formula below shall account battery current as well, so far it is ignored (and not available when charging from grid)
-      #if iBatteryVoltage > 26 :
-      #  iBatterySOC = 100
-      #elif iBatteryVoltage < 22 :
-      #    iBatterySOC = 0
-      #elif iBatteryVoltage < 22.7 :
-      #    iBatterySOC = 5
-      #else : 
-      #  iBatterySOC = (iBatteryVoltage - 22.7) / 3.3 * 100
-
       return Sample(
-        pvWorkState,
-        pvMpptState,
-        pvChargingState,
-        pvVoltage,
-        pvBatteryVoltage,
-        pvChargerCurrent,
-        pvChargerPower,
-        pvRadiatorTemperature,
-        pvBatteryRelay,
-        pvRelay,
-        pvError,
-        pvWarning,
-        pvAccumulatedPower,
-
-        iWorkState,
-        iBatteryVoltage,
-        iVoltage,
-        iGridVoltage,
-        iPInverter,
-        iPGrid,
-        iPLoad,
-        iLoadPercent,
-        iSInverter,
-        iSGrid,
-        iSLoad,     
-        iRadiatorTemperature,
-        iRelayState,
-        iGridRelayState,
-        iLoadRelayState,
-        iAccumulatedLoadPower,
-        iAccumulatedDischargerPower,
-        iAccumulatedSelfusePower,
-        iError,
-        iWarning,
-        iBattPower,
-        iBattCurrent #,
-      #  iBatterySOC
+        pvWorkState, pvVoltage, pvBatteryVoltage, pvChargerCurrent, pvChargerPower, 
+        pvRadiatorTemperature, pvBatteryRelay, pvRelay, pvError, pvWarning, pvAccumulatedPower,
+        iWorkState, iBatteryVoltage, iVoltage, iGridVoltage, iPInverter, iPGrid, iPLoad, iLoadPercent, 
+        iSInverter, iSGrid, iSLoad, iRadiatorTemperature, iRelayState, iGridRelayState, iLoadRelayState, 
+        iAccumulatedLoadPower, iAccumulatedDischargerPower, iAccumulatedSelfusePower, iError, iWarning, iBattPower, iBattCurrent
       )
+#     else:
+#       return Sample(
+#         "pvWorkState", 72, 24, 7, 168, 
+#         36, "pvBatteryRelay", "pvRelay", "pvError", "pvWarning", 123,
+#         "iWorkState", 24, 220, 221, 2200, 2201, 2199, 80, 
+#         330, 331, 329, 37, "iRelayState", "iGridRelayState", "iLoadRelayState", 
+#         2345, 23, 23, "iError", "iWarning", 240, 10
+#       )
   

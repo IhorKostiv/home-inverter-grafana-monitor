@@ -7,7 +7,7 @@ How to use:
 1. Prepare a raspberry PI 4 (or any other single-board computer)
 2. Connect a USB-B cable to your Inverter USB port
 3. Go root (`sudo su`)
-4. Install docker & docker-compose on it
+4. Install docker & docker-compose on it as well as other prerequisties
    ```bash
    curl -fsSL https://get.docker.com -o get-docker.sh
    chmod +x get-docker.sh
@@ -24,7 +24,7 @@ How to use:
    ```
 6. Change `INVERTER_MODEL` on the [compose file](./docker-compose.yml) according to your model.
 7. Go into the repo folder and do `docker-compose up -d`
-8. Give it 20m to install everything and boot
+8. Give it ~~20m to install everything and boot
 9. Open `http://<rasperry-ip>:3000` and login with `admin/admin`
 10. You should be redirected to an empty list of dashboards. Click New -> Import
 11. Select [this file](./home-dashboard.json)
@@ -36,6 +36,7 @@ How to use:
 * MUST PV1800 `must-pv1800`
 * MUST EP3000 `must-ep3000`
 * MUST PH18-5248 `must-ph18-5248`
+* GreenCell `GreenCell`
 
 # But I have different model
 
@@ -52,7 +53,7 @@ How to use:
    ```
 4. Modify [monitor.py](monitor/monitor.py) to support your  `INVERTER_MODEL`, deploy as usual. Change `INVERTER_MODEL` 
    in the [compose file](./docker-compose.yml).
-5. Open a Pul Request so others can benefit from your work.
+5. Open a Pull Request so others can benefit from your work.
 
 # I want notifications when power goes out
 
