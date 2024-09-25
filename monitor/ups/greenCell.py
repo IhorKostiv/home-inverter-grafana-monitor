@@ -181,8 +181,8 @@ class GreenCell(UPS):
         3: "EQ charge"
       }
       relayStates = {
-        0: "Disconnect", 
-        1: "Connect"
+        0: "Off", 
+        1: "ON"
       }
 
       self.scc.clear_buffers_before_each_transaction = True
