@@ -15,9 +15,9 @@ def bitmaskText(newLine, Bitmask, Texts):
 
 def bitmaskNegative(value):
     if value > 32768:
-        return abs(value - 65536)
+        return value - 65536
     else:
-        return -value
+        return value
 
 class GreenCell(UPS):
     def __init__(self, device_path: str):
