@@ -27,7 +27,7 @@ How to use:
 8. Give it ~~20m to install everything and boot
 9. Open `http://<rasperry-ip>:3000` and login with `admin/admin`
 10. You should be redirected to an empty list of dashboards. Click New -> Import
-11. Select [this file](./home-dashboard.json)
+11. Select [this file](./home-dashboard-AGM24.json)
 
 <img src="dashboard.jpg">
 

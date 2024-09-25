@@ -119,6 +119,31 @@
       },
       "targets": [
         {
+          "alias": "Grid",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PBDC07BC01591819D"
+          },
+          "groupBy": [],
+          "hide": false,
+          "measurement": "inverter",
+          "orderByTime": "ASC",
+          "policy": "autogen",
+          "refId": "D",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "iPGrid"
+                ],
+                "type": "field"
+              }
+            ]
+          ],
+          "tags": []
+        },
+        {
           "alias": "Load",
           "datasource": {
             "type": "influxdb",
@@ -178,7 +203,7 @@
           "measurement": "inverter",
           "orderByTime": "ASC",
           "policy": "autogen",
-          "query": "SELECT -\"iBattPower\" FROM \"autogen\".\"inverter\" WHERE $timeFilter",
+          "query": "SELECT \"iBattPower\" FROM \"autogen\".\"inverter\" WHERE $timeFilter",
           "rawQuery": true,
           "refId": "C",
           "resultFormat": "time_series",
@@ -187,31 +212,6 @@
               {
                 "params": [
                   "iBattPower"
-                ],
-                "type": "field"
-              }
-            ]
-          ],
-          "tags": []
-        },
-        {
-          "alias": "Grid",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "PBDC07BC01591819D"
-          },
-          "groupBy": [],
-          "hide": false,
-          "measurement": "inverter",
-          "orderByTime": "ASC",
-          "policy": "autogen",
-          "refId": "D",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "iPGrid"
                 ],
                 "type": "field"
               }
@@ -465,7 +465,7 @@
           "measurement": "inverter",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT - last(\"iBattPower\") / last(\"iBatteryVoltage\") FROM \"inverter\" WHERE $timeFilter",
+          "query": "SELECT last(\"iBattPower\") / last(\"iBatteryVoltage\") FROM \"inverter\" WHERE $timeFilter",
           "rawQuery": true,
           "refId": "C",
           "resultFormat": "time_series",
@@ -509,7 +509,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 33,
+            "fillOpacity": 30,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -518,8 +518,11 @@
             },
             "insertNulls": false,
             "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
             "lineWidth": 1,
-            "pointSize": 5,
+            "pointSize": 3,
             "scaleDistribution": {
               "type": "linear"
             },
@@ -530,9 +533,10 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "dashed+area"
+              "mode": "dashed"
             }
           },
+          "fieldMinMax": false,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -542,26 +546,26 @@
                 "value": null
               },
               {
-                "color": "#EAB839",
-                "value": 50
+                "color": "orange",
+                "value": 3000
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 6000
               }
             ]
           },
-          "unit": "celsius"
+          "unit": "voltamp"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
+        "h": 11,
         "w": 9,
         "x": 13,
         "y": 0
       },
-      "id": 13,
+      "id": 17,
       "options": {
         "legend": {
           "calcs": [],
@@ -576,7 +580,7 @@
       },
       "targets": [
         {
-          "alias": "AC",
+          "alias": "Grid",
           "datasource": {
             "type": "influxdb",
             "uid": "PBDC07BC01591819D"
@@ -585,16 +589,14 @@
           "hide": false,
           "measurement": "inverter",
           "orderByTime": "ASC",
-          "policy": "default",
-          "query": "SELECT \"bat_amps\" FROM \"autogen\".\"logs\" WHERE $timeFilter",
-          "rawQuery": false,
-          "refId": "A",
+          "policy": "autogen",
+          "refId": "D",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "iRadiatorTemperature"
+                  "iSGrid"
                 ],
                 "type": "field"
               }
@@ -603,7 +605,31 @@
           "tags": []
         },
         {
-          "alias": "PV",
+          "alias": "Load",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PBDC07BC01591819D"
+          },
+          "groupBy": [],
+          "measurement": "inverter",
+          "orderByTime": "ASC",
+          "policy": "autogen",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "iSLoad"
+                ],
+                "type": "field"
+              }
+            ]
+          ],
+          "tags": []
+        },
+        {
+          "alias": "Inverter",
           "datasource": {
             "type": "influxdb",
             "uid": "PBDC07BC01591819D"
@@ -612,16 +638,16 @@
           "hide": false,
           "measurement": "inverter",
           "orderByTime": "ASC",
-          "policy": "default",
-          "query": "SELECT \"bat_amps\" FROM \"autogen\".\"logs\" WHERE $timeFilter",
+          "policy": "autogen",
+          "query": "SELECT -\"iBattPower\" FROM \"autogen\".\"inverter\" WHERE $timeFilter",
           "rawQuery": false,
-          "refId": "B",
+          "refId": "C",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "pvRadiatorTemperature"
+                  "iSInverter"
                 ],
                 "type": "field"
               }
@@ -630,7 +656,7 @@
           "tags": []
         }
       ],
-      "title": "Temperature",
+      "title": "Energy",
       "type": "timeseries"
     },
     {
@@ -858,157 +884,13 @@
         "type": "influxdb",
         "uid": "PBDC07BC01591819D"
       },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": true,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "right",
-            "axisSoftMax": 230,
-            "axisSoftMin": 210,
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 40,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 7,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "dashed+area"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "orange",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 184
-              },
-              {
-                "color": "red",
-                "value": 253
-              }
-            ]
-          },
-          "unit": "volt"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 9,
-        "x": 13,
-        "y": 6
-      },
-      "id": 11,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "alias": "Grid",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "PBDC07BC01591819D"
-          },
-          "groupBy": [],
-          "measurement": "inverter",
-          "orderByTime": "ASC",
-          "policy": "autogen",
-          "query": "SELECT \"ac\" FROM \"autogen\".\"logs\" WHERE $timeFilter",
-          "rawQuery": false,
-          "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "iGridVoltage"
-                ],
-                "type": "field"
-              }
-            ]
-          ],
-          "tags": []
-        },
-        {
-          "alias": "Inverter",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "PBDC07BC01591819D"
-          },
-          "groupBy": [],
-          "hide": true,
-          "measurement": "inverter",
-          "orderByTime": "ASC",
-          "policy": "autogen",
-          "query": "SELECT \"ac\" FROM \"autogen\".\"logs\" WHERE $timeFilter",
-          "rawQuery": false,
-          "refId": "B",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "iVoltage"
-                ],
-                "type": "field"
-              }
-            ]
-          ],
-          "tags": []
-        }
-      ],
-      "title": "Input AC Voltage",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "default": true,
-        "type": "influxdb",
-        "uid": "PBDC07BC01591819D"
-      },
       "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
+          "decimals": 1,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1021,10 +903,23 @@
           },
           "unit": "kwatt"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Load"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 7,
+        "h": 5,
         "w": 4,
         "x": 9,
         "y": 10
@@ -1146,7 +1041,7 @@
           "tags": []
         }
       ],
-      "title": "∫ Energy",
+      "title": "Accumulated Energy",
       "type": "stat"
     },
     {
@@ -1285,6 +1180,150 @@
         "type": "influxdb",
         "uid": "PBDC07BC01591819D"
       },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": true,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "right",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 33,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed+area"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "celsius"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 9,
+        "x": 13,
+        "y": 11
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "alias": "AC",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PBDC07BC01591819D"
+          },
+          "groupBy": [],
+          "hide": false,
+          "measurement": "inverter",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT \"bat_amps\" FROM \"autogen\".\"logs\" WHERE $timeFilter",
+          "rawQuery": false,
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "iRadiatorTemperature"
+                ],
+                "type": "field"
+              }
+            ]
+          ],
+          "tags": []
+        },
+        {
+          "alias": "PV",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PBDC07BC01591819D"
+          },
+          "groupBy": [],
+          "hide": false,
+          "measurement": "inverter",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT \"bat_amps\" FROM \"autogen\".\"logs\" WHERE $timeFilter",
+          "rawQuery": false,
+          "refId": "B",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "pvRadiatorTemperature"
+                ],
+                "type": "field"
+              }
+            ]
+          ],
+          "tags": []
+        }
+      ],
+      "title": "Temperature",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "default": true,
+        "type": "influxdb",
+        "uid": "PBDC07BC01591819D"
+      },
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1347,10 +1386,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
+        "h": 5,
         "w": 9,
-        "x": 13,
-        "y": 11
+        "x": 0,
+        "y": 17
       },
       "id": 16,
       "options": {
@@ -1395,6 +1434,151 @@
       ],
       "title": "PV Voltage",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "default": true,
+        "type": "influxdb",
+        "uid": "PBDC07BC01591819D"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": true,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "right",
+            "axisSoftMax": 230,
+            "axisSoftMin": 210,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 40,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 7,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed+area"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 184
+              },
+              {
+                "color": "red",
+                "value": 253
+              }
+            ]
+          },
+          "unit": "volt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 9,
+        "x": 13,
+        "y": 17
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "alias": "Grid",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PBDC07BC01591819D"
+          },
+          "groupBy": [],
+          "measurement": "inverter",
+          "orderByTime": "ASC",
+          "policy": "autogen",
+          "query": "SELECT \"ac\" FROM \"autogen\".\"logs\" WHERE $timeFilter",
+          "rawQuery": false,
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "iGridVoltage"
+                ],
+                "type": "field"
+              }
+            ]
+          ],
+          "tags": []
+        },
+        {
+          "alias": "Inverter",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PBDC07BC01591819D"
+          },
+          "groupBy": [],
+          "hide": true,
+          "measurement": "inverter",
+          "orderByTime": "ASC",
+          "policy": "autogen",
+          "query": "SELECT \"ac\" FROM \"autogen\".\"logs\" WHERE $timeFilter",
+          "rawQuery": false,
+          "refId": "B",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "iVoltage"
+                ],
+                "type": "field"
+              }
+            ]
+          ],
+          "tags": []
+        }
+      ],
+      "title": "Input AC Voltage",
+      "type": "timeseries"
     }
   ],
   "refresh": "5s",
@@ -1437,6 +1621,6 @@
   "timezone": "browser",
   "title": "Home AGM24",
   "uid": "6nZlWpK4k",
-  "version": 32,
+  "version": 34,
   "weekStart": ""
 }
