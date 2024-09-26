@@ -1,4 +1,5 @@
 import time
+from gpiozero import CPUTemperature
 from . import Sample, UPS
 
 def bitmaskText(newLine, Bitmask, Texts):
@@ -185,7 +186,6 @@ class GreenCell(UPS):
         1: "ON"
       }
 
-      self.scc.clear_buffers_before_each_transaction = True
       #      self.scc.debug = True
       pv = self.scc.read_registers(15200, 22)
       print("PV Message: ", pv)
@@ -261,12 +261,16 @@ class GreenCell(UPS):
                                                       # 25272: ["Software version", 1, ""],
       iBattPower = bitmaskNegative(soc[73])           # 25273: ["Battery power", 1, "W"],
       iBattCurrent = bitmaskNegative(soc[74])         # 25274: ["Battery current", 1, "A"],
+
+      rpiTemperature = CPUTemperature().temperature
+
       return Sample(
         pvWorkState, pvVoltage, pvBatteryVoltage, pvChargerCurrent, pvChargerPower, 
         pvRadiatorTemperature, pvBatteryRelay, pvRelay, pvError, pvWarning, pvAccumulatedPower,
-        iWorkState, iBatteryVoltage, iVoltage, iGridVoltage, iPInverter, iPGrid, iPLoad, iLoadPercent, 
-        iSInverter, iSGrid, iSLoad, iRadiatorTemperature, iRelayState, iGridRelayState, iLoadRelayState, 
-        iAccumulatedLoadPower, iAccumulatedDischargerPower, iAccumulatedSelfusePower, iError, iWarning, iBattPower, iBattCurrent
+        iWorkState, iBatteryVoltage, iVoltage, iGridVoltage, iPInverter, iPGrid, iPLoad, iLoadPercent, iSInverter, 
+        iSGrid, iSLoad, iRadiatorTemperature, iRelayState, iGridRelayState, iLoadRelayState, iAccumulatedLoadPower, 
+        iAccumulatedDischargerPower, iAccumulatedSelfusePower, iError, iWarning, iBattPower, iBattCurrent,
+        rpiTemperature
       )
 #     else:
 #       return Sample(

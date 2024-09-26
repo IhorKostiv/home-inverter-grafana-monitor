@@ -13,6 +13,8 @@ SERBAUD = baud_rate
 i = minimalmodbus.Instrument(SERPORT, device_id)
 i.serial.timeout= SERTIMEOUT
 i.serial.baudrate = SERBAUD
+i.debug = True
+i.clear_buffers_before_each_transaction = True
 
 results = i.read_registers(registers_from, registers_to - registers_from)
 for i, v in enumerate(results):
