@@ -21,8 +21,11 @@ def bitmaskNegative(value):
         return value
 
 class GreenCell(UPS):
-    def __init__(self, device_path: str):
+    debug: bool
+
+    def __init__(self, device_path: str, isDebug: bool):
         super().__init__(device_path, 4, 19200)
+        self.debug = isDebug
 
     def sample(self) -> Sample:
       
@@ -186,9 +189,10 @@ class GreenCell(UPS):
         1: "ON"
       }
 
-      #      self.scc.debug = True
+      self.scc.debug = self.debug
       pv = self.scc.read_registers(15200, 22)
-      print("PV Message: ", pv)
+      if self.debug:
+        print("PV Message: ", pv)
       
       pvWorkState = pvWorkStates[pv[1]] + ", " + mpptStates[pv[2]] + ", " + chargingStates[pv[3]]   # 15201 15202 15203
       pvVoltage = pv[5] / 10.0                               # 15205
@@ -204,7 +208,8 @@ class GreenCell(UPS):
           
       time.sleep(0.02)
       soc = self.scc.read_registers(25200, 75)
-      print("Invertor Message: ", soc)
+      if self.debug:
+        print("Invertor Message: ", soc)
        
       iWorkState = inverterWorkStates[soc[1]]         # 25201
       iBatteryVoltage = soc[5] / 10.0                 # 25205: ["Battery voltage", 0.1, "V"],        

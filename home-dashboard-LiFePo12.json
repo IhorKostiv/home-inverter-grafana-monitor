@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 3,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -48,7 +48,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 30,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -86,11 +86,11 @@
               },
               {
                 "color": "orange",
-                "value": 3000
+                "value": 1000
               },
               {
                 "color": "red",
-                "value": 6000
+                "value": 2000
               }
             ]
           },
@@ -258,11 +258,11 @@
             "properties": [
               {
                 "id": "min",
-                "value": -50
+                "value": -100
               },
               {
                 "id": "max",
-                "value": 150
+                "value": 100
               },
               {
                 "id": "thresholds",
@@ -275,11 +275,11 @@
                     },
                     {
                       "color": "yellow",
-                      "value": -43
+                      "value": -100
                     },
                     {
                       "color": "green",
-                      "value": -20
+                      "value": -69.998
                     },
                     {
                       "color": "text",
@@ -287,11 +287,11 @@
                     },
                     {
                       "color": "orange",
-                      "value": 100
+                      "value": 80
                     },
                     {
                       "color": "red",
-                      "value": 125
+                      "value": 100
                     }
                   ]
                 }
@@ -315,16 +315,12 @@
             },
             "properties": [
               {
-                "id": "fieldMinMax",
-                "value": true
-              },
-              {
                 "id": "min",
-                "value": 22
+                "value": 10
               },
               {
                 "id": "max",
-                "value": 29
+                "value": 15
               },
               {
                 "id": "thresholds",
@@ -337,19 +333,19 @@
                     },
                     {
                       "color": "red",
-                      "value": 23
+                      "value": 11.8
                     },
                     {
                       "color": "yellow",
-                      "value": 24.1
+                      "value": 12.9
                     },
                     {
                       "color": "green",
-                      "value": 26
+                      "value": 13.4
                     },
                     {
                       "color": "purple",
-                      "value": 28.8
+                      "value": 14
                     }
                   ]
                 }
@@ -363,6 +359,9 @@
               {
                 "id": "displayName",
                 "value": "V"
+              },
+              {
+                "id": "fieldMinMax"
               }
             ]
           }
@@ -509,7 +508,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 30,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -547,11 +546,11 @@
               },
               {
                 "color": "orange",
-                "value": 3000
+                "value": 1000
               },
               {
                 "color": "red",
-                "value": 6000
+                "value": 2000
               }
             ]
           },
@@ -895,12 +894,12 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "right",
-            "axisSoftMax": 29,
-            "axisSoftMin": 21,
+            "axisSoftMax": 15,
+            "axisSoftMin": 11,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 20,
+            "fillOpacity": 40,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -912,7 +911,7 @@
             "lineStyle": {
               "fill": "solid"
             },
-            "lineWidth": 1,
+            "lineWidth": 2,
             "pointSize": 4,
             "scaleDistribution": {
               "type": "linear"
@@ -937,19 +936,19 @@
               },
               {
                 "color": "red",
-                "value": 23
+                "value": 11.8
               },
               {
                 "color": "yellow",
-                "value": 24.1
+                "value": 12.9
               },
               {
                 "color": "green",
-                "value": 26
+                "value": 13.4
               },
               {
                 "color": "purple",
-                "value": 28.8
+                "value": 14.6
               }
             ]
           },
@@ -1028,7 +1027,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 20,
+            "fillOpacity": 33,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -1141,33 +1140,6 @@
               {
                 "params": [
                   "pvRadiatorTemperature"
-                ],
-                "type": "field"
-              }
-            ]
-          ],
-          "tags": []
-        },
-        {
-          "alias": "rPi",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "PBDC07BC01591819D"
-          },
-          "groupBy": [],
-          "hide": false,
-          "measurement": "inverter",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "query": "SELECT \"bat_amps\" FROM \"autogen\".\"logs\" WHERE $timeFilter",
-          "rawQuery": false,
-          "refId": "C",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "rpiTemperature"
                 ],
                 "type": "field"
               }
@@ -1363,7 +1335,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 20,
+            "fillOpacity": 40,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -1397,11 +1369,11 @@
               },
               {
                 "color": "green",
-                "value": 30
+                "value": 15
               },
               {
                 "color": "red",
-                "value": 150
+                "value": 105
               }
             ]
           },
@@ -1481,7 +1453,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 20,
+            "fillOpacity": 40,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -1612,7 +1584,7 @@
     "list": []
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {
@@ -1643,8 +1615,8 @@
     "type": "timepicker"
   },
   "timezone": "browser",
-  "title": "Home AGM24",
-  "uid": "6nZlWpK4k",
-  "version": 38,
+  "title": "Home LiFePo12",
+  "uid": "cdz3eu72pasjke",
+  "version": 5,
   "weekStart": ""
 }
