@@ -40,7 +40,7 @@ class Sample(object):
     iWarning: str
     iBattPower: int
     iBattCurrent: int
-    rpiTemperature: float
+#    rpiTemperature: float
 
     def jSON(self, uKey: str) -> str:
         return [
@@ -80,8 +80,8 @@ class Sample(object):
                     "iError": self.iError,
                     "iWarning": self.iWarning,
                     "iBattPower": self.iBattPower,
-                    "iBattCurrent": self.iBattCurrent,
-                    "rpiTemperature": self.rpiTemperature
+                    "iBattCurrent": self.iBattCurrent#,
+ #                   "rpiTemperature": self.rpiTemperature
                 }
     }
 ]
