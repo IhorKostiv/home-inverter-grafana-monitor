@@ -274,7 +274,7 @@ class GreenCell(UPS):
         pvRadiatorTemperature, pvBatteryRelay, pvRelay, pvError, pvWarning, pvAccumulatedPower,
         iWorkState, iBatteryVoltage, iVoltage, iGridVoltage, iPInverter, iPGrid, iPLoad, iLoadPercent, iSInverter, 
         iSGrid, iSLoad, iRadiatorTemperature, iRelayState, iGridRelayState, iLoadRelayState, iAccumulatedLoadPower, 
-        iAccumulatedDischargerPower, iAccumulatedSelfusePower, iError, iWarning, iBattPower, iBattCurrent#,
+        iAccumulatedDischargerPower, iAccumulatedSelfusePower, iError, iWarning, iBattPower, iBattCurrent,
         rpiTemperature
       )
   
