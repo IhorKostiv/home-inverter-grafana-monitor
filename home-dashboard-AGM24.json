@@ -276,7 +276,7 @@
             "uid": "PBDC07BC01591819D"
           },
           "groupBy": [],
-          "hide": false,
+          "hide": true,
           "measurement": "inverter",
           "orderByTime": "ASC",
           "policy": "autogen",
@@ -301,7 +301,7 @@
             "uid": "PBDC07BC01591819D"
           },
           "groupBy": [],
-          "hide": false,
+          "hide": true,
           "measurement": "inverter",
           "orderByTime": "ASC",
           "policy": "autogen",
@@ -326,7 +326,7 @@
             "uid": "PBDC07BC01591819D"
           },
           "groupBy": [],
-          "hide": false,
+          "hide": true,
           "measurement": "inverter",
           "orderByTime": "ASC",
           "policy": "autogen",
@@ -1854,7 +1854,7 @@
     "list": []
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {
@@ -1887,6 +1887,6 @@
   "timezone": "browser",
   "title": "Home AGM24",
   "uid": "6nZlWpK4k",
-  "version": 55,
+  "version": 56,
   "weekStart": ""
 }
