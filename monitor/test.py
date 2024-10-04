@@ -2,8 +2,8 @@ import os
 from ups import UPS, greenCell
 
 
-inverter: UPS = greenCell.GreenCell("/dev/ttyUSB0", True)
-sample = inverter.sample()
+inverter: UPS = greenCell.GreenCell("/dev/ttyUSB0")
+sample = inverter.sample(True)
 
 print("Measured: {0}".format(sample))
 

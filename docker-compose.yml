@@ -13,6 +13,7 @@ services:
       DB_PASSWORD: root
       DB_NAME: ups
       INVERTER_MODEL: "GreenCell"
+      IS_DEBUG: "False"
     depends_on:
       - influxdb
     tmpfs:

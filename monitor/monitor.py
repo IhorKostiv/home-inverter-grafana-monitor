@@ -29,14 +29,14 @@ client = InfluxDBClient(DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME)
 #    print("Unknown inverter model model: {0}".format(INVERTER_MODEL))
 #    exit(1)
 
-inverter: UPS = greenCell.GreenCell(USB_DEVICE, isDebug) # SUPPORTED_INVERTERS[INVERTER_MODEL](USB_DEVICE)
-sample = inverter.sample()
+inverter: UPS = greenCell.GreenCell(USB_DEVICE) # SUPPORTED_INVERTERS[INVERTER_MODEL](USB_DEVICE)
+sample = inverter.sample(isDebug)
 
 if isDebug:
     print("Measured: {0}".format(sample))
 
 json_body = sample.jSON(INVERTER_MODEL)
 
-print(datetime.datetime.now(), json_body)
+print(datetime.datetime.now(), " ", json_body)
 
 client.write_points(json_body)

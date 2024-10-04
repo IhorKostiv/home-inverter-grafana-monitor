@@ -1,5 +1,5 @@
 import time
-#from gpiozero import CPUTemperature
+from gpiozero import CPUTemperature
 from . import Sample, UPS
 
 def bitmaskText(newLine, Bitmask, Texts):
@@ -21,13 +21,11 @@ def bitmaskNegative(value):
         return value
 
 class GreenCell(UPS):
-    debug: bool
-
-    def __init__(self, device_path: str, isDebug: bool):
+    
+    def __init__(self, device_path: str):
         super().__init__(device_path, 4, 19200)
-        self.debug = isDebug
 
-    def sample(self) -> Sample:
+    def sample(self, isDebug: bool) -> Sample:
       
       pvErrors = {
             1: "Hardware protection",
@@ -168,33 +166,35 @@ class GreenCell(UPS):
         6: "Grid charging"
       }
       pvWorkStates = {
-        0: "Initialization mode", 
-        1: "Selftest Mode", 
-        2: "Work Mode", 
-        3: "Stop Mode"
+        0: "Initialization",    # "Initialization mode", 
+        1: "Selftest",          # "Selftest Mode", 
+        2: "Work",              # "Work Mode", 
+        3: "Stop",              # "Stop Mode"
       }
       mpptStates = {
-        0: "Stop", 
+        0: "S",                 # "Stop", 
         1: "MPPT", 
-        2: "Current limiting"
+        2: "CL"                 # "Current limiting"
       }
       chargingStates = {
-        0: "Stop", 
-        1: "Absorb charge", 
-        2: "Float charge", 
-        3: "EQ charge"
+        0: "S",                 # "Stop", 
+        1: "A",                 # "Absorb charge", 
+        2: "F",                 # "Float charge", 
+        3: "EQ",                # "EQ charge"
       }
       relayStates = {
         0: "Off", 
         1: "ON"
       }
 
-      self.scc.debug = self.debug
+      self.scc.debug = isDebug
       pv = self.scc.read_registers(15200, 22)
-      if self.debug:
+      if isDebug:
         print("PV Message: ", pv)
-      
-      pvWorkState = pvWorkStates[pv[1]] + ", " + mpptStates[pv[2]] + ", " + chargingStates[pv[3]]   # 15201 15202 15203
+      if pv[1]==2: # work mode
+          pvWorkState = mpptStates[pv[2]] + "-" + chargingStates[pv[3]]   # 15201 15202 15203
+      else:
+          pvWorkState = pvWorkStates[pv[1]]                               # 15201 15202 15203
       pvVoltage = pv[5] / 10.0                               # 15205
       pvBatteryVoltage = pv[6] / 10.0                        # 15206
       pvChargerCurrent = pv[7] / 10.0	                     # 15207
@@ -208,7 +208,7 @@ class GreenCell(UPS):
           
       time.sleep(0.02)
       soc = self.scc.read_registers(25200, 75)
-      if self.debug:
+      if isDebug:
         print("Invertor Message: ", soc)
        
       iWorkState = inverterWorkStates[soc[1]]         # 25201
@@ -267,7 +267,7 @@ class GreenCell(UPS):
       iBattPower = bitmaskNegative(soc[73])           # 25273: ["Battery power", 1, "W"],
       iBattCurrent = bitmaskNegative(soc[74])         # 25274: ["Battery current", 1, "A"],
 
-#      rpiTemperature = CPUTemperature().temperature
+      rpiTemperature = CPUTemperature().temperature
 
       return Sample(
         pvWorkState, pvVoltage, pvBatteryVoltage, pvChargerCurrent, pvChargerPower, 
@@ -275,14 +275,6 @@ class GreenCell(UPS):
         iWorkState, iBatteryVoltage, iVoltage, iGridVoltage, iPInverter, iPGrid, iPLoad, iLoadPercent, iSInverter, 
         iSGrid, iSLoad, iRadiatorTemperature, iRelayState, iGridRelayState, iLoadRelayState, iAccumulatedLoadPower, 
         iAccumulatedDischargerPower, iAccumulatedSelfusePower, iError, iWarning, iBattPower, iBattCurrent#,
- #       rpiTemperature
+        rpiTemperature
       )
-#     else:
-#       return Sample(
-#         "pvWorkState", 72, 24, 7, 168, 
-#         36, "pvBatteryRelay", "pvRelay", "pvError", "pvWarning", 123,
-#         "iWorkState", 24, 220, 221, 2200, 2201, 2199, 80, 
-#         330, 331, 329, 37, "iRelayState", "iGridRelayState", "iLoadRelayState", 
-#         2345, 23, 23, "iError", "iWarning", 240, 10
-#       )
   

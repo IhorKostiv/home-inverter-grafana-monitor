@@ -78,20 +78,7 @@
           },
           "unit": "kwatt"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Load"
-            },
-            "properties": [
-              {
-                "id": "decimals",
-                "value": 3
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 18,
@@ -485,6 +472,6 @@
   "timezone": "browser",
   "title": "Accumulated",
   "uid": "fdzhjy8x9jldsc",
-  "version": 3,
+  "version": 4,
   "weekStart": ""
 }
