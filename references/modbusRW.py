@@ -21,7 +21,7 @@ i.debug = True
 i.clear_buffers_before_each_transaction = True
 
 result = i.read_register(register)
-print("{0} was {1}".format(i + register, result))
+print("{0} was {1}".format(register, result))
 
 #if value >=0 :
 #    time.sleep(0.1)
