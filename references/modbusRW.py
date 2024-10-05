@@ -5,7 +5,7 @@ import sys
 device_id = int(sys.argv[1])
 baud_rate = int(sys.argv[2])
 register = int(sys.argv[3])
-if len(argv)>3:
+if len(sys.argv)>3:
     value = int(sys.argv[4])
 else:
     value = -1
