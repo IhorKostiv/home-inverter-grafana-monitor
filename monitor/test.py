@@ -1,4 +1,5 @@
 import os
+import datetime
 from ups import UPS, greenCell
 
 
@@ -11,4 +12,5 @@ INVERTER_MODEL = os.environ.get("INVERTER_MODEL", "GreenCell")
 
 json_body = sample.jSON(INVERTER_MODEL)
 
-print(json_body)
+print(datetime.datetime.now(), " ", json_body)
+

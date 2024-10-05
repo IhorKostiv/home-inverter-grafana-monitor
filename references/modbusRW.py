@@ -5,7 +5,10 @@ import sys
 device_id = int(sys.argv[1])
 baud_rate = int(sys.argv[2])
 register = int(sys.argv[3])
-value = int(sys.argv[4])
+if len(argv)>3:
+    value = int(sys.argv[4])
+else:
+    value = -1
 
 SERPORT = '/dev/ttyUSB0'
 SERTIMEOUT = 0.5
@@ -20,7 +23,7 @@ i.clear_buffers_before_each_transaction = True
 result = i.read_register(register)
 print("{0} was {1}".format(i + register, result))
 
-#if value != "":
+#if value >=0 :
 #    time.sleep(0.1)
 
 #    i.write_register(register, value)
