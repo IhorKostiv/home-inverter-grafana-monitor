@@ -6,6 +6,8 @@ from dataclasses import dataclass
 
 @dataclass
 class Sample(object):
+    icEnergyUse: str
+
     pvWorkState: str
     pvVoltage: float
     pvBatteryVoltage: float
@@ -48,6 +50,7 @@ class Sample(object):
                 "measurement": "inverter",
                 "tags": { "uKey": uKey },
                 "fields": {
+                    "icEnergyUse": self.icEnergyUse,
                     "pvWorkState": self.pvWorkState,
                     "pvVoltage": self.pvVoltage,
                     "pvBatteryVoltage": self.pvBatteryVoltage,

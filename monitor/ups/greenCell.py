@@ -182,12 +182,35 @@ class GreenCell(UPS):
         2: "F",                 # "Float charge", 
         3: "EQ",                # "EQ charge"
       }
-      relayStates = {
-        0: "Off", 
-        1: "ON"
-      }
+      relayStates = { 0: "Off", 1: "ON" }
+
+      icEnergyUses = { 1: "SBU", 2: "SUB", 3: "UTI", 4: "SOL"}
+      icSolarUseAims = { 0: "LBU", 1: "BLU" }
 
       self.scc.debug = isDebug
+      ic = self.scc.read_registers(20100, 45)
+      if isDebug:
+        print("iControl Message: ", ic)
+                                               # 20101	RW	Inverter offgrid work enable	0：OFF 1：ON  
+                                               # 20102	RW	Inverter output voltage Set	220.0V-240.0V
+                                               # 20103	RW	Inverter output frequency Set	50.00Hz/60.00Hz
+                                               # 20104	RW	Inverter search mode enable	0：OFF 1：ON  
+                                               # 20108	RW	Inverter discharger to grid enable	"48V:   0：OFF  1：ON 24V:  Null"
+      icEnergyUse = icEnergyUses[ic[9]]        # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
+                                               # 20111	RW	Grid protect standard	0：VDE4105; 1：UPS  ;  2：home ;3:GEN
+      #icSolarUseAim = icSolarUseAims[ic[12]]   # 20112	RW	SolarUse Aim	"0:LBU  1:BLU(defalut)(for PV;PH) | 0:LB  1:LU(defalut)  (for EP)"
+                                               # 20113	RW	Inverter max discharger current	"48V:  0.1A（AC）| 12V 24V:  Null"
+                                               # 20118	RW	Battery stop discharging voltage	0.1V  
+                                               # 20119	RW	Battery stop charging voltage	0.1V  
+                                               # 20125	RW	Grid max charger current set	0.1A(DC)
+                                               # 20127	RW	Battery low voltage	0.1V
+                                               # 20128	RW	Battery high voltage	0.1V
+                                               # 20132	RW	Max Combine charger current	0.1A(DC)(for PV;PH)
+                                               # 20142	RW	System setting	
+                                               # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
+                                               # 20144	RW	Solar power balance	"0:SBD 1:SBE"
+
+      time.sleep(0.02)
       pv = self.scc.read_registers(15200, 22)
       if isDebug:
         print("PV Message: ", pv)
@@ -269,7 +292,7 @@ class GreenCell(UPS):
 
       rpiTemperature = CPUTemperature().temperature
 
-      return Sample(
+      return Sample( icEnergyUse,
         pvWorkState, pvVoltage, pvBatteryVoltage, pvChargerCurrent, pvChargerPower, 
         pvRadiatorTemperature, pvBatteryRelay, pvRelay, pvError, pvWarning, pvAccumulatedPower,
         iWorkState, iBatteryVoltage, iVoltage, iGridVoltage, iPInverter, iPGrid, iPLoad, iLoadPercent, iSInverter, 
