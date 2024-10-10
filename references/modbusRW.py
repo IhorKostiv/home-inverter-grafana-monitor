@@ -23,8 +23,8 @@ i.clear_buffers_before_each_transaction = True
 result = i.read_register(register)
 print("{0} was {1}".format(register, result))
 
-#if value >=0 :
-#    time.sleep(0.1)
+if value >=0 :
+    time.sleep(0.1)
 
-#    i.write_register(register, value)
-#    print("{0} now {1}".format(i + register, value))
+    i.write_register(register, value)
+    print("{0} now {1}".format(i + register, value))

@@ -1,5 +1,25 @@
 version: "3.0"
 services:
+  forecast.solar:
+    build:
+      context: forecast.solar
+    restart: always
+    environment:
+      DB_HOST: home-inverter-grafana-monitor-influxdb-1
+      DB_PORT: 8086
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      DB_NAME: ups
+      LATITUDE: 49.842
+      LONGITUDE: 24.0316
+      AZIMUTH: 20
+      DECLINTION: 70
+      POWER: 1.8
+      DAMPING: 0
+    depends_on:
+      - influxdb
+    tmpfs:
+      - /var/run
   monitor:
     build:
       context: monitor
@@ -7,7 +27,7 @@ services:
     devices:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
     environment:
-      DB_HOST: home-inverter-grafana-monitor_influxdb_1
+      DB_HOST: home-inverter-grafana-monitor-influxdb-1
       DB_PORT: 8086
       DB_USERNAME: root
       DB_PASSWORD: root
