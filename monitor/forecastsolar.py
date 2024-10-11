@@ -47,7 +47,10 @@ def pvEstimate(currentTime: datetime, solarData) -> int:
  #   d2 = t2 - current_time
     d = t2 - t1
 
-    avg = p1 + ((p2 - p1) * d1.total_seconds() / d.total_seconds()) # linear approximation
+    if t2 != t1:
+        avg = p1 + ((p2 - p1) * d1.total_seconds() / d.total_seconds()) # linear approximation
+    else:
+        avg = p1
     
     #print(f"estimate {avg}@{currentTime} between {p1}@{t1} and {p2}"@{t2})
     return avg
