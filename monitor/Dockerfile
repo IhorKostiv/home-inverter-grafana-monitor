@@ -7,6 +7,8 @@ RUN mkdir /monitor
 WORKDIR /monitor
 COPY monitor.py /monitor
 COPY ups /monitor/ups
+COPY forecastsolar.py /monitor
 
+RUN echo "6,21,36,51 * * * * python3 /monitor/forecastsolar.py" >> /etc/crontabs/root && crontab -l
 RUN echo "* * * * * python3 /monitor/monitor.py" >> /etc/crontabs/root && crontab -l
 CMD crond -f -l 8

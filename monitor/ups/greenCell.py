@@ -292,7 +292,7 @@ class GreenCell(UPS):
 
       rpiTemperature = CPUTemperature().temperature
 
-      return Sample( icEnergyUse,
+      return Sample( icEnergyUse, 0,
         pvWorkState, pvVoltage, pvBatteryVoltage, pvChargerCurrent, pvChargerPower, 
         pvRadiatorTemperature, pvBatteryRelay, pvRelay, pvError, pvWarning, pvAccumulatedPower,
         iWorkState, iBatteryVoltage, iVoltage, iGridVoltage, iPInverter, iPGrid, iPLoad, iLoadPercent, iSInverter, 
