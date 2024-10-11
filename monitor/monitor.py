@@ -7,36 +7,6 @@ import datetime
 from ups import UPS, greenCell #, must_ep3000, must_pv1800, must_ph18_5248
 from forecastsolar import pvEstimate
 
-# def pvEstimate(current_time: datetime, solar_data) -> int:
-
-#     p1 = 0
-#     t1 = current_time
-#     p2 = 0
-#     t2 = current_time
-    
-#     for i, t in enumerate(solar_data['result']):
-#         p = solar_data['result'][t]
-#         tt = parser.parse(t)
-#         if current_time > tt:
-#             p1 = p
-#             t1 = tt
-#         else:
-#             if current_time <= tt:
-#                 p2 = p
-#                 t2 = tt
-#                 break
-
-# #        print(f"index {i} time {t} estimate {p}")
-
-#     d1 = current_time - t1
-#  #   d2 = t2 - current_time
-#     d = t2 - t1
-
-#     avg = p1 + ((p2 - p1) * d1.total_seconds() / d.total_seconds()) # linear approximation
-
-#  #   print(f"estimate {avg} between {p1} and {p2}")
-#     return avg
-
 #SUPPORTED_INVERTERS = {
 #    "must-pv1800": must_pv1800.MustPV1800,
 #    "must-ep3000": must_ep3000.MustEP3000,
@@ -63,7 +33,10 @@ inverter: UPS = greenCell.GreenCell(USB_DEVICE) # SUPPORTED_INVERTERS[INVERTER_M
 sample = inverter.sample(isDebug)
 
 forecast = client.query("SELECT last(""Response"") FROM ""forecast""")
-sample.fPVEstimate = pvEstimate(datetime.datetime.now(), forecast)
+if len(forecast) > 0:
+    if isDebug:
+        print("Forecast: ", forecast)
+    sample.fPVEstimate = pvEstimate(datetime.datetime.now(), forecast)
 
 if isDebug:
     print("Measured: {0}".format(sample))
