@@ -14,6 +14,8 @@ SERPORT = '/dev/ttyUSB0'
 SERTIMEOUT = 0.5
 SERBAUD = baud_rate
 
+time.sleep(1)
+
 i = minimalmodbus.Instrument(SERPORT, device_id)
 i.serial.timeout= SERTIMEOUT
 i.serial.baudrate = SERBAUD
