@@ -19,40 +19,34 @@ def solarProductionEstimate(lat: float, lon: float, dec: int, az: int, kwp: floa
     else:
         return "" # "error: Failed to fetch data"
 
-def pvEstimate(currentTime: datetime, solarData) -> int:
+def pvEstimate(current_time: datetime, solar_data) -> int:
 
     p1 = 0
-    t1 = currentTime
+    t1 = current_time
     p2 = 0
-    t2 = currentTime
+    t2 = current_time
     
-    for i, t in enumerate(solarData):
-        p = solarData[t]
+    for i, t in enumerate(solar_data):
+        p = solar_data[t]
         tt = parser.parse(t)
-        if currentTime > tt:
+        if current_time > tt:
             p1 = p
             t1 = tt
         else:
-            if currentTime < tt:
+            if current_time <= tt:
                 p2 = p
                 t2 = tt
                 break
-            else:
-                if currentTime == tt:
-                    return p
 
 #        print(f"index {i} time {t} estimate {p}")
 
-    d1 = currentTime - t1
+    d1 = current_time - t1
  #   d2 = t2 - current_time
     d = t2 - t1
 
-    if t2 != t1:
-        avg = p1 + ((p2 - p1) * d1.total_seconds() / d.total_seconds()) # linear approximation
-    else:
-        avg = p1
-    
-    #print(f"estimate {avg}@{currentTime} between {p1}@{t1} and {p2}"@{t2})
+    avg = p1 + ((p2 - p1) * d1.total_seconds() / d.total_seconds()) # linear approximation
+
+ #   print(f"estimate {avg} between {p1} and {p2}")
     return avg
 
 # Example usage
