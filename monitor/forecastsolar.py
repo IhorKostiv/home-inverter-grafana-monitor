@@ -1,4 +1,6 @@
 import datetime
+from tzlocal import get_localzone
+
 from dateutil import parser
 from influxdb import InfluxDBClient
 from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
@@ -28,7 +30,7 @@ def pvEstimate(current_time: datetime, solar_data) -> int:
     
     for i, t in enumerate(solar_data):
         p = solar_data[t]
-        tt = parser.parse(t)
+        tt = parser.parse(t).astimezone(get_localzone())
         if current_time > tt:
             p1 = p
             t1 = tt
