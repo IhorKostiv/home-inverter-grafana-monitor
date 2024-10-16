@@ -8,7 +8,7 @@ import json
 import os
 
 def solarProductionEstimate(lat: float, lon: float, dec: int, az: int, kwp: float, damping: str = "0") -> str:
-    url = f"https://api.forecast.solar/estimate/watts/{lat}/{lon}/{dec}/{az}/{kwp}?damping={damping}" # ?actual=<float kWh>
+    url = f"https://api.forecast.solar/estimate/watts/{lat}/{lon}/{dec}/{az}/{kwp}?damping={damping}" # &actual={actual} # <float kWh>
 #    url = f"https://api.meteosource.com/v1/solar?date={date}&lat={lat}&lon={lon}&modulePower={module_power}&orientation={orientation}&tilt={tilt}&key={api_key}"
     
     response = requests.get(url)
@@ -47,7 +47,7 @@ def pvEstimate(current_time: datetime, solar_data) -> int:
     avg = p1 + ((p2 - p1) * d1.total_seconds() / d.total_seconds()) # linear approximation
 
  #   print(f"estimate {avg} between {p1} and {p2}")
-    return avg
+    return int(avg)
 
 # Example usage
 if __name__ == "__main__":

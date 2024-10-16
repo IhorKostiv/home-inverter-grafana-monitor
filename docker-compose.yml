@@ -1,24 +1,4 @@
 services:
-  # forecast.solar:
-  #   build:
-  #     context: forecast.solar
-  #   restart: always
-  #   environment:
-  #     DB_HOST: home-inverter-grafana-monitor-influxdb-1
-  #     DB_PORT: 8086
-  #     DB_USERNAME: root
-  #     DB_PASSWORD: root
-  #     DB_NAME: ups
-  #     LATITUDE: 49.842
-  #     LONGITUDE: 24.0316
-  #     AZIMUTH: 20
-  #     DECLINTION: 70
-  #     POWER: 1.8
-  #     DAMPING: 0
-  #   depends_on:
-  #     - influxdb
-  #   tmpfs:
-  #     - /var/run
   monitor:
     build:
       context: monitor
@@ -49,7 +29,7 @@ services:
     image: arm32v7/influxdb
     restart: always
     ports:
-      - "8086:8086" # expose for localhost
+      - "8086:8086" # expose for testing, no need in production
     environment:
       DOCKER_INFLUXDB_INIT_USERNAME: root
       DOCKER_INFLUXDB_INIT_PASSWORD: root

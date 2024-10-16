@@ -111,7 +111,7 @@
                 "id": "custom.lineStyle",
                 "value": {
                   "dash": [
-                    10,
+                    5,
                     10
                   ],
                   "fill": "dash"
@@ -142,6 +142,30 @@
       },
       "targets": [
         {
+          "alias": "Load",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PBDC07BC01591819D"
+          },
+          "groupBy": [],
+          "measurement": "inverter",
+          "orderByTime": "ASC",
+          "policy": "autogen",
+          "refId": "A",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "iPLoad"
+                ],
+                "type": "field"
+              }
+            ]
+          ],
+          "tags": []
+        },
+        {
           "alias": "Grid",
           "datasource": {
             "type": "influxdb",
@@ -159,30 +183,6 @@
               {
                 "params": [
                   "iPGrid"
-                ],
-                "type": "field"
-              }
-            ]
-          ],
-          "tags": []
-        },
-        {
-          "alias": "Load",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "PBDC07BC01591819D"
-          },
-          "groupBy": [],
-          "measurement": "inverter",
-          "orderByTime": "ASC",
-          "policy": "autogen",
-          "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "iPLoad"
                 ],
                 "type": "field"
               }
@@ -343,6 +343,31 @@
             ]
           ],
           "tags": []
+        },
+        {
+          "alias": "Estimate",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PBDC07BC01591819D"
+          },
+          "groupBy": [],
+          "hide": false,
+          "measurement": "inverter",
+          "orderByTime": "ASC",
+          "policy": "autogen",
+          "refId": "I",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "fPVEstimate"
+                ],
+                "type": "field"
+              }
+            ]
+          ],
+          "tags": []
         }
       ],
       "title": "Energy",
@@ -408,7 +433,7 @@
                     },
                     {
                       "color": "text",
-                      "value": 0
+                      "value": 0.01
                     },
                     {
                       "color": "orange",
@@ -644,11 +669,11 @@
             "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 1,
-            "pointSize": 5,
+            "pointSize": 3,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -832,8 +857,12 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "green",
+                      "color": "blue",
                       "value": null
+                    },
+                    {
+                      "color": "green",
+                      "value": 0.01
                     },
                     {
                       "color": "yellow",
@@ -1036,11 +1065,11 @@
             "insertNulls": false,
             "lineInterpolation": "smooth",
             "lineWidth": 1,
-            "pointSize": 7,
+            "pointSize": 3,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1184,11 +1213,11 @@
               "fill": "solid"
             },
             "lineWidth": 1,
-            "pointSize": 4,
+            "pointSize": 3,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1292,6 +1321,12 @@
             "mode": "palette-classic"
           },
           "decimals": 1,
+          "links": [
+            {
+              "title": "Drill down",
+              "url": "http://inverter.local:3000/d/fdzhjy8x9jldsc/accumulated?orgId=1"
+            }
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -1448,7 +1483,7 @@
         "type": "influxdb",
         "uid": "PBDC07BC01591819D"
       },
-      "description": "",
+      "description": "PV States: </BR>\nStop </BR>\nSelftest </BR>\nWork Modes: </BR>\nMPPT-A = MPPT, Absorb charge </BR>\nMPPT-F = MPPT, Float charge </BR>\nCL-F = Current limiting, Float charge </BR>\nCL-A = Current limiting, Absorb charge </BR>",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1760,7 +1795,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1783,7 +1818,7 @@
                 "value": 30
               },
               {
-                "color": "yellow",
+                "color": "super-light-green",
                 "value": 80
               },
               {
@@ -1847,14 +1882,14 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "5s",
+  "refresh": "30s",
   "schemaVersion": 39,
   "tags": [],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {
@@ -1887,6 +1922,6 @@
   "timezone": "browser",
   "title": "Home AGM24",
   "uid": "6nZlWpK4k",
-  "version": 56,
+  "version": 67,
   "weekStart": ""
 }
