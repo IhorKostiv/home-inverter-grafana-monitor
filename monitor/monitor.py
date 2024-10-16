@@ -48,6 +48,6 @@ if isDebug:
 
 json_body = sample.jSON(INVERTER_MODEL)
 
-print(datetime.datetime.now(), " ", json_body)
+print(datetime.now(), " ", json_body)
 
 client.write_points(json_body)

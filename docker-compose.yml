@@ -20,6 +20,7 @@ services:
       DECLINTION: 70
       POWER: 1.8
       DAMPING: 0
+      TZ: "Europe/Kiev"
     depends_on:
       - influxdb
     tmpfs:
