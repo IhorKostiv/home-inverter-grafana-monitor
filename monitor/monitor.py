@@ -30,8 +30,8 @@ client = InfluxDBClient(DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME)
 #    print("Unknown inverter model model: {0}".format(INVERTER_MODEL))
 #    exit(1)
 
-#inverter: UPS = greenCell.GreenCell(USB_DEVICE) # SUPPORTED_INVERTERS[INVERTER_MODEL](USB_DEVICE)
-#sample = inverter.sample(isDebug)
+inverter: UPS = greenCell.GreenCell(USB_DEVICE) # SUPPORTED_INVERTERS[INVERTER_MODEL](USB_DEVICE)
+sample = inverter.sample(isDebug)
 
 forecast = client.query("SELECT last(""Response"") FROM ""forecast""")
 if isDebug:
