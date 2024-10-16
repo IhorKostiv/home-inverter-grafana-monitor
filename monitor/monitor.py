@@ -3,7 +3,7 @@ from influxdb import InfluxDBClient
 from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
 
 import os
-import datetime
+from datetime import datetime
 from ups import UPS, greenCell #, must_ep3000, must_pv1800, must_ph18_5248
 from forecastsolar import pvEstimate
 import json
@@ -40,7 +40,7 @@ fl = list(forecast.get_points("forecast"))
 if len(fl) > 0:
     js = json.loads(fl[0]['last'].replace("'", '"'))
 
-    sample.fPVEstimate = pvEstimate(datetime.datetime.now(),js)
+    sample.fPVEstimate = pvEstimate(datetime.now(datetime.get_localzone()),js)
 
 if isDebug:
     print("Measured: {0}".format(sample))
