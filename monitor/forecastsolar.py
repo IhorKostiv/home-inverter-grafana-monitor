@@ -21,36 +21,36 @@ def solarProductionEstimate(lat: float, lon: float, dec: int, az: int, kwp: floa
     else:
         return "" # "error: Failed to fetch data"
 
-def pvEstimate(current_time: datetime, solar_data) -> int:
+def pvEstimate(currentTime: datetime, solarData) -> int:
 
     p1 = 0
-    t1 = current_time
+    t1 = currentTime
     p2 = 0
-    t2 = current_time
+    t2 = currentTime
     tz = get_localzone()
-    
-    for i, t in enumerate(solar_data):
-        p = solar_data[t]
-        tt = parser.parse(t).tz_localize(tz) #, tzinfos=current_time.tzinfo)
+    sd = solarData["Response"]
+    for i, t in enumerate(sd):
+        p = sd[t]
+        tt = parser.parse(t).replace(tzinfo=tz) #, tzinfos=current_time.tzinfo)
         print(f"power {p} @ {tt} {tz}")
-        if current_time > tt:
+        if currentTime > tt:
             p1 = p
             t1 = tt
         else:
-            if current_time <= tt:
+            if currentTime <= tt:
                 p2 = p
                 t2 = tt
                 break
 
 #        print(f"index {i} time {t} estimate {p}")
 
-    d1 = current_time - t1
+    d1 = currentTime - t1
  #   d2 = t2 - current_time
     d = t2 - t1
 
     avg = p1 + ((p2 - p1) * d1.total_seconds() / d.total_seconds()) # linear approximation
 
-    print(f"estimate {avg} @ {current_time} between {p1} @ {t1} and {p2} @ {t2}")
+    print(f"estimate {avg} @ {currentTime} between {p1} @ {t1} and {p2} @ {t2}")
     return int(avg)
 
 # Example usage
@@ -75,11 +75,13 @@ if __name__ == "__main__":
             {
                 "measurement": "forecast",
              #   "tags": { "lat": lat, "lon": lon, "az": az, "dec": dec, "kwp": kwp, "damping": damping },
-                "fields": { "Response": str(Response) }
+                "fields": { 
+                    "Response": str(Response), 
+                    "TimeZone": solarData["message"]["info"]["timezone"] }
              }
         ]
 
-        DB_HOST = os.environ.get("DB_HOST", "sandbox")
+        DB_HOST = os.environ.get("DB_HOST", "inverter")
         DB_PORT = int(os.environ.get("DB_PORT", "8086"))
         DB_USERNAME = os.environ.get("DB_USERNAME", "root")
         DB_PASSWORD = os.environ.get("DB_PASSWORD", "root")

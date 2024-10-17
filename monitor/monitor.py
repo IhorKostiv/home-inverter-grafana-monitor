@@ -34,12 +34,12 @@ client = InfluxDBClient(DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME)
 inverter: UPS = greenCell.GreenCell(USB_DEVICE) # SUPPORTED_INVERTERS[INVERTER_MODEL](USB_DEVICE)
 sample = inverter.sample(isDebug)
 
-forecast = client.query("SELECT last(""Response"") FROM ""forecast""")
+forecast = client.query("SELECT last(""Response"") as Response, last(""TimeZone"") as TimeZone FROM ""forecast"" ORDER BY time DESC")
 if isDebug:
     print("Forecast: ", forecast)
 fl = list(forecast.get_points("forecast"))
 if len(fl) > 0:
-    js = json.loads(fl[0]['last'].replace("'", '"'))
+    js = json.loads(str(fl[0]).replace("'", '"').replace('"{',"{").replace('}"',"}"))
     if isDebug:
         print(js)
     sample.fPVEstimate = pvEstimate(datetime.now(get_localzone()), js)
