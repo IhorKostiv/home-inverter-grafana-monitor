@@ -104,3 +104,9 @@ class UPS(object):
 
     def sample(self) -> Sample:
         pass
+
+    def setSolar(self, isDebug: bool):
+        pass
+
+    def setUtility(self, isDebug: bool):
+        pass

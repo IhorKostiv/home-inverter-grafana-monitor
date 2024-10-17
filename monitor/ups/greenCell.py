@@ -301,3 +301,15 @@ class GreenCell(UPS):
         rpiTemperature
       )
   
+    def setSolar(self, isDebug: bool):
+        if isDebug:
+            print("set Solar")
+        time.sleep(0.1) # just in case
+        self.scc.write_register(20109, 1)
+
+    def setUtility(self, isDebug: bool):
+        if isDebug:
+            print("set Utility")
+        time.sleep(0.1) # just in case
+        self.scc.write_register(20109, 3)
+

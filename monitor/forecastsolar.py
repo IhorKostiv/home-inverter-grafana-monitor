@@ -32,7 +32,7 @@ def pvEstimate(currentTime: datetime, solarData) -> int:
     for i, t in enumerate(sd):
         p = sd[t]
         tt = parser.parse(t).replace(tzinfo=tz) #, tzinfos=current_time.tzinfo)
-        print(f"power {p} @ {tt} {tz}")
+        #print(f"power {p} @ {tt} {tz}")
         if currentTime > tt:
             p1 = p
             t1 = tt
