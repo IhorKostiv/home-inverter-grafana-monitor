@@ -4,7 +4,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
 
 import os
 from datetime import datetime
-from tzlocal import get_localzone
+#from tzlocal import get_localzone
 from ups import UPS, greenCell #, must_ep3000, must_pv1800, must_ph18_5248
 from forecastsolar import pvEstimate
 import json
@@ -17,7 +17,7 @@ import json
 
 USB_DEVICE = os.environ.get("USB_DEVICE", "/dev/ttyUSB0")
 
-DB_HOST = os.environ.get("DB_HOST", "sandbox")
+DB_HOST = os.environ.get("DB_HOST", "inverter")
 DB_PORT = int(os.environ.get("DB_PORT", "8086"))
 DB_USERNAME = os.environ.get("DB_USERNAME", "root")
 DB_PASSWORD = os.environ.get("DB_PASSWORD", "root")
@@ -40,8 +40,9 @@ if isDebug:
 fl = list(forecast.get_points("forecast"))
 if len(fl) > 0:
     js = json.loads(fl[0]['last'].replace("'", '"'))
-
-    sample.fPVEstimate = pvEstimate(datetime.now(get_localzone()),js)
+    if isDebug:
+        print(js)
+    sample.fPVEstimate = pvEstimate(datetime.now(), js)
 
 if isDebug:
     print("Measured: {0}".format(sample))

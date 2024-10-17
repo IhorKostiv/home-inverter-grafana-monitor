@@ -27,10 +27,11 @@ def pvEstimate(current_time: datetime, solar_data) -> int:
     t1 = current_time
     p2 = 0
     t2 = current_time
+    #tz = get_localzone()
     
     for i, t in enumerate(solar_data):
         p = solar_data[t]
-        tt = parser.parse(t).astimezone(get_localzone())
+        tt = parser.parse(t) #, tzinfos=current_time.tzinfo)
         print(f"item {p} @ {tt}")
         if current_time > tt:
             p1 = p
