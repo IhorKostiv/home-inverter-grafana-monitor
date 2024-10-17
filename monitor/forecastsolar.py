@@ -31,6 +31,7 @@ def pvEstimate(current_time: datetime, solar_data) -> int:
     for i, t in enumerate(solar_data):
         p = solar_data[t]
         tt = parser.parse(t).astimezone(get_localzone())
+        print(f"item {p} @ {tt}")
         if current_time > tt:
             p1 = p
             t1 = tt
@@ -48,7 +49,7 @@ def pvEstimate(current_time: datetime, solar_data) -> int:
 
     avg = p1 + ((p2 - p1) * d1.total_seconds() / d.total_seconds()) # linear approximation
 
-    print(f"estimate {avg}@{current_time} between {p1}@{t1} and {p2}@{t2}")
+    print(f"estimate {avg} @ {current_time} between {p1} @ {t1} and {p2} @ {t2}")
     return int(avg)
 
 # Example usage
