@@ -305,11 +305,11 @@ class GreenCell(UPS):
         if isDebug:
             print("set Solar")
         time.sleep(0.1) # just in case
-        self.scc.write_register(20109, 1)
+        self.scc.write_register(20109, 1)  # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
 
     def setUtility(self, isDebug: bool):
         if isDebug:
             print("set Utility")
         time.sleep(0.1) # just in case
-        self.scc.write_register(20109, 3)
+        self.scc.write_register(20109, 3) # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
 

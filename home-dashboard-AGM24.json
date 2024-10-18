@@ -118,6 +118,61 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Estimate"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    3,
+                    3
+                  ],
+                  "fill": "dot"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Inverter"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Grid"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              }
+            ]
           }
         ]
       },
@@ -1755,6 +1810,31 @@
             ]
           ],
           "tags": []
+        },
+        {
+          "alias": "Energy",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PBDC07BC01591819D"
+          },
+          "groupBy": [],
+          "hide": false,
+          "measurement": "inverter",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "refId": "G",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "icEnergyUse"
+                ],
+                "type": "field"
+              }
+            ]
+          ],
+          "tags": []
         }
       ],
       "title": "Work State",
@@ -1922,6 +2002,6 @@
   "timezone": "browser",
   "title": "Home AGM24",
   "uid": "6nZlWpK4k",
-  "version": 67,
+  "version": 69,
   "weekStart": ""
 }
