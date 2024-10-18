@@ -60,7 +60,7 @@ print(datetime.now(), " ", json_body)
 if USB_DEVICE != "SIMULATOR":
     client.write_points(json_body)
 
-if sample.iPInverter == 0:
+if sample.iPInverter == 0 and sample.fPVEstimate >= 0:
     if sample.icEnergyUse == "UTI" and sample.fPVEstimate > sample.iPLoad + 60:
         inverter.setSolar(isDebug)
     else:

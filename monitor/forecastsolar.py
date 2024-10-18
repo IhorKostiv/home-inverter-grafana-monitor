@@ -23,10 +23,8 @@ def solarProductionEstimate(lat: float, lon: float, dec: int, az: int, kwp: floa
 
 def pvEstimate(currentTime: datetime, solarData) -> int:
 
-    p1 = 0
-    t1 = currentTime
-    p2 = 0
-    t2 = currentTime
+    p1 = p2 = -2
+    t1 = t2 = currentTime
     tz = get_localzone()
     sd = solarData["Response"]
     for i, t in enumerate(sd):
