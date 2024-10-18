@@ -7,6 +7,7 @@ services:
     devices:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
     environment:
+      USB_DEVICE: "/dev/ttyUSB0"
       DB_HOST: home-inverter-grafana-monitor-influxdb-1
       DB_PORT: 8086
       DB_USERNAME: root
