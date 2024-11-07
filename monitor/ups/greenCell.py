@@ -200,8 +200,8 @@ class GreenCell(UPS):
                                                # 20111	RW	Grid protect standard	0：VDE4105; 1：UPS  ;  2：home ;3:GEN
       #icSolarUseAim = icSolarUseAims[ic[12]]   # 20112	RW	SolarUse Aim	"0:LBU  1:BLU(defalut)(for PV;PH) | 0:LB  1:LU(defalut)  (for EP)"
                                                # 20113	RW	Inverter max discharger current	"48V:  0.1A（AC）| 12V 24V:  Null"
-                                               # 20118	RW	Battery stop discharging voltage	0.1V  
-                                               # 20119	RW	Battery stop charging voltage	0.1V  
+      icBatteryStopDischarging = ic[18] / 10.0 # 20118	RW	Battery stop discharging voltage	0.1V  
+      icBatteryStopCharging = ic[19] / 10.0    # 20119	RW	Battery stop charging voltage	0.1V  
                                                # 20125	RW	Grid max charger current set	0.1A(DC)
                                                # 20127	RW	Battery low voltage	0.1V
                                                # 20128	RW	Battery high voltage	0.1V
@@ -292,7 +292,7 @@ class GreenCell(UPS):
 
       rpiTemperature = CPUTemperature().temperature
 
-      return Sample( icEnergyUse, 0,
+      return Sample( icEnergyUse, icBatteryStopDischarging, icBatteryStopCharging, 0,
         pvWorkState, pvVoltage, pvBatteryVoltage, pvChargerCurrent, pvChargerPower, 
         pvRadiatorTemperature, pvBatteryRelay, pvRelay, pvError, pvWarning, pvAccumulatedPower,
         iWorkState, iBatteryVoltage, iVoltage, iGridVoltage, iPInverter, iPGrid, iPLoad, iLoadPercent, iSInverter, 

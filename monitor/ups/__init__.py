@@ -7,6 +7,9 @@ from dataclasses import dataclass
 @dataclass
 class Sample(object):
     icEnergyUse: str
+    icBatteryStopDischarging: float
+    icBatteryStopCharging: float
+
     fPVEstimate: int
 
     pvWorkState: str
