@@ -64,5 +64,5 @@ if sample.iPInverter == 0 and sample.fPVEstimate >= 0:
     if sample.icEnergyUse == "UTI" and sample.fPVEstimate > sample.iPLoad + 60:
         inverter.setSolar(isDebug)
     else:
-        if sample.icEnergyUse == "SBU" and sample.fPVEstimate < sample.iPLoad and sample.iBatteryVoltage < sample.icBatteryStopCharging:
+        if sample.icEnergyUse == "SBU" and sample.fPVEstimate < sample.iPLoad and sample.iBatteryVoltage < (sample.icBatteryStopCharging + sample.icBatteryStopDischarging) / 2:
             inverter.setUtility(isDebug)
