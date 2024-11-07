@@ -61,7 +61,7 @@ if USB_DEVICE != "SIMULATOR":
     client.write_points(json_body)
 
 if sample.iPInverter == 0 and sample.fPVEstimate >= 0:
-    if sample.icEnergyUse == "UTI" and sample.fPVEstimate > sample.iPLoad + 60:
+    if sample.icEnergyUse == "UTI" and sample.fPVEstimate > sample.iPLoad:
         inverter.setSolar(isDebug)
     else:
         if sample.icEnergyUse == "SBU" and sample.fPVEstimate < sample.iPLoad and sample.iBatteryVoltage < (sample.icBatteryStopCharging + sample.icBatteryStopDischarging) / 2:
