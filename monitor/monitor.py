@@ -24,6 +24,7 @@ DB_PASSWORD = os.environ.get("DB_PASSWORD", "root")
 DB_NAME = os.environ.get("DB_NAME", "ups")
 INVERTER_MODEL = os.environ.get("INVERTER_MODEL", "GreenCell")
 isDebug = os.environ.get("IS_DEBUG", "True") == "True"
+solarVoltage = int(os.environ.get("SOLAR_VOLTAGE", "0"))
 
 client = InfluxDBClient(DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME)
 
@@ -60,9 +61,18 @@ print(datetime.now(), " ", json_body)
 if USB_DEVICE != "SIMULATOR":
     client.write_points(json_body)
 
-if sample.iPInverter == 0 and sample.fPVEstimate >= 0:
-    if sample.icEnergyUse == "UTI" and sample.fPVEstimate > sample.iPLoad:
-        inverter.setSolar(isDebug)
+if sample.iPInverter == 0:
+    if sample.fPVEstimate >= 0:
+        if sample.icEnergyUse == "UTI" and sample.fPVEstimate > sample.iPLoad:
+            inverter.setSolar(isDebug)
+        else:
+            if sample.icEnergyUse == "SBU" and sample.fPVEstimate < sample.iPLoad and sample.iBatteryVoltage < (sample.icBatteryStopCharging + sample.icBatteryStopDischarging) / 2:
+                inverter.setUtility(isDebug)
     else:
-        if sample.icEnergyUse == "SBU" and sample.fPVEstimate < sample.iPLoad and sample.iBatteryVoltage < (sample.icBatteryStopCharging + sample.icBatteryStopDischarging) / 2:
-            inverter.setUtility(isDebug)
+        if solarVoltage > 0:
+            if sample.icEnergyUse == "UTI" and sample.pvVoltage >= solarVoltage:
+                inverter.setSolar(isDebug)
+            else:
+                if sample.icEnergyUse == "SBU" and sample.pvVoltage < solarVoltage and sample.iBatteryVoltage < (sample.icBatteryStopCharging + sample.icBatteryStopDischarging) / 2:
+                    inverter.setUtility(isDebug)
+            
