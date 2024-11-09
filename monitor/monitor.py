@@ -64,15 +64,19 @@ if USB_DEVICE != "SIMULATOR":
 if sample.iPInverter == 0:
     if sample.fPVEstimate >= 0:
         if sample.icEnergyUse == "UTI" and sample.fPVEstimate > sample.iPLoad:
+            print("Set Solar ON by Estimate")
             inverter.setSolar(isDebug)
         else:
             if sample.icEnergyUse == "SBU" and sample.fPVEstimate < sample.iPLoad and sample.iBatteryVoltage < (sample.icBatteryStopCharging + sample.icBatteryStopDischarging) / 2:
+                print("Set Solar Off by Estimate")
                 inverter.setUtility(isDebug)
     else:
         if solarVoltage > 0:
             if sample.icEnergyUse == "UTI" and sample.pvVoltage >= solarVoltage:
+                print("Set Solar ON by Voltage")
                 inverter.setSolar(isDebug)
             else:
                 if sample.icEnergyUse == "SBU" and sample.pvVoltage < solarVoltage and sample.iBatteryVoltage < (sample.icBatteryStopCharging + sample.icBatteryStopDischarging) / 2:
+                    print("Set Solar Off by Voltage")
                     inverter.setUtility(isDebug)
             
