@@ -73,10 +73,16 @@ if sample.iPInverter == 0:
                 inverter.setSolar(isDebug)
     else:
         if sample.icEnergyUse == "SBU" and sample.iBatteryVoltage < (sample.icBatteryStopCharging + sample.icBatteryStopDischarging) / 2:
-            if sample.fPVEstimate >= 0 and sample.fPVEstimate < sample.iPLoad:
-                print("Set Solar Off by Estimate")
-                inverter.setUtility(isDebug)
-            else:
+            if sample.fPVEstimate >= 0:
+                if sample.fPVEstimate < sample.iPLoad:
+                    if solarVoltageOff > 0:
+                       if sample.pvVoltage < solarVoltageOff:
+                            print("Set Solar Off by Estimate and Voltage")
+                            inverter.setUtility(isDebug)
+                    else:
+                        print("Set Solar Off by Estimate")
+                        inverter.setUtility(isDebug)
+            else: # no estimate, operate only by Voltage
                 # actually below is expected to be more sophisticated formula accounting MPPT since voltage depend on produced power
                 if solarVoltageOff > 0 and sample.pvVoltage < solarVoltageOff:
                     print("Set Solar Off by Voltage")

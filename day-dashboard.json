@@ -530,7 +530,7 @@
               },
               {
                 "id": "min",
-                "value": 22
+                "value": 24
               },
               {
                 "id": "max",
@@ -546,12 +546,20 @@
                       "value": null
                     },
                     {
+                      "color": "red",
+                      "value": 21
+                    },
+                    {
                       "color": "orange",
                       "value": 23
                     },
                     {
                       "color": "yellow",
                       "value": 24.1
+                    },
+                    {
+                      "color": "super-light-green",
+                      "value": 25
                     },
                     {
                       "color": "green",
@@ -775,7 +783,7 @@
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "center",
-        "orientation": "auto",
+        "orientation": "horizontal",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
@@ -913,6 +921,18 @@
             ]
           ],
           "tags": []
+        },
+        {
+          "alias": "Estimate",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PBDC07BC01591819D"
+          },
+          "hide": false,
+          "query": "SELECT sum(\"fPVEstimate\")/60000 FROM \"inverter\" WHERE $timeFilter fill(null)",
+          "rawQuery": true,
+          "refId": "E",
+          "resultFormat": "time_series"
         }
       ],
       "title": "Accumulated",
@@ -1779,12 +1799,20 @@
                 "value": null
               },
               {
+                "color": "red",
+                "value": 21
+              },
+              {
                 "color": "orange",
-                "value": 23
+                "value": 23.3
               },
               {
                 "color": "yellow",
                 "value": 24.1
+              },
+              {
+                "color": "super-light-green",
+                "value": 25
               },
               {
                 "color": "green",
@@ -1896,6 +1924,6 @@
   "timezone": "browser",
   "title": "Day AGM24",
   "uid": "de062ngp034zkc",
-  "version": 29,
+  "version": 31,
   "weekStart": ""
 }

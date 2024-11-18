@@ -541,12 +541,20 @@
                       "value": null
                     },
                     {
+                      "color": "red",
+                      "value": 21
+                    },
+                    {
                       "color": "orange",
-                      "value": 23
+                      "value": 23.3
                     },
                     {
                       "color": "yellow",
                       "value": 24.1
+                    },
+                    {
+                      "color": "super-light-green",
+                      "value": 25
                     },
                     {
                       "color": "green",
@@ -1291,12 +1299,20 @@
                 "value": null
               },
               {
+                "color": "red",
+                "value": 21
+              },
+              {
                 "color": "orange",
-                "value": 23
+                "value": 23.3
               },
               {
                 "color": "yellow",
                 "value": 24.1
+              },
+              {
+                "color": "super-light-green",
+                "value": 25
               },
               {
                 "color": "green",
@@ -2002,6 +2018,6 @@
   "timezone": "browser",
   "title": "Home AGM24",
   "uid": "6nZlWpK4k",
-  "version": 70,
+  "version": 71,
   "weekStart": ""
 }
