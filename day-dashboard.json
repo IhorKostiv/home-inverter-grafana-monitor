@@ -218,7 +218,13 @@
               }
             ]
           ],
-          "tags": []
+          "tags": [
+            {
+              "key": "iPLoad::field",
+              "operator": "<",
+              "value": "6500"
+            }
+          ]
         },
         {
           "alias": "Grid",
@@ -242,8 +248,7 @@
                 "type": "field"
               }
             ]
-          ],
-          "tags": []
+          ]
         },
         {
           "alias": "Inverter",
@@ -270,7 +275,13 @@
               }
             ]
           ],
-          "tags": []
+          "tags": [
+            {
+              "key": "iPInverter::field",
+              "operator": "<",
+              "value": "6500"
+            }
+          ]
         },
         {
           "alias": "PV",
@@ -1885,6 +1896,6 @@
   "timezone": "browser",
   "title": "Day AGM24",
   "uid": "de062ngp034zkc",
-  "version": 28,
+  "version": 29,
   "weekStart": ""
 }

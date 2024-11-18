@@ -22,6 +22,8 @@ services:
       POWER: 1.8
       DAMPING: 0
       TZ: "Europe/Kyiv"
+      SOLAR_VOLTAGE_ON: 74
+      SOLAR_VOLTAGE_OFF: 64
     depends_on:
       - influxdb
     tmpfs:

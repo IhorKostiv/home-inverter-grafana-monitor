@@ -215,7 +215,13 @@
               }
             ]
           ],
-          "tags": []
+          "tags": [
+            {
+              "key": "iPLoad::field",
+              "operator": "<",
+              "value": "6500"
+            }
+          ]
         },
         {
           "alias": "Grid",
@@ -527,6 +533,18 @@
           "query": "SELECT max(\"iAccumulatedSelfusePower\")-min(\"iAccumulatedSelfusePower\") FROM \"inverter\" WHERE $timeFilter fill(null)",
           "rawQuery": true,
           "refId": "B",
+          "resultFormat": "time_series"
+        },
+        {
+          "alias": "Estimate",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PBDC07BC01591819D"
+          },
+          "hide": false,
+          "query": "SELECT sum(\"fPVEstimate\")/60000 FROM \"inverter\" WHERE $timeFilter fill(null)",
+          "rawQuery": true,
+          "refId": "D",
           "resultFormat": "time_series"
         }
       ],
@@ -1029,6 +1047,6 @@
   "timezone": "browser",
   "title": "Accumulated",
   "uid": "fdzhjy8x9jldsc",
-  "version": 22,
+  "version": 24,
   "weekStart": ""
 }
