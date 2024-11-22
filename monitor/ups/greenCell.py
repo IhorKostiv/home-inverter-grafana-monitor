@@ -9,7 +9,7 @@ def bitmaskText(newLine, Bitmask, Texts):
                 if t != "":
                     t = t + ", \n"
                 t = t + Texts[b]
-        if bool(newLine):
+        if bool(newLine and t != ""):
             return ", \n" + t
         else:
             return t   

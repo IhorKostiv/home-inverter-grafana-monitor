@@ -57,7 +57,7 @@ if __name__ == "__main__":
     lat = os.environ.get("LATITUDE", "49.842")      # latitude of location, -90 (south) … 90 (north); handeled with a precission of 0.0001 or ~10 m
     lon = os.environ.get("LONGITUDE", "24.0316")    # longitude of location, -180 (west) … 180 (east); handeled with a precission of 0.0001 or ~10 m
     az = os.environ.get("AZIMUTH", "20")            # plane azimuth, -180 … 180 (-180 = north, -90 = east, 0 = south, 90 = west, 180 = north); integer
-    dec = os.environ.get("DECLINTION", "70")        # plane declination, 0 (horizontal) … 90 (vertical) - always in relation to the earth's surface; integer
+    dec = os.environ.get("DECLINATION", "70")        # plane declination, 0 (horizontal) … 90 (vertical) - always in relation to the earth's surface; integer
     kwp = os.environ.get("POWER", "1.8")            # installed modules power in kWatt; float
     damping = os.environ.get("DAMPING","0")         # https://doc.forecast.solar/damping
     isDebug = os.environ.get("IS_DEBUG", "False") == "True"

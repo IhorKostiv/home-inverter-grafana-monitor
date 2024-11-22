@@ -1526,7 +1526,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "/.* Warning/"
+              "options": "Warning"
             },
             "properties": [
               {
@@ -1759,7 +1759,7 @@
             "axisLabel": "",
             "axisPlacement": "right",
             "axisSoftMax": 28,
-            "axisSoftMin": 24,
+            "axisSoftMin": 25,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
@@ -1884,7 +1884,6 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "",
   "schemaVersion": 39,
   "tags": [],
   "templating": {
@@ -1924,6 +1923,6 @@
   "timezone": "browser",
   "title": "Day AGM24",
   "uid": "de062ngp034zkc",
-  "version": 31,
+  "version": 33,
   "weekStart": ""
 }

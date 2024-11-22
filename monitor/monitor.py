@@ -62,6 +62,9 @@ print(datetime.now(), " ", json_body)
 if USB_DEVICE != "SIMULATOR":
     client.write_points(json_body)
 
+#if solarVoltageOn > 0 and solarVoltageOn < 1:
+#    sv = client.query("SELECT max(""pvVoltage"") as pvVoltage FROM ""inverter"" WHERE time >= now() - 7d")
+
 if sample.iPInverter == 0:
     if sample.icEnergyUse == "UTI":
         if sample.fPVEstimate >= 0 and sample.fPVEstimate > sample.iPLoad:

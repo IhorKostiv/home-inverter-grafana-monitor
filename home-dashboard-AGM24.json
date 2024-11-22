@@ -1641,7 +1641,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "/.* Warning/"
+              "options": "Warning"
             },
             "properties": [
               {
@@ -1985,7 +1985,7 @@
     "list": []
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {
@@ -2018,6 +2018,6 @@
   "timezone": "browser",
   "title": "Home AGM24",
   "uid": "6nZlWpK4k",
-  "version": 71,
+  "version": 72,
   "weekStart": ""
 }
