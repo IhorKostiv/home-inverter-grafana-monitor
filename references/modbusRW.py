@@ -29,4 +29,4 @@ if value >=0 :
     time.sleep(0.1)
 
     i.write_register(register, value)
-    print("{0} now {1}".format(i + register, value))
+    print("{0} now {1}".format(register, value))
