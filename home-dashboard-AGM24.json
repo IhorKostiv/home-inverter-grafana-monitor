@@ -434,7 +434,7 @@
         "type": "influxdb",
         "uid": "PBDC07BC01591819D"
       },
-      "description": "",
+      "description": "<table>\n<tr><td>26v</td><td>100%</td></tr>\n<tr><td>25v</td><td>80%</td></tr>\n<tr><td>24.1v</td><td>50%</td></tr>\n<tr><td>23.6v</td><td>30%</td></tr>\n<tr><td>23v</td><td>10%</td></tr>\n<tr><td>21v</td><td>0%</td></tr>\n</table>",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1114,7 +1114,7 @@
             "axisLabel": "",
             "axisPlacement": "right",
             "axisSoftMax": 230,
-            "axisSoftMin": 210,
+            "axisSoftMin": 220,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
@@ -1147,16 +1147,24 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "orange",
+                "color": "blue",
                 "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 170
               },
               {
                 "color": "green",
                 "value": 184
               },
               {
-                "color": "red",
+                "color": "orange",
                 "value": 253
+              },
+              {
+                "color": "red",
+                "value": 280
               }
             ]
           },
@@ -1247,6 +1255,7 @@
         "type": "influxdb",
         "uid": "PBDC07BC01591819D"
       },
+      "description": "<table>\n<tr><td>26v</td><td>100%</td></tr>\n<tr><td>25v</td><td>80%</td></tr>\n<tr><td>24.1v</td><td>50%</td></tr>\n<tr><td>23.6v</td><td>30%</td></tr>\n<tr><td>23v</td><td>10%</td></tr>\n<tr><td>21v</td><td>0%</td></tr>\n</table>",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1259,7 +1268,7 @@
             "axisLabel": "",
             "axisPlacement": "right",
             "axisSoftMax": 28,
-            "axisSoftMin": 24,
+            "axisSoftMin": 26,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
@@ -1514,7 +1523,7 @@
           "tags": []
         },
         {
-          "alias": "Self",
+          "alias": "Battery",
           "datasource": {
             "type": "influxdb",
             "uid": "PBDC07BC01591819D"
@@ -1641,7 +1650,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "Warning"
+              "options": "/.* Warning/"
             },
             "properties": [
               {
@@ -1985,7 +1994,7 @@
     "list": []
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {
@@ -2018,6 +2027,6 @@
   "timezone": "browser",
   "title": "Home AGM24",
   "uid": "6nZlWpK4k",
-  "version": 72,
+  "version": 77,
   "weekStart": ""
 }

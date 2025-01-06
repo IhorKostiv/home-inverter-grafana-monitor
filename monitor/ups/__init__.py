@@ -9,6 +9,7 @@ class Sample(object):
     icEnergyUse: str
     icBatteryStopDischarging: float
     icBatteryStopCharging: float
+    icBatteryEqualization: float
 
     fPVEstimate: int
 

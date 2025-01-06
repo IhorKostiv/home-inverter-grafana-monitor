@@ -18,12 +18,12 @@ services:
       LATITUDE: 49.842
       LONGITUDE: 24.0316
       AZIMUTH: 20
-      DECLINTION: 70
+      DECLINATION: 70
       POWER: 1.8
       DAMPING: 0
       TZ: "Europe/Kyiv"
-      SOLAR_VOLTAGE_ON: 74
-      SOLAR_VOLTAGE_OFF: 64
+      SOLAR_VOLTAGE_ON: 75 # 0.96, 76 seems late
+      SOLAR_VOLTAGE_OFF: 65 # 0.82
     depends_on:
       - influxdb
     tmpfs:

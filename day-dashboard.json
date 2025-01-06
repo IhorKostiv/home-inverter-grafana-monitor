@@ -445,7 +445,7 @@
         "type": "influxdb",
         "uid": "PBDC07BC01591819D"
       },
-      "description": "",
+      "description": "<table>\n<tr><td>26v</td><td>100%</td></tr>\n<tr><td>25v</td><td>80%</td></tr>\n<tr><td>24.1v</td><td>50%</td></tr>\n<tr><td>23.6v</td><td>30%</td></tr>\n<tr><td>23v</td><td>10%</td></tr>\n<tr><td>21v</td><td>0%</td></tr>\n</table>",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1318,7 +1318,7 @@
         "type": "influxdb",
         "uid": "PBDC07BC01591819D"
       },
-      "description": "",
+      "description": "<table>\n<tr><td>26v</td><td>100%</td></tr>\n<tr><td>25v</td><td>80%</td></tr>\n<tr><td>24.1v</td><td>50%</td></tr>\n<tr><td>23.6v</td><td>30%</td></tr>\n<tr><td>23v</td><td>10%</td></tr>\n<tr><td>21v</td><td>0%</td></tr>\n</table>",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1330,6 +1330,8 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "right",
+            "axisSoftMax": 28,
+            "axisSoftMin": 25,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
@@ -1342,6 +1344,9 @@
             },
             "insertNulls": false,
             "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
             "lineWidth": 1,
             "pointSize": 3,
             "scaleDistribution": {
@@ -1366,16 +1371,32 @@
                 "value": null
               },
               {
-                "color": "green",
-                "value": 30
+                "color": "red",
+                "value": 21
+              },
+              {
+                "color": "orange",
+                "value": 23.3
+              },
+              {
+                "color": "yellow",
+                "value": 24.1
               },
               {
                 "color": "super-light-green",
-                "value": 80
+                "value": 25
+              },
+              {
+                "color": "green",
+                "value": 26
+              },
+              {
+                "color": "#EAB839",
+                "value": 28.8
               },
               {
                 "color": "red",
-                "value": 145
+                "value": 28.9
               }
             ]
           },
@@ -1384,12 +1405,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
+        "h": 5,
         "w": 18,
         "x": 0,
         "y": 10
       },
-      "id": 16,
+      "id": 3,
       "options": {
         "legend": {
           "calcs": [],
@@ -1404,16 +1425,17 @@
       },
       "targets": [
         {
-          "alias": "PV",
+          "alias": "Battery",
           "datasource": {
             "type": "influxdb",
             "uid": "PBDC07BC01591819D"
           },
           "groupBy": [],
+          "hide": false,
           "measurement": "inverter",
           "orderByTime": "ASC",
           "policy": "autogen",
-          "query": "SELECT \"ac\" FROM \"autogen\".\"logs\" WHERE $timeFilter",
+          "query": "SELECT \"iBatteryVoltage\" FROM \"autogen\".\"inverter\" WHERE $timeFilter",
           "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
@@ -1421,7 +1443,7 @@
             [
               {
                 "params": [
-                  "pvVoltage"
+                  "iBatteryVoltage"
                 ],
                 "type": "field"
               }
@@ -1430,7 +1452,7 @@
           "tags": []
         }
       ],
-      "title": "PV Voltage",
+      "title": "Battery Voltage",
       "type": "timeseries"
     },
     {
@@ -1747,6 +1769,7 @@
         "type": "influxdb",
         "uid": "PBDC07BC01591819D"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1758,8 +1781,6 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "right",
-            "axisSoftMax": 28,
-            "axisSoftMin": 25,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
@@ -1772,9 +1793,6 @@
             },
             "insertNulls": false,
             "lineInterpolation": "smooth",
-            "lineStyle": {
-              "fill": "solid"
-            },
             "lineWidth": 1,
             "pointSize": 3,
             "scaleDistribution": {
@@ -1799,32 +1817,16 @@
                 "value": null
               },
               {
-                "color": "red",
-                "value": 21
-              },
-              {
-                "color": "orange",
-                "value": 23.3
-              },
-              {
-                "color": "yellow",
-                "value": 24.1
+                "color": "green",
+                "value": 30
               },
               {
                 "color": "super-light-green",
-                "value": 25
-              },
-              {
-                "color": "green",
-                "value": 26
-              },
-              {
-                "color": "#EAB839",
-                "value": 28.8
+                "value": 80
               },
               {
                 "color": "red",
-                "value": 28.9
+                "value": 145
               }
             ]
           },
@@ -1833,12 +1835,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 18,
         "x": 0,
-        "y": 14
+        "y": 15
       },
-      "id": 3,
+      "id": 16,
       "options": {
         "legend": {
           "calcs": [],
@@ -1853,17 +1855,16 @@
       },
       "targets": [
         {
-          "alias": "Battery",
+          "alias": "PV",
           "datasource": {
             "type": "influxdb",
             "uid": "PBDC07BC01591819D"
           },
           "groupBy": [],
-          "hide": false,
           "measurement": "inverter",
           "orderByTime": "ASC",
           "policy": "autogen",
-          "query": "SELECT \"iBatteryVoltage\" FROM \"autogen\".\"inverter\" WHERE $timeFilter",
+          "query": "SELECT \"ac\" FROM \"autogen\".\"logs\" WHERE $timeFilter",
           "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
@@ -1871,7 +1872,7 @@
             [
               {
                 "params": [
-                  "iBatteryVoltage"
+                  "pvVoltage"
                 ],
                 "type": "field"
               }
@@ -1880,10 +1881,11 @@
           "tags": []
         }
       ],
-      "title": "Battery Voltage",
+      "title": "PV Voltage",
       "type": "timeseries"
     }
   ],
+  "refresh": "",
   "schemaVersion": 39,
   "tags": [],
   "templating": {
@@ -1923,6 +1925,6 @@
   "timezone": "browser",
   "title": "Day AGM24",
   "uid": "de062ngp034zkc",
-  "version": 33,
+  "version": 34,
   "weekStart": ""
 }
