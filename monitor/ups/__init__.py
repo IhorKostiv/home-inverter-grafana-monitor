@@ -10,6 +10,8 @@ class UPS(object):
     def __init__(self, isDebug: bool):
         if platform.system() == "Linux":
             self.rpiTemperature = CPUTemperature().temperature
+        else:
+            print(f"Platform is {platform.system()}")
 
         self.isDebug: bool = isDebug
         self.icEnergyUse: str = ""
