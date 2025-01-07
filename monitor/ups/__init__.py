@@ -5,11 +5,13 @@ import minimalmodbus
 import serial
 from dataclasses import dataclass
 from gpiozero import CPUTemperature
+from gpiozero.pins.pigpio import PiGPIOFactory
 
 class UPS(object):
     def __init__(self, isDebug: bool):
         if platform.system() == "Linux":
-            self.rpiTemperature = CPUTemperature().temperature
+            factory = PiGPIOFactory()
+            self.rpiTemperature = CPUTemperature(pin_factory=factory).temperature
         else:
             print(f"Platform is {platform.system()}")
 

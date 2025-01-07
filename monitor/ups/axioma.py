@@ -140,7 +140,7 @@ A1 CCC Max discharging current (only 48V model) C is an integer ranging from 0 t
         if len(v) > 15:
             self.iBattCurrent = self.batCurrent(float(v[9]), float(v[15]))  # KKK Battery charging current K is an Integer ranging from 0 to 9. The units is A.
                                             # OOO Battery capacity X is an Integer ranging from 0 to 9. The units is %.
-            self.pvRadiatorTemperature = iRadiatorTemperature = int(v[11]) # TTTT Inverter heat sink temperature T is an integer ranging from 0 to 9. The units is ℃（NTC A/D value for Axpert 1~3K）
+            self.pvRadiatorTemperature = self.iRadiatorTemperature = int(v[11]) # TTTT Inverter heat sink temperature T is an integer ranging from 0 to 9. The units is ℃（NTC A/D value for Axpert 1~3K）
             self.pvChargerCurrent = float(v[12])        # EE.E PV1 Input current E is an Integer ranging from 0 to 9. The units is A.
             self.pvVoltage = float(v[13])               # UUU.U PV1 Input voltage U is an Integer ranging from 0 to 9. The units is V.
             self.pvBatteryVoltage = float(v[14])        # WW.WW Battery voltage from SCCW is an Integer ranging from 0 to 9. The units is V.
