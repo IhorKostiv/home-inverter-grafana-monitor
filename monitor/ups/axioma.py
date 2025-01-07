@@ -37,22 +37,22 @@ class Axioma(UPSserial):
         pass
 
     def resetSerial(self):
-        if hasattr(super, 'scc'):
-            super.scc.reset_input_buffer()
-            super.scc.reset_output_buffer()
+        if hasattr(self, 'scc'):
+            self.scc.reset_input_buffer()
+            self.scc.reset_output_buffer()
 
     def reopenSerial(self):
-        if hasattr(super, 'scc'):
-            super.scc.close()
+        if hasattr(self, 'scc'):
+            self.scc.close()
             time.sleep(1)
-            super.scc.open()
+            self.scc.open()
 
     def readSerial(self, cmd: str, nakPossible: bool, breakOnEmpty: bool = False):
-        if hasattr(super, 'scc'):
+        if hasattr(self, 'scc'):
             self.resetSerial()
-            super.scc.write(bytes.fromhex(cmd))
-            super.scc.flush()
-            r = super.scc.readline()
+            self.scc.write(bytes.fromhex(cmd))
+            self.scc.flush()
+            r = self.scc.readline()
             self.resetSerial()            
         else:
             r = input(f"Enter message for {cmd}: ")
