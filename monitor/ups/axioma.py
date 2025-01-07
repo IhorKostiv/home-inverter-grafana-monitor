@@ -55,21 +55,19 @@ class Axioma(UPSserial):
             r = self.scc.readline()
             self.resetSerial()            
         else:
-            r = input(f"Enter message for {cmd}: ").encode('utf-8')
-            if r != b'':
-                r = r + b'\r'
+            r = input(f"Enter message for {cmd}: ")
                     
-        if r == b'' and not breakOnEmpty: # connection broken, reopen and re-read one more time
+        if (r == b'' or r == '') and not breakOnEmpty: # connection broken, reopen and re-read one more time
             self.reopenSerial()
             return self.readSerial(cmd, nakPossible, True)
 
-        if r == b'(NAKss\r' and not nakPossible: # if NAK received, try again just once to break recursion
+        if (r == b'(NAKss\r' or r == '(NAKss') and not nakPossible: # if NAK received, try again just once to break recursion
             time.sleep(0.4)
             return self.readSerial(cmd, True)
         
         if self.isDebug:
             print(f"for {cmd} response {r}")
-        return r.decode('utf-8')
+        return r
 
     def batCurrent(self, charge: float, discharge: float):
         if discharge > 0.0:
