@@ -69,7 +69,7 @@ class Axioma(UPSserial):
         
         if self.isDebug:
             print(f"for {cmd} response {r}")
-        return r.decode('utf-8')
+        return r.decode('utf-8', errors='ignore')
 
     def batCurrent(self, charge: float, discharge: float):
         if discharge > 0.0:
