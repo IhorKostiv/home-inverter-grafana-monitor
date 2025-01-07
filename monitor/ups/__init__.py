@@ -1,6 +1,7 @@
 import platform
 from time import strftime
 from typing import Self
+from unicodedata import east_asian_width
 import minimalmodbus
 import serial
 from dataclasses import dataclass
@@ -10,8 +11,11 @@ from gpiozero.pins.pigpio import PiGPIOFactory
 class UPS(object):
     def __init__(self, isDebug: bool):
         if platform.system() == "Linux":
-            factory = PiGPIOFactory()
-            self.rpiTemperature = CPUTemperature(pin_factory=factory).temperature
+            try:
+                factory = PiGPIOFactory()
+                self.rpiTemperature = CPUTemperature(pin_factory=factory).temperature
+            except:
+                pass
         else:
             print(f"Platform is {platform.system()}")
 
