@@ -12,7 +12,7 @@ def extract_values(input_string):
     matches = re.findall(pattern, input_string)
     
     return matches
-
+"""
 def bitmaskText(newLine, Bitmask, Texts):
         t = ""
         for b in Texts:
@@ -30,7 +30,7 @@ def bitmaskNegative(value):
         return value - 65536
     else:
         return value
-
+"""
 class Axioma(UPSserial):
 
     def readSerialCRC(self, cmd: str):
@@ -55,7 +55,7 @@ class Axioma(UPSserial):
             r = super.scc.readline()
             self.resetSerial()            
         else:
-            r = input("Enter message for {cmd}: ")
+            r = input(f"Enter message for {cmd}: ")
                     
         if (r == b'' or r == '') and not breakOnEmpty: # connection broken, reopen and re-read one more time
             self.reopenSerial()
@@ -66,7 +66,7 @@ class Axioma(UPSserial):
             return self.readSerial(cmd, True)
         
         if self.isDebug:
-            print("for {cmd} response {r}")
+            print(f"for {cmd} response {r}")
         return r
 
     def batCurrent(self, charge: float, discharge: float):
