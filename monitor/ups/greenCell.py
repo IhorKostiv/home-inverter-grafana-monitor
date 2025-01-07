@@ -1,6 +1,5 @@
 import time
-from gpiozero import CPUTemperature
-from . import Sample, UPS
+from . import UPSmodbus
 
 def bitmaskText(newLine, Bitmask, Texts):
         t = ""
@@ -20,13 +19,11 @@ def bitmaskNegative(value):
     else:
         return value
 
-class GreenCell(UPS):
+class GreenCell(UPSmodbus):
     
-    def __init__(self, device_path: str):
-        super().__init__(device_path, 4, 19200)
+    def __init__(self, isDebug: bool, device_path: str):
+      super().__init__(isDebug, device_path, 4, 19200)
 
-    def sample(self, isDebug: bool) -> Sample:
-      
       pvErrors = {
             1: "Hardware protection",
             2: "Over current",
@@ -187,21 +184,20 @@ class GreenCell(UPS):
       icEnergyUses = { 1: "SBU", 2: "SUB", 3: "UTI", 4: "SOL"}
       icSolarUseAims = { 0: "LBU", 1: "BLU" }
 
-      self.scc.debug = isDebug
       ic = self.scc.read_registers(20100, 45)
-      if isDebug:
+      if self.isDebug:
         print("iControl Message: ", ic)
                                                # 20101	RW	Inverter offgrid work enable	0：OFF 1：ON  
                                                # 20102	RW	Inverter output voltage Set	220.0V-240.0V
                                                # 20103	RW	Inverter output frequency Set	50.00Hz/60.00Hz
                                                # 20104	RW	Inverter search mode enable	0：OFF 1：ON  
                                                # 20108	RW	Inverter discharger to grid enable	"48V:   0：OFF  1：ON 24V:  Null"
-      icEnergyUse = icEnergyUses[ic[9]]        # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
+      self.icEnergyUse = icEnergyUses[ic[9]]        # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
                                                # 20111	RW	Grid protect standard	0：VDE4105; 1：UPS  ;  2：home ;3:GEN
       #icSolarUseAim = icSolarUseAims[ic[12]]   # 20112	RW	SolarUse Aim	"0:LBU  1:BLU(defalut)(for PV;PH) | 0:LB  1:LU(defalut)  (for EP)"
                                                # 20113	RW	Inverter max discharger current	"48V:  0.1A（AC）| 12V 24V:  Null"
-      icBatteryStopDischarging = ic[18] / 10.0 # 20118	RW	Battery stop discharging voltage	0.1V  
-      icBatteryStopCharging = ic[19] / 10.0    # 20119	RW	Battery stop charging voltage	0.1V  
+      self.icBatteryStopDischarging = ic[18] / 10.0 # 20118	RW	Battery stop discharging voltage	0.1V  
+      self.icBatteryStopCharging = ic[19] / 10.0    # 20119	RW	Battery stop charging voltage	0.1V  
                                                # 20125	RW	Grid max charger current set	0.1A(DC)
                                                # 20127	RW	Battery low voltage	0.1V
                                                # 20128	RW	Battery high voltage	0.1V
@@ -212,104 +208,94 @@ class GreenCell(UPS):
 
       time.sleep(0.02)
       pv = self.scc.read_registers(15200, 22)
-      if isDebug:
+      if self.isDebug:
         print("PV Message: ", pv)
       if pv[1]==2: # work mode
-          pvWorkState = mpptStates[pv[2]] + "-" + chargingStates[pv[3]]   # 15201 15202 15203
+          self.pvWorkState = mpptStates[pv[2]] + "-" + chargingStates[pv[3]]   # 15201 15202 15203
       else:
-          pvWorkState = pvWorkStates[pv[1]]                               # 15201 15202 15203
-      pvVoltage = pv[5] / 10.0                               # 15205
-      pvBatteryVoltage = pv[6] / 10.0                        # 15206
-      pvChargerCurrent = pv[7] / 10.0	                     # 15207
-      pvChargerPower = pv[8]	                             # 15208
-      pvRadiatorTemperature = pv[9]                          # 15209
-      pvBatteryRelay = relayStates[pv[11]]                   # 15211
-      pvRelay = relayStates[pv[12]]                          # 15212
-      pvError = bitmaskText(False, pv[13], pvErrors)         # 15213
-      pvWarning = bitmaskText(False, pv[14], pvWarnings)     # 15214
-      pvAccumulatedPower = (pv[17] * 1000) + (pv[18] / 10.0) # 15217 mWh, 15218  .1KWh
+          self.pvWorkState = pvWorkStates[pv[1]]                               # 15201 15202 15203
+      self.pvVoltage = pv[5] / 10.0                               # 15205
+      self.pvBatteryVoltage = pv[6] / 10.0                        # 15206
+      self.pvChargerCurrent = pv[7] / 10.0	                     # 15207
+      self.pvChargerPower = pv[8]	                             # 15208
+      self.pvRadiatorTemperature = pv[9]                          # 15209
+      self.pvBatteryRelay = relayStates[pv[11]]                   # 15211
+      self.pvRelay = relayStates[pv[12]]                          # 15212
+      self.pvError = bitmaskText(False, pv[13], pvErrors)         # 15213
+      self.pvWarning = bitmaskText(False, pv[14], pvWarnings)     # 15214
+      self.pvAccumulatedPower = (pv[17] * 1000) + (pv[18] / 10.0) # 15217 mWh, 15218  .1KWh
           
       time.sleep(0.02)
       soc = self.scc.read_registers(25200, 75)
-      if isDebug:
+      if self.isDebug:
         print("Invertor Message: ", soc)
        
-      iWorkState = inverterWorkStates[soc[1]]         # 25201
-      iBatteryVoltage = soc[5] / 10.0                 # 25205: ["Battery voltage", 0.1, "V"],        
-      iVoltage = soc[6] / 10.0                        # 25206: ["Inverter voltage", 0.1, "V"],
-      iGridVoltage = soc[7] / 10.0                    # 25207: ["Grid voltage", 0.1, "V"],
+      self.iWorkState = inverterWorkStates[soc[1]]         # 25201
+      self.iBatteryVoltage = soc[5] / 10.0                 # 25205: ["Battery voltage", 0.1, "V"],        
+      self.iVoltage = soc[6] / 10.0                        # 25206: ["Inverter voltage", 0.1, "V"],
+      self.iGridVoltage = soc[7] / 10.0                    # 25207: ["Grid voltage", 0.1, "V"],
                                                       # 25208: ["BUS voltage", 0.1, "V"],
                                                       # 25209: ["Control current", 0.1, "A"],
                                                       # 25210: ["Inverter current", 0.1, "A"],
                                                       # 25211: ["Grid current", 0.1, "A"],
                                                       # 25212: ["Load current", 0.1, "A"],
-      iPInverter = soc[13]	                          # 25213: ["Inverter power(P)", 1, "W"],
-      iPGrid = soc[14]                                # 25214: ["Grid power(P)", 1, "W"],
-      iPLoad = soc[15]                                # 25215: ["Load power(P)", 1, "W"],
-      iLoadPercent = soc[16]                          # 25216: ["Load percent", 1, "%"],
-      iSInverter = soc[17]                            # 25217: ["Inverter complex power(S)", 1, "VA"],
-      iSGrid = soc[18]                                # 25218: ["Grid complex power(S)", 1, "VA"],
-      iSLoad = soc[19]                                # 25219: ["Load complex power(S)", 1, "VA"],
+      self.iPInverter = soc[13]	                          # 25213: ["Inverter power(P)", 1, "W"],
+      self.iPGrid = soc[14]                                # 25214: ["Grid power(P)", 1, "W"],
+      self.iPLoad = soc[15]                                # 25215: ["Load power(P)", 1, "W"],
+      self.iLoadPercent = soc[16]                          # 25216: ["Load percent", 1, "%"],
+      self.iSInverter = soc[17]                            # 25217: ["Inverter complex power(S)", 1, "VA"],
+      self.iSGrid = soc[18]                                # 25218: ["Grid complex power(S)", 1, "VA"],
+      self.iSLoad = soc[19]                                # 25219: ["Load complex power(S)", 1, "VA"],
                                                       # 25221: ["Inverter reactive power(Q)", 1, "var"],
                                                       # 25222: ["Grid reactive power(Q)", 1, "var"],
                                                       # 25223: ["Load reactive power(Q)", 1, "var"],
                                                       # 25225: ["Inverter frequency", 0.01, "Hz"],
                                                       # 25226: ["Grid frequency", 0.01, "Hz"],       
-      iRadiatorTemperature = soc[33]                  # 25233: ["AC radiator temperature", 1, "°C"],
+      self.iRadiatorTemperature = soc[33]                  # 25233: ["AC radiator temperature", 1, "°C"],
                                                       # 25234: ["Transformer temperature", 1, "°C"],
                                                       # 25235: ["DC radiator temperature", 1, "°C"],
-      iRelayState = relayStates[soc[37]]              # 25237: ["Inverter relay state", 1, ""],
-      iGridRelayState = relayStates[soc[38]]          # 25238: ["Grid relay state", 1, ""],
-      iLoadRelayState = relayStates[soc[39]]          # 25239: ["Load relay state", 1, ""],
+      self.iRelayState = relayStates[soc[37]]              # 25237: ["Inverter relay state", 1, ""],
+      self.iGridRelayState = relayStates[soc[38]]          # 25238: ["Grid relay state", 1, ""],
+      self.iLoadRelayState = relayStates[soc[39]]          # 25239: ["Load relay state", 1, ""],
                                                       # 25240: ["N_Line relay state", 1, ""],
                                                       # 25241: ["DC relay state", 1, ""],
                                                       # 25242: ["Earth relay state", 1, ""],
                                                       # 25245: ["Accumulated charger power high", 1000, "kWh"],
                                                       # 25246: ["Accumulated charger power low", 0.1, "kWh"],
-      iAccumulatedDischargerPower = (soc[47] * 1000) + (soc[48] / 10.0) # 25247: ["Accumulated discharger power high", 1000, "kWh"],
+      self.iAccumulatedDischargerPower = (soc[47] * 1000) + (soc[48] / 10.0) # 25247: ["Accumulated discharger power high", 1000, "kWh"],
                                                       # 25248: ["Accumulated discharger power low", 0.1, "kWh"],
                                                       # 25249: ["Accumulated buy power high", 1, "kWh"],
                                                       # 25250: ["Accumulated buy power low", 0.1, "kWh"],
                                                       # 25251: ["Accumulated sell power high", 1, "kWh"],
                                                       # 25252: ["Accumulated sell power low", 0.1, "kWh"],
-      iAccumulatedLoadPower = (soc[53] * 1000) + (soc[54] / 10.0)  # 25253: ["Accumulated load power high", 1, "kWh"],
+      self.iAccumulatedLoadPower = (soc[53] * 1000) + (soc[54] / 10.0)  # 25253: ["Accumulated load power high", 1, "kWh"],
                                                       # 25254: ["Accumulated load power low", 0.1, "kWh"],
-      iAccumulatedSelfusePower = (soc[55] * 1000) + (soc[56] / 10.0 )    # 25255: ["Accumulated self_use power high", 1000, "kWh"],
+      self.iAccumulatedSelfusePower = (soc[55] * 1000) + (soc[56] / 10.0 )    # 25255: ["Accumulated self_use power high", 1000, "kWh"],
                                                       # 25256: ["Accumulated self_use power low", 0.1, "kWh"],
                                                       # 25257: ["Accumulated PV_sell power high", 1, "kWh"],
                                                       # 25258: ["Accumulated PV_sell power low", 0.1, "kWh"],
                                                       # 25259: ["Accumulated grid_charger power high", 1, "kWh"],
                                                       # 25260: ["Accumulated grid_charger power low", 0.1, "kWh"],
-      iError = bitmaskText(False, soc[61], iError1s)            # 25261	Error message 1
-      iError += bitmaskText(iError != "", soc[62], iError2s)    # 25262	Error message 2
-      iError += bitmaskText(iError != "", soc[63], iError3s)    # 25263	Error message 3
-      iWarning = bitmaskText(False, soc[65], iWarning1s)           # 25265	Warning message 1
-      iWarning += bitmaskText(iWarning != "", soc[66], iWarning2s) # 25266	Warning message 2
+      self.iError = bitmaskText(False, soc[61], iError1s)            # 25261	Error message 1
+      self.iError += bitmaskText(self.iError != "", soc[62], iError2s)    # 25262	Error message 2
+      self.iError += bitmaskText(self.iError != "", soc[63], iError3s)    # 25263	Error message 3
+      self.iWarning = bitmaskText(False, soc[65], iWarning1s)           # 25265	Warning message 1
+      self.iWarning += bitmaskText(self.iWarning != "", soc[66], iWarning2s) # 25266	Warning message 2
                                                       # 25271: ["Hardware version", 1, ""],
                                                       # 25272: ["Software version", 1, ""],
-      iBattPower = bitmaskNegative(soc[73])           # 25273: ["Battery power", 1, "W"],
-      iBattCurrent = bitmaskNegative(soc[74])         # 25274: ["Battery current", 1, "A"],
-
-      rpiTemperature = CPUTemperature().temperature
-
-      return Sample( icEnergyUse, icBatteryStopDischarging, icBatteryStopCharging, 0,
-        pvWorkState, pvVoltage, pvBatteryVoltage, pvChargerCurrent, pvChargerPower, 
-        pvRadiatorTemperature, pvBatteryRelay, pvRelay, pvError, pvWarning, pvAccumulatedPower,
-        iWorkState, iBatteryVoltage, iVoltage, iGridVoltage, iPInverter, iPGrid, iPLoad, iLoadPercent, iSInverter, 
-        iSGrid, iSLoad, iRadiatorTemperature, iRelayState, iGridRelayState, iLoadRelayState, iAccumulatedLoadPower, 
-        iAccumulatedDischargerPower, iAccumulatedSelfusePower, iError, iWarning, iBattPower, iBattCurrent,
-        rpiTemperature
-      )
+      self.iBattPower = bitmaskNegative(soc[73])           # 25273: ["Battery power", 1, "W"],
+      self.iBattCurrent = bitmaskNegative(soc[74])         # 25274: ["Battery current", 1, "A"],
   
-    def setSolar(self, isDebug: bool):
-        if isDebug:
-            print("set Solar")
+    def setSBU(self):
         time.sleep(0.1) # just in case
         self.scc.write_register(20109, 1)  # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
+        return super().setSBU()
 
-    def setUtility(self, isDebug: bool):
-        if isDebug:
-            print("set Utility")
+    def setSUB(self):
+        raise NotImplementedError("SUB is not available for this inverter")
+        return super().setSUB()
+
+    def setUtility(self):
         time.sleep(0.1) # just in case
         self.scc.write_register(20109, 3) # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
-
+        return super().setUtility()

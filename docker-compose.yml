@@ -13,7 +13,7 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: root
       DB_NAME: ups
-      INVERTER_MODEL: "GreenCell"
+      INVERTER_MODEL: "Axioma"
       IS_DEBUG: "False"
       LATITUDE: 49.842
       LONGITUDE: 24.0316
@@ -22,8 +22,8 @@ services:
       POWER: 1.8
       DAMPING: 0
       TZ: "Europe/Kyiv"
-      SOLAR_VOLTAGE_ON: 75 # 0.96, 76 seems late
-      SOLAR_VOLTAGE_OFF: 65 # 0.82
+      SOLAR_VOLTAGE_ON: 150 # 0.96, 76 seems late
+      SOLAR_VOLTAGE_OFF: 130 # 0.82
     depends_on:
       - influxdb
     tmpfs:

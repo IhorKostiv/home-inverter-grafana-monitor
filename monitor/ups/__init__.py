@@ -1,53 +1,59 @@
+import platform
 from time import strftime
 from typing import Self
 import minimalmodbus
+import serial
 from dataclasses import dataclass
+from gpiozero import CPUTemperature
 
+class UPS(object):
+    def __init__(self, isDebug: bool):
+        if platform.system() == "Linux":
+            self.rpiTemperature = CPUTemperature().temperature
 
-@dataclass
-class Sample(object):
-    icEnergyUse: str
-    icBatteryStopDischarging: float
-    icBatteryStopCharging: float
-    icBatteryEqualization: float
+        self.isDebug: bool = isDebug
+        self.icEnergyUse: str = ""
+        self.icBatteryStopDischarging: float = 0.0
+        self.icBatteryStopCharging: float = 0.0
+        self.icBatteryEqualization: float = 0.0
 
-    fPVEstimate: int
+        self.fPVEstimate: int = 0
 
-    pvWorkState: str
-    pvVoltage: float
-    pvBatteryVoltage: float
-    pvChargerCurrent: float
-    pvChargerPower: int
-    pvRadiatorTemperature: int
-    pvBatteryRelay: str
-    pvRelay: str
-    pvError: str
-    pvWarning: str
-    pvAccumulatedPower: float
+        self.pvWorkState: str = ""
+        self.pvVoltage: float = 0.0
+        self.pvBatteryVoltage: float = 0.0
+        self.pvChargerCurrent: float = 0.0
+        self.pvChargerPower: int = 0
+        self.pvRadiatorTemperature: int = 0
+#        self.pvBatteryRelay: str = ""
+#        self.pvRelay: str = ""
+        self.pvError: str = ""
+        self.pvWarning: str = ""
+        self.pvAccumulatedPower: float = 0.0
 
-    iWorkState: str
-    iBatteryVoltage: float
-    iVoltage: float
-    iGridVoltage: float
-    iPInverter: int
-    iPGrid: int
-    iPLoad: int
-    iLoadPercent: int
-    iSInverter: int
-    iSGrid: int
-    iSLoad: int 
-    iRadiatorTemperature: int
-    iRelayState: str
-    iGridRelayState: str
-    iLoadRelayState: str
-    iAccumulatedLoadPower: float
-    iAccumulatedDischargerPower: float
-    iAccumulatedSelfusePower: float
-    iError:  str
-    iWarning: str
-    iBattPower: int
-    iBattCurrent: int
-    rpiTemperature: float
+        self.iWorkState: str =""
+        self.iBatteryVoltage: float = 0.0
+        self.iVoltage: float = 0.0
+        self.iGridVoltage: float = 0.0
+        self.iPInverter: int = 0
+        self.iPGrid: int = 0
+        self.iPLoad: int = 0
+        self.iLoadPercent: int = 0
+        self.iSInverter: int = 0
+        self.iSGrid: int = 0
+        self.iSLoad: int = 0
+        self.iRadiatorTemperature: int = 0
+ #       self.iRelayState: str = ""
+ #       self.iGridRelayState: str = ""
+ #       self.iLoadRelayState: str = ""
+        self.iAccumulatedLoadPower: float = 0.0
+        self.iAccumulatedDischargerPower: float = 0.0
+        self.iAccumulatedSelfusePower: float = 0.0
+        self.iError:  str = ""
+        self.iWarning: str = ""
+        self.iBattPower: int = 0
+        self.iBattCurrent: int = 0
+        self.rpiTemperature: float = 0.0
 
     def jSON(self, uKey: str) -> str:
         return [
@@ -63,8 +69,8 @@ class Sample(object):
                     "pvChargerCurrent": self.pvChargerCurrent,
                     "pvChargerPower": self.pvChargerPower,
                     "pvRadiatorTemperature": self.pvRadiatorTemperature,
-                    "pvBatteryRelay": self.pvBatteryRelay,
-                    "pvRelay": self.pvRelay,
+#                    "pvBatteryRelay": self.pvBatteryRelay,
+#                    "pvRelay": self.pvRelay,
                     "pvAccumulatedPower": self.pvAccumulatedPower,
                     "pvError": self.pvError,
                     "pvWarning": self.pvWarning,
@@ -80,9 +86,9 @@ class Sample(object):
                     "iSGrid": self.iSGrid,
                     "iSLoad": self.iSLoad,
                     "iRadiatorTemperature": self.iRadiatorTemperature,
-                    "iRelayState": self.iRelayState,
-                    "iGridRelayState": self.iGridRelayState,
-                    "iLoadRelayState": self.iLoadRelayState,
+ #                   "iRelayState": self.iRelayState,
+ #                   "iGridRelayState": self.iGridRelayState,
+ #                   "iLoadRelayState": self.iLoadRelayState,
                     "iAccumulatedLoadPower": self.iAccumulatedLoadPower,
                     "iAccumulatedDischargerPower": self.iAccumulatedDischargerPower,
                     "iAccumulatedSelfusePower": self.iAccumulatedSelfusePower,
@@ -95,9 +101,31 @@ class Sample(object):
     }
 ]
 
+    def setSBU(self):
+        if self.isDebug:
+            print("set SBU")
+        pass
 
-class UPS(object):
-    def __init__(self, device_path: str, device_id: int, baud_rate: int):
+    def setSUB(self):
+        if self.isDebug:
+            print("set SUB")
+        pass
+
+    def setUtility(self):
+        if self.isDebug:
+            print("set UTI")
+        pass
+
+    def setFPVEstimate(self, estimate: int):
+        self.fpvEstimate = estimate
+
+    def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
+        pass
+
+class UPSmodbus(UPS):
+    def __init__(self, isDebug: bool, device_path: str, device_id: int, baud_rate: int):
+        super().__init__(isDebug)
+
         self.device_path = device_path
         self.device_id = device_id
         self.baud_rate = baud_rate
@@ -105,12 +133,43 @@ class UPS(object):
         self.scc = minimalmodbus.Instrument(device_path, device_id)
         self.scc.serial.baudrate = baud_rate
         self.scc.serial.timeout = 0.5
+        self.scc.debug = isDebug
 
-    def sample(self) -> Sample:
+    def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
+        if self.iPInverter == 0:
+            if self.icEnergyUse == "UTI":
+                if self.fPVEstimate >= 0 and self.fPVEstimate > self.iPLoad:
+                    print("Set Solar ON by Estimate")
+                    self.setSBU()
+                elif solarVoltageOn > 0 and self.pvVoltage > solarVoltageOn:
+                    print("Set Solar ON by Voltage")
+                    self.setSBU()
+                #elif : # more than equalization and pv > avg(on, off)
+            elif self.icEnergyUse == "SBU" and self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2:
+                if self.fPVEstimate >= 0:
+                    if self.fPVEstimate < self.iPLoad:
+                        if solarVoltageOff > 0:
+                           if self.pvVoltage < solarVoltageOff:
+                                print("Set Solar Off by Estimate and Voltage")
+                                self.setUtility()
+                        else:
+                            print("Set Solar Off by Estimate")
+                            self.setUtility()
+                else: # no estimate, operate only by Voltage
+                    # actually below better to be more sophisticated formula accounting MPPT since voltage depend on produced power
+                    if solarVoltageOff > 0 and self.pvVoltage < solarVoltageOff:
+                        print("Set Solar Off by Voltage")
+                        self.setUtility()
+
         pass
 
-    def setSolar(self, isDebug: bool):
-        pass
+class UPSserial(UPS):
+    def __init__(self, isDebug: bool, device_path: str, baud_rate: int):
+        super().__init__(isDebug)
 
-    def setUtility(self, isDebug: bool):
-        pass
+        if device_path != "SIMULATOR":
+            self.scc = serial.Serial(device_path, baud_rate, timeout=1)
+
+    def __del__(self):
+        if hasattr(super, 'scc'):
+            self.scc.close()
