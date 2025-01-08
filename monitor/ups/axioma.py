@@ -1,5 +1,6 @@
 import cmd
 import time
+import re
 from typing import Self
 from . import UPSserial
 from datetime import datetime
