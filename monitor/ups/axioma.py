@@ -188,7 +188,7 @@ class Axioma(UPSserial):
                                         # Y Solar feed to grid status (reserved feature) 0: normal 1: solar feed to grid
                                         # ZZ Set country customized regulation (reserved feature) 00: India 01: Germany 02: South America
                                         # AAAA Solar feed to grid power (reserved feature) A is an Integer ranging from 0 to 9. The units is W. # Device general status parameters inquiry
-        self.iBattPower = self.iBattCurrent * self.iBatteryVoltage
+        self.iBattPower = int(self.iBattCurrent * self.iBatteryVoltage)
         self.iPInverter = self.pvChargerPower + self.iBattPower
         self.iPGrid = self.iPLoad - self.iPInverter + 65  # include self consumption approximate
         if self.iPInverter < 0:
