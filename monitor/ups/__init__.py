@@ -6,14 +6,12 @@ import minimalmodbus
 import serial
 from dataclasses import dataclass
 from gpiozero import CPUTemperature
-from gpiozero.pins.pigpio import PiGPIOFactory
 
 class UPS(object):
     def __init__(self, isDebug: bool):
         if platform.system() == "Linux":
             try:
-                factory = PiGPIOFactory()
-                self.rpiTemperature = CPUTemperature(pin_factory=factory).temperature
+                self.rpiTemperature = CPUTemperature().temperature
             except:
                 pass
         else:
@@ -63,49 +61,49 @@ class UPS(object):
         self.iBattCurrent: int = 0
         self.rpiTemperature: float = 0.0
 
+    def addNotEmpty(self, f: dict, key: str, value:any, e:any):
+        if value != e:
+            f[key] = value
+
     def jSON(self, uKey: str) -> str:
+        f = {}
+        self.addNotEmpty(f, "icEnergyUse", self.icEnergyUse, '')
+        self.addNotEmpty(f, "fPVEstimate", self.fPVEstimate, 0)
+        self.addNotEmpty(f, "pvWorkState", self.pvWorkState, '')
+        self.addNotEmpty(f, "pvVoltage", self.pvVoltage, 0.0)
+        self.addNotEmpty(f, "pvBatteryVoltage", self.pvBatteryVoltage, 0.0)
+        self.addNotEmpty(f, "pvChargerCurrent", self.pvChargerCurrent, 0.0)
+        self.addNotEmpty(f, "pvChargerPower", self.pvChargerPower, 0)
+        self.addNotEmpty(f, "pvRadiatorTemperature", self.pvRadiatorTemperature, 0)
+        self.addNotEmpty(f, "pvAccumulatedPower", self.pvAccumulatedPower, 0)
+        self.addNotEmpty(f, "pvError", self.pvError, '')
+        self.addNotEmpty(f, "pvWarning", self.pvWarning, '')
+        self.addNotEmpty(f, "iWorkState", self.iWorkState, '')
+        self.addNotEmpty(f, "iBatteryVoltage", self.iBatteryVoltage, 0.0)
+        self.addNotEmpty(f, "iVoltage", self.iVoltage, 0.0)
+        self.addNotEmpty(f, "iGridVoltage", self.iGridVoltage, 0.0)
+        self.addNotEmpty(f, "iPInverter", self.iPInverter, 0)
+        self.addNotEmpty(f, "iPGrid", self.iPGrid, 0)
+        self.addNotEmpty(f, "iPLoad", self.iPLoad, 0)
+        self.addNotEmpty(f, "iLoadPercent", self.iLoadPercent, 0)
+        self.addNotEmpty(f, "iSInverter", self.iSInverter, 0)
+        self.addNotEmpty(f, "iSGrid", self.iSGrid, 0)
+        self.addNotEmpty(f, "iSLoad", self.iSLoad, 0)
+        self.addNotEmpty(f, "iRadiatorTemperature", self.iRadiatorTemperature, 0)
+        self.addNotEmpty(f, "iAccumulatedLoadPower", self.iAccumulatedLoadPower, 0.0)
+        self.addNotEmpty(f, "iAccumulatedDischargerPower", self.iAccumulatedDischargerPower, 0.0)
+        self.addNotEmpty(f, "iAccumulatedSelfusePower", self.iAccumulatedSelfusePower, 0.0)
+        self.addNotEmpty(f, "iError", self.iError, '')
+        self.addNotEmpty(f, "iWarning", self.iWarning, '')
+        self.addNotEmpty(f, "iBattPower", self.iBattPower, 0)
+        self.addNotEmpty(f, "iBattCurrent", self.iBattCurrent, 0)
+        self.addNotEmpty(f, "rpiTemperature", self.rpiTemperature, 0.0)
+
         return [
             {
                 "measurement": "inverter",
                 "tags": { "uKey": uKey },
-                "fields": {
-                    "icEnergyUse": self.icEnergyUse,
-                    "fPVEstimate": self.fPVEstimate,
-                    "pvWorkState": self.pvWorkState,
-                    "pvVoltage": self.pvVoltage,
-                    "pvBatteryVoltage": self.pvBatteryVoltage,
-                    "pvChargerCurrent": self.pvChargerCurrent,
-                    "pvChargerPower": self.pvChargerPower,
-                    "pvRadiatorTemperature": self.pvRadiatorTemperature,
-#                    "pvBatteryRelay": self.pvBatteryRelay,
-#                    "pvRelay": self.pvRelay,
-                    "pvAccumulatedPower": self.pvAccumulatedPower,
-                    "pvError": self.pvError,
-                    "pvWarning": self.pvWarning,
-                    "iWorkState": self.iWorkState,
-                    "iBatteryVoltage": self.iBatteryVoltage,
-                    "iVoltage": self.iVoltage,
-                    "iGridVoltage": self.iGridVoltage,
-                    "iPInverter": self.iPInverter,
-                    "iPGrid": self.iPGrid,
-                    "iPLoad": self.iPLoad,
-                    "iLoadPercent": self.iLoadPercent,
-                    "iSInverter": self.iSInverter,
-                    "iSGrid": self.iSGrid,
-                    "iSLoad": self.iSLoad,
-                    "iRadiatorTemperature": self.iRadiatorTemperature,
- #                   "iRelayState": self.iRelayState,
- #                   "iGridRelayState": self.iGridRelayState,
- #                   "iLoadRelayState": self.iLoadRelayState,
-                    "iAccumulatedLoadPower": self.iAccumulatedLoadPower,
-                    "iAccumulatedDischargerPower": self.iAccumulatedDischargerPower,
-                    "iAccumulatedSelfusePower": self.iAccumulatedSelfusePower,
-                    "iError": self.iError,
-                    "iWarning": self.iWarning,
-                    "iBattPower": self.iBattPower,
-                    "iBattCurrent": self.iBattCurrent,
-                    "rpiTemperature": self.rpiTemperature
-                }
+                "fields": f
     }
 ]
 

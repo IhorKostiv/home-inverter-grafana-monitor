@@ -32,7 +32,7 @@ solarVoltageOff = float(os.environ.get("SOLAR_VOLTAGE_OFF", "0.82"))
 client = InfluxDBClient(DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME)
 
 if INVERTER_MODEL not in SUPPORTED_INVERTERS:
-    print("Unknown inverter model model: {0}".format(INVERTER_MODEL))
+    print("Error: Unknown inverter model: {0}".format(INVERTER_MODEL))
     exit(1)
 
 inverter: UPS = SUPPORTED_INVERTERS[INVERTER_MODEL](isDebug, USB_DEVICE)
@@ -48,8 +48,9 @@ if len(fl) > 0:
     inverter.setFPVEstimate(pvEstimate(datetime.now(get_localzone()), js))
 
 json_body = inverter.jSON(INVERTER_MODEL)
+if isDebug:
+    print(datetime.now(), " ", json_body)
 
-print(datetime.now(), " ", json_body)
 if USB_DEVICE != "SIMULATOR":
     client.write_points(json_body)
 
@@ -67,6 +68,7 @@ if solarVoltageOn > 0 and solarVoltageOff > 0 and (solarVoltageOn < 1 or solarVo
             break
     else:
         solarVoltageOn = solarVoltageOff = 0
-        print("Solar Voltage Zero")
+        if isDebug:
+            print("Solar Voltage Zero")
 
 inverter.setBestEnergyUse(solarVoltageOn, solarVoltageOff)
