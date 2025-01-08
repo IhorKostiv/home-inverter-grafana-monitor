@@ -15,13 +15,11 @@ def create_custom_crc():
 def axiomaCRC(data):
     crc_func = create_custom_crc()
     crc_value = crc_func(data)
-    return crc_value
+    return crc_value.to_bytes(2, byteorder='big')
 
 def main():
-    # Open the RS232 port
-    ser = serial.Serial('/dev/ttyUSB0', baudrate=2400, timeout=1)
 
-    print("RS232 port opened. Type your message and press Enter. Type '' to quit.")
+    print("Type your message and press Enter. Type '' to quit.")
 
     while True:
         # Get input from the keyboard
@@ -39,6 +37,8 @@ def main():
         # Convert message to hex format
         hex_message = binascii.hexlify(message_with_crc).decode('utf-8')
 
+        # Open the RS232 port
+        ser = serial.Serial('/dev/ttyUSB0', baudrate=2400, timeout=1)
         # Send the hex message to the RS232 port
         print(f"Sending to RS232 (hex): {hex_message}")
         ser.write(bytes.fromhex(hex_message))
@@ -49,9 +49,9 @@ def main():
         hex_response = binascii.hexlify(response).decode('utf-8')
         print(f"Response from RS232: {response}/nHex : {hex_response}")
 
-    # Close the RS232 port
-    ser.close()
-    print("RS232 port closed.")
+        # Close the RS232 port
+        ser.close()
+        print("RS232 port closed.")
 
 def hex_to_string(hex_string):
     try:
