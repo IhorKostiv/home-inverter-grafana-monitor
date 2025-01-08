@@ -1,22 +1,25 @@
 import serial
 import binascii
+import crcmod
 
-def calculate_crc16(d):
-    crc = 0
- #   d = data.encode()
-    for byte in d:
-        crc ^= byte
-        for _ in range(8):
-            if crc & 0x0001:
-                crc = (crc >> 1) ^ 0xA001
-            else:
-                crc >>= 1
-    crc = crc & 0xFFFF
-    return crc.to_bytes(2, byteorder='little')
+# Define the custom CRC function with a 16-bit polynomial
+def create_custom_crc():
+    polynomial = 0x11021  # Correct 16-bit polynomial
+    initial_value = 0x0000
+    final_xor = 0x0000
+    reflect = False
+
+    crc_func = crcmod.mkCrcFun(polynomial, initCrc=initial_value, xorOut=final_xor, rev=reflect)
+    return crc_func
+
+def axiomaCRC(data):
+    crc_func = create_custom_crc()
+    crc_value = crc_func(data)
+    return crc_value
 
 def main():
     # Open the RS232 port
- #   ser = serial.Serial('/dev/ttyUSB0', baudrate=2400, timeout=1)
+    ser = serial.Serial('/dev/ttyUSB0', baudrate=2400, timeout=1)
 
     print("RS232 port opened. Type your message and press Enter. Type '' to quit.")
 
@@ -30,7 +33,7 @@ def main():
         b = user_input.encode("utf-8")
 
         # Calculate CRC and append to the message
-        crc = calculate_crc16(b)
+        crc = axiomaCRC(b)
         message_with_crc = b + crc + 0x0D.to_bytes(1)
 
         # Convert message to hex format
@@ -38,16 +41,17 @@ def main():
 
         # Send the hex message to the RS232 port
         print(f"Sending to RS232 (hex): {hex_message}")
-  #      ser.write(bytes.fromhex(hex_message))
+        ser.write(bytes.fromhex(hex_message))
 
         # Read and print the response from the RS232 port
-  #      response = ser.readline()
-  #      hex_response = binascii.hexlify(response).decode('utf-8')
-  #      print(f"Response from RS232: {response}/nHex : {hex_response}")
+        ser.flush()
+        response = ser.readline()
+        hex_response = binascii.hexlify(response).decode('utf-8')
+        print(f"Response from RS232: {response}/nHex : {hex_response}")
 
     # Close the RS232 port
-  #  ser.close()
-  #  print("RS232 port closed.")
+    ser.close()
+    print("RS232 port closed.")
 
 def hex_to_string(hex_string):
     try:
