@@ -11,12 +11,12 @@ class UPS(object):
     def __init__(self, isDebug: bool):
         if platform.system() == "Linux":
             try:
-                self.rpiTemperature: int = int(CPUTemperature().temperature)
+                self.rpiTemperature: float = float(CPUTemperature().temperature)
             except:
                 pass
         else:
             print(f"Platform is {platform.system()}")
-            self.rpiTemperature: int = 0
+            self.rpiTemperature: float = 0.0
 
         self.isDebug: bool = isDebug
         self.icEnergyUse: str = ""

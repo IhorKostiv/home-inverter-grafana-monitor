@@ -85,6 +85,11 @@ class Axioma(UPSserial):
         self.readQPIGS()
         time.sleep(0.5)
         self.readQPIRI()
+        time.sleep(0.5)
+        try:
+            self.readQMOD()
+        except:
+            pass
 
     def readQPIRI(self): # todo: Device Rating Information inquiry
         icEnergyUses = { 0: "Uti", 1: "SUB", 2: "SBU" }
@@ -198,18 +203,18 @@ class Axioma(UPSserial):
         return v
 
     def readQMOD(self): # todo: Device Mode inquiry
-        r = self.readSerialCRC("514D4F44961F0D", False) # "QMOD")
-    
+        r = self.readSerialCRC("514D4F4F49C10D", False) # "QMOD")  4961
+        if len(r) > 2:
+            iWorkStates = { 'P': "Power on", 'S': "Standby", 'L': "Line", 'B': "Battery", 'F': "Fault", 'D': "Shutdown" }
+            try:
+                self.iWorkState = iWorkStates[r[1]]
+            except:
+                self.iWorkState = r[1]
         # QMOD<cr>: Device Mode inquiry
         # Computer: QMOD<CRC><cr>
         # Device: (M<CRC><cr>
         # MODE CODE(M) Notes
-        # P Power on mode
-        # S Standby mode
-        # L Line mode
-        # B Battery mode
-        # F Fault mode
-        # D Shutdown mode
+        return r
         
     def readQPIWS(self): # todo: Device Warning Status inquiry
         pass
@@ -230,7 +235,6 @@ class Axioma(UPSserial):
       pvWarning = bitmaskText(False, pv[14], pvWarnings)     # 15214
       pvAccumulatedPower = (pv[17] * 1000) + (pv[18] / 10.0) # 15217 mWh, 15218  .1KWh
           
-      iWorkState = inverterWorkStates[soc[1]]         # 25201
       iSInverter = soc[17]                            # 25217: ["Inverter complex power(S)", 1, "VA"],
       iSGrid = soc[18]                                # 25218: ["Grid complex power(S)", 1, "VA"],
       iAccumulatedDischargerPower = (soc[47] * 1000) + (soc[48] / 10.0) # 25247: ["Accumulated discharger power high", 1000, "kWh"],

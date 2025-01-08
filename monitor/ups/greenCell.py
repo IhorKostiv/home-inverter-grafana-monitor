@@ -153,7 +153,7 @@ class GreenCell(UPSmodbus):
         32768: "Unknown Warning 2-15"
       }
 
-      inverterWorkStates = {
+      iWorkStates = {
         0: "Power On", 
         1: "Self Test", 
         2: "Off Grid", 
@@ -230,7 +230,7 @@ class GreenCell(UPSmodbus):
       if self.isDebug:
         print("Invertor Message: ", soc)
        
-      self.iWorkState = inverterWorkStates[soc[1]]         # 25201
+      self.iWorkState = iWorkStates[soc[1]]         # 25201
       self.iBatteryVoltage = soc[5] / 10.0                 # 25205: ["Battery voltage", 0.1, "V"],        
       self.iVoltage = soc[6] / 10.0                        # 25206: ["Inverter voltage", 0.1, "V"],
       self.iGridVoltage = soc[7] / 10.0                    # 25207: ["Grid voltage", 0.1, "V"],
