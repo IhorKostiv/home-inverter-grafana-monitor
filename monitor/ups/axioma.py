@@ -140,7 +140,7 @@ class Axioma(UPSserial):
 
     def readQPIGS(self): # almost done: Device general status parameters inquiry
         
-        pvWorkStates = { '000': "Off", '110': "Sc", '101': "Ac", '111': "ASc" }
+        pvWorkStates = { '000': "Off", '100': "?c", '110': "Sc", '101': "Gc", '111': "SGc" }
     
         r = self.readSerial("5150494753B7A90D", False) # "QPIGS")
         v = extract_values(r)        
@@ -203,7 +203,7 @@ class Axioma(UPSserial):
         return v
 
     def readQMOD(self): # todo: Device Mode inquiry
-        r = self.readSerialCRC("514D4F4F49C10D", False) # "QMOD")  4961
+        r = self.readSerial("514D4F4F49C10D", False) # "QMOD")  4961
         if len(r) > 2:
             iWorkStates = { 'P': "Power on", 'S': "Standby", 'L': "Line", 'B': "Battery", 'F': "Fault", 'D': "Shutdown" }
             try:
