@@ -139,7 +139,7 @@ class Axioma(UPSserial):
 
     def readQPIGS(self): # done: Device general status parameters inquiry
         
-        pvWorkStates = { '000': "Off", '110': "Sc", '101': "Ac", '111': "ASc" }
+        pvWorkStates = { '000': "Off", '100': "?c", '110': "Sc", '101': "Gc", '111': "SGc" }
     
         r = self.readSerial("5150494753B7A90D", False) # "QPIGS")
         v = extract_values(r)        
