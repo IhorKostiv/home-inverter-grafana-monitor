@@ -124,7 +124,7 @@ class UPS(object):
         pass
 
     def setFPVEstimate(self, estimate: int):
-        self.fpvEstimate = estimate
+        self.fPVEstimate = estimate
 
     def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
         pass

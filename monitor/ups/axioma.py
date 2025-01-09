@@ -82,14 +82,13 @@ class Axioma(UPSserial):
     
     def __init__(self, isDebug: bool, device_path: str):
         super().__init__(isDebug, device_path, 2400)
+        
         self.readQPIGS()
         time.sleep(0.5)
         self.readQPIRI()
         time.sleep(0.5)
-        try:
-            self.readQMOD()
-        except:
-            pass
+        self.readQMOD()
+        
 
     def readQPIRI(self): # todo: Device Rating Information inquiry
         icEnergyUses = { 0: "Uti", 1: "SUB", 2: "SBU" }
@@ -138,7 +137,7 @@ class Axioma(UPSserial):
         """
         return v
 
-    def readQPIGS(self): # almost done: Device general status parameters inquiry
+    def readQPIGS(self): # done: Device general status parameters inquiry
         
         pvWorkStates = { '000': "Off", '110': "Sc", '101': "Ac", '111': "ASc" }
     
@@ -203,7 +202,7 @@ class Axioma(UPSserial):
         return v
 
     def readQMOD(self): # todo: Device Mode inquiry
-        r = self.readSerialCRC("514D4F4F49C10D", False) # "QMOD")  4961
+        r = self.readSerial("514D4F4F49C10D", False) # "QMOD")
         if len(r) > 2:
             iWorkStates = { 'P': "Power on", 'S': "Standby", 'L': "Line", 'B': "Battery", 'F': "Fault", 'D': "Shutdown" }
             try:
@@ -216,13 +215,15 @@ class Axioma(UPSserial):
         # MODE CODE(M) Notes
         return r
         
-    def readQPIWS(self): # todo: Device Warning Status inquiry
+    def readQPIWS(self): # todo: Device Warning Status inquiry (100000000000000000000000000000000000
+        r = self.readSerial("5150495753b4da0d", False)
+
         pass
-    def readQDI(self): # todo: The default setting value information
+    def readQDI(self): # todo: The default setting value information (230.0 50.0 0030 21.0 27.0 28.2 23.0 60 0 0 2 0 0 0 0 0 1 1 1 0 1 0 27.0 0 1)F
         pass
-    def readQET(self): # todo: Query total PV generated energy
+    def readQET(self): # todo: Query total PV generated energy - NAK
         pass
-    def readQLT(self): #  todo: Query total output load energy
+    def readQLT(self): # todo: Query total output load energy - NAK
         pass
 
     """
@@ -249,6 +250,12 @@ class Axioma(UPSserial):
       iWarning += bitmaskText(iWarning != "", soc[66], iWarning2s) # 25266	Warning message 2
 
     """  
+    """
+    POP<NN><cr>: Setting device output source priority
+    Computer: POP<NN><CRC><cr>
+    Device: (ACK<CRC><cr> if device accepts this command, otherwise, responds (NAK<CRC><cr>
+    Set output source priority, 00 for UtilitySolarBat, 01 for SolarUtilityBat, 02 for SolarBatUtility
+    """
     def setSBU(self):
         return super.setSBU()
 
@@ -266,4 +273,10 @@ if __name__ == "__main__":
 
     # (221.3 50.0 221.3 50.0 0420 0388 014 439 27.00 000 100 0037 01.0 113.1 00.00 00000 01010110 00 01 00117 110 0 01 0000
     # (220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 21.0 28.2 27.0 0 40 040 1 1 2 1 01 0 0 27.0 0 1
-    # 
+    # (L
+
+    # QBEQI (0 060 030 040 030 29.20 000 120 0 0000
+    # QFLAG (EbzDadjkuvxy]
+    # QPIRI (220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 21.0 28.2 27.0 0 40 040 1 1 2 1 01 0 0 27.0 0 1
+    # QVFW (VERFW:00043.19
+    # QPI (PI30
