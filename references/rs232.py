@@ -1,6 +1,7 @@
 import serial
 import binascii
 import crcmod
+import platform
 
 # Define the custom CRC function with a 16-bit polynomial
 def create_custom_crc():
@@ -12,10 +13,37 @@ def create_custom_crc():
     crc_func = crcmod.mkCrcFun(polynomial, initCrc=initial_value, xorOut=final_xor, rev=reflect)
     return crc_func
 
-def axiomaCRC(data):
-    crc_func = create_custom_crc()
-    crc_value = crc_func(data)
-    return crc_value.to_bytes(2, byteorder='big')
+#def axiomaCRC(data):
+def axiomaCRC(pin):
+    crc_ta = [
+        0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
+        0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef
+    ]
+
+    crc = 0
+    for byte in pin:
+        da = (crc >> 8) >> 4
+        da = da & 0x0F
+        crc <<= 4
+        crc ^= crc_ta[da ^ (byte >> 4)]
+        da = (crc >> 8) >> 4
+        da = da & 0x0F
+        crc <<= 4
+        crc ^= crc_ta[da ^ (byte & 0x0F)]
+
+    # Escape CR, LF, 'H' characters
+    b_crc_low = crc & 0x00FF
+    b_crc_high = crc >> 8
+    if b_crc_low in [0x28, 0x0d, 0x0a]:
+        b_crc_low += 1
+    if b_crc_high in [0x28, 0x0d, 0x0a]:
+        b_crc_high += 1
+
+    crc = (b_crc_high << 8) | b_crc_low
+    return crc.to_bytes(2, byteorder='big')
+#    crc_func = create_custom_crc()
+#    crc_value = crc_func(data)
+#    return crc_value.to_bytes(2, byteorder='big')
 
 def main():
 
@@ -30,28 +58,31 @@ def main():
 
         b = user_input.encode("utf-8")
 
-        # Calculate CRC and append to the message
-        crc = axiomaCRC(b)
-        message_with_crc = b + crc + 0x0D.to_bytes(1)
-
+        if b[:2].lower() != b'0x':
+            # Calculate CRC and append to the message
+            crc = axiomaCRC(b)
+            message_with_crc = b + crc + 0x0D.to_bytes(1)
+        else:
+            message_with_crc = bytes.fromhex(b[2:].decode('utf-8'))
         # Convert message to hex format
         hex_message = binascii.hexlify(message_with_crc).decode('utf-8')
 
-        # Open the RS232 port
-        ser = serial.Serial('/dev/ttyUSB0', baudrate=2400, timeout=1)
-        # Send the hex message to the RS232 port
         print(f"Sending to RS232 (hex): {hex_message}")
-        ser.write(bytes.fromhex(hex_message))
+        # Open the RS232 port
+        if platform.system() == "Linux":
+            ser = serial.Serial('/dev/ttyUSB0', baudrate=2400, timeout=1)
+            # Send the hex message to the RS232 port
+            ser.write(bytes.fromhex(hex_message))
 
-        # Read and print the response from the RS232 port
-        ser.flush()
-        response = ser.readline()
-        hex_response = binascii.hexlify(response).decode('utf-8')
-        print(f"Response from RS232: {response}/nHex : {hex_response}")
+            # Read and print the response from the RS232 port
+            ser.flush()
+            response = ser.readline()
+            hex_response = binascii.hexlify(response).decode('utf-8')
+            print(f"Response from RS232: {response}/nHex : {hex_response}")
 
-        # Close the RS232 port
-        ser.close()
-        print("RS232 port closed.")
+            # Close the RS232 port
+            ser.close()
+            print("RS232 port closed.")
 
 def hex_to_string(hex_string):
     try:
