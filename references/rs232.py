@@ -4,8 +4,8 @@ import crcmod
 import platform
 
 # Define the custom CRC function with a 16-bit polynomial
-def create_custom_crc():
-    polynomial = 0x11021  # Correct 16-bit polynomial
+def axiomaCustomCRC():
+    polynomial = 0x11021
     initial_value = 0x0000
     final_xor = 0x0000
     reflect = False
@@ -13,37 +13,25 @@ def create_custom_crc():
     crc_func = crcmod.mkCrcFun(polynomial, initCrc=initial_value, xorOut=final_xor, rev=reflect)
     return crc_func
 
-#def axiomaCRC(data):
-def axiomaCRC(pin):
-    crc_ta = [
-        0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
-        0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef
-    ]
+def incrementSpecialChar(crc):
+    # Define the set of special characters to check against
+    specialChars = {0x28, 0x0d, 0x0a}
 
-    crc = 0
-    for byte in pin:
-        da = (crc >> 8) >> 4
-        da = da & 0x0F
-        crc <<= 4
-        crc ^= crc_ta[da ^ (byte >> 4)]
-        da = (crc >> 8) >> 4
-        da = da & 0x0F
-        crc <<= 4
-        crc ^= crc_ta[da ^ (byte & 0x0F)]
+    # Extract the high and low bytes
+    hb = (crc >> 8) & 0xFF
+    lb = crc & 0xFF
 
-    # Escape CR, LF, 'H' characters
-    b_crc_low = crc & 0x00FF
-    b_crc_high = crc >> 8
-    if b_crc_low in [0x28, 0x0d, 0x0a]:
-        b_crc_low += 1
-    if b_crc_high in [0x28, 0x0d, 0x0a]:
-        b_crc_high += 1
+    # Increment bytes if they are special ones
+    hb = (hb + 1) & 0xFF if hb in specialChars else hb
+    lb = (lb + 1) & 0xFF if lb in specialChars else lb
 
-    crc = (b_crc_high << 8) | b_crc_low
-    return crc.to_bytes(2, byteorder='big')
-#    crc_func = create_custom_crc()
-#    crc_value = crc_func(data)
-#    return crc_value.to_bytes(2, byteorder='big')
+    # Combine the high and low bytes back into a two-byte value
+    return (hb << 8) | lb
+
+def axiomaCRC(data):
+    crc_func = axiomaCustomCRC()
+    crc_value = incrementSpecialChar(crc_func(data))
+    return crc_value.to_bytes(2, byteorder='big')
 
 def main():
 
@@ -78,7 +66,7 @@ def main():
             ser.flush()
             response = ser.readline()
             hex_response = binascii.hexlify(response).decode('utf-8')
-            print(f"Response from RS232: {response}/nHex : {hex_response}")
+            print(f"Response from RS232: {response}\nHex : {hex_response}")
 
             # Close the RS232 port
             ser.close()
