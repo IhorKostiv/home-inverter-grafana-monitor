@@ -1,18 +1,6 @@
 import time
 from . import UPSmodbus
 
-def bitmaskText(newLine, Bitmask, Texts):
-        t = ""
-        for b in Texts:
-            if b & Bitmask:
-                if t != "":
-                    t = t + ", "
-                t = t + Texts[b]
-        if bool(newLine and t != ""):
-            return ", " + t
-        else:
-            return t   
-
 def bitmaskNegative(value):
     if value > 32768:
         return value - 65536

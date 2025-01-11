@@ -2,8 +2,11 @@ import cmd
 import time
 import re
 from typing import Self
-from . import UPSserial
 from datetime import datetime
+if __name__ == "__main__":
+    from __init__ import UPSserial, addText
+else:
+    from . import UPSserial, addText
 
 def extract_values(input_string):
     # Define the regular expression pattern to match numeric values (including decimal points)
@@ -59,37 +62,46 @@ class Axioma(UPSserial):
             r = input(f"Enter message for {cmd}: ").encode('utf-8')
             if r != b'':
                 r = r + b'\r'
+
+        #if self.isDebug:
+        print(f"{datetime.now()} for {cmd} response\t{r}")
                     
-        if r == b'' and not breakOnEmpty: # connection broken, reopen and re-read one more time
+        if len(r) < 3 and not breakOnEmpty: # connection broken, reopen and re-read one more time
             self.reopenSerial()
             return self.readSerial(cmd, nakPossible, True)
 
-        if r == b'(NAKss\r' and not nakPossible: # if NAK received, try again just once to break recursion
+        if r[:-3] == b'(NAK' and not nakPossible: # if NAK received unexpectedly, try again just once to not recurse
             time.sleep(0.4)
             return self.readSerial(cmd, True)
         
         # todo: check CRC and re-read if not match
 
-        #if self.isDebug:
-        print(f"{datetime.now()}for {cmd} response\t{r}")
         return r.decode('utf-8', errors='ignore')
 
+    def setSerial(self, cmd: str):
+        return self.readSerial(cmd, True)[:-3] == '(ACK'
+
     def batCurrent(self, charge: float, discharge: float):
-        if discharge > 0.0:
-            return discharge
-        else:
-            return -charge
+        return discharge if discharge > 0.0 else -charge
     
     def __init__(self, isDebug: bool, device_path: str):
         super().__init__(isDebug, device_path, 2400)
         
+        if not self.readQPI():
+            raise TypeError("Incompatible inverter protocol")
+
         self.readQPIGS()
         time.sleep(0.5)
         self.readQPIRI()
         time.sleep(0.5)
         self.readQMOD()
+        time.sleep(0.5)
+        self.readQPIWS()
         
-
+    def readQPI(self): # Device Protocol validation
+        r = self.readSerial("515049beac0d", False) # "QPI")
+        return len(r) == 8 and r[:-3] == b'(PI30'
+    
     def readQPIRI(self): # todo: Device Rating Information inquiry
         icEnergyUses = { 0: "Uti", 1: "SUB", 2: "SBU" }
 
@@ -152,7 +164,7 @@ class Axioma(UPSserial):
         if len(v) > 4:
             self.iPLoad = int(v[4])         # FFFF AC output apparent power F is an Integer number from 0 to 9. The units is V
         if len(v) > 5:
-            self.iSLoad = int(v[5])         # GGGG AC output active powerG is an Integer ranging from 0 to 9. The units is W
+            self.iSLoad = int(v[5])         # GGGG AC output active power G is an Integer ranging from 0 to 9. The units is W
         if len(v) > 6:
             self.iLoadPercent = int(v[6])   # HHH Output load percent DEVICE: HHH is Maximum of W% or VA%. VA% is a percent of apparent power. W% is a percent of active power. The units is %.
                                             # III BUS voltage I is an Integer ranging from 0 to 9. The units is V.
@@ -202,81 +214,140 @@ class Axioma(UPSserial):
         return v
 
     def readQMOD(self): # todo: Device Mode inquiry
-        r = self.readSerial("514D4F4F49C10D", False) # "QMOD")
+        r = self.readSerial("514d4f4449c10d", False) # "QMOD")
         if len(r) > 2:
             iWorkStates = { 'P': "Power on", 'S': "Standby", 'L': "Line", 'B': "Battery", 'F': "Fault", 'D': "Shutdown" }
-            try:
-                self.iWorkState = iWorkStates[r[1]]
-            except:
-                self.iWorkState = r[1]
+            s = r[1]
+            if s in iWorkStates:
+                self.iWorkState = iWorkStates[s]
+            else:
+                self.iWorkState = s
         # QMOD<cr>: Device Mode inquiry
         # Computer: QMOD<CRC><cr>
         # Device: (M<CRC><cr>
         # MODE CODE(M) Notes
         return r
-        
+
     def readQPIWS(self): # todo: Device Warning Status inquiry (100000000000000000000000000000000000
+        bitOK = "0"
         r = self.readSerial("5150495753b4da0d", False)
 
+        messages = [
+            ( 0, "pvWarning", "PV loss"),
+            ( 1, "iError", "Inverter fault", "iError"),
+            ( 2, "iError", "Bus Over Fault"),
+            ( 3, "iError", "Bus Under Fault"),
+            ( 4, "iError", "Bus Soft Fail Fault"),
+            ( 5, "iWarning", "Line Fail"),
+            ( 6, "pvError", "OPVShort Fault"),
+            ( 7, "iError", "Inverter voltage too low"),
+            ( 8, "iError", "Inverter voltage too high"),
+            ( 9, "iError", "Over temperature", "iWarning"),
+            (10, "iError", "Fan locked", "iWarning"),
+            (11, "iError", "Battery voltage high", "iWarning"),
+            (12, "iWarning", "Battery low"),
+            (13, "pvWarning", "a13"),
+            (14, "iWarning", "Battery under shutdown"),
+            (15, "iWarning", "Battery derating"),
+            (16, "iError", "Over load", "iWarning"),
+            (17, "iWarning", "Eeprom fault"),
+            (18, "iError", "Inverter Over Current"),
+            (19, "iError", "Inverter Soft Fail"),
+            (20, "iError", "Self Test Fail"),
+            (21, "pvError", "OP DC Voltage Over"),
+            (22, "iError", "Bat Open"),
+            (23, "iError", "Current Sensor Fail"),
+            (24, "pvWarning", "a24"),
+            (25, "pvWarning", "a25"),
+            (26, "pvWarning", "a26"),
+            (27, "pvWarning", "a27"),
+            (28, "pvWarning", "a28"),
+            (29, "pvWarning", "a29"),
+            (30, "pvWarning", "a30"),
+            (31, "iError", "Battery weak"), # (only 48V model) 24V model: a31, a32 is fault code 48V model: a32, a33 is fault code 
+            (32, "iError", "a32"),
+            (33, "iError", "a33"),
+            (34, "pvWarning", "a34"),
+            (35, "iWarning", "Battery equalization")
+        ]
+
+        fault = len(r) > 1 and r[1] != bitOK
+
+        for index, attr, message, *optional in messages:
+            if len(r) > index and r[index] != bitOK:
+                if optional and not fault:
+                    setattr(self, optional[0], addText(getattr(self, optional[0], ""), message))
+                else:
+                    setattr(self, attr, addText(getattr(self, attr, ""), message))
+        if len(r) < 36:
+            self.pvWarning = addText(self.pvWarning, f"Too short error code received {r}")
         pass
+
     def readQDI(self): # todo: The default setting value information (230.0 50.0 0030 21.0 27.0 28.2 23.0 60 0 0 2 0 0 0 0 0 1 1 1 0 1 0 27.0 0 1)F
         pass
     def readQET(self): # todo: Query total PV generated energy - NAK
+        # pvAccumulatedPower = (pv[17] * 1000) + (pv[18] / 10.0) # 15217 mWh, 15218  .1KWh
         pass
     def readQLT(self): # todo: Query total output load energy - NAK
+        # iAccumulatedLoadPower = (soc[53] * 1000) + (soc[54] / 10.0)  # 25253: ["Accumulated load power high", 1, "kWh"],              # 25254: ["Accumulated load power low", 0.1, "kWh"],
         pass
 
     """
-
-      if pv[1]==2: # work mode
-          pvWorkState = mpptStates[pv[2]] + "-" + chargingStates[pv[3]]   # 15201 15202 15203
-      else:
-          pvWorkState = pvWorkStates[pv[1]]                               # 15201 15202 15203
-      pvError = bitmaskText(False, pv[13], pvErrors)         # 15213
-      pvWarning = bitmaskText(False, pv[14], pvWarnings)     # 15214
-      pvAccumulatedPower = (pv[17] * 1000) + (pv[18] / 10.0) # 15217 mWh, 15218  .1KWh
-          
       iSInverter = soc[17]                            # 25217: ["Inverter complex power(S)", 1, "VA"],
       iSGrid = soc[18]                                # 25218: ["Grid complex power(S)", 1, "VA"],
       iAccumulatedDischargerPower = (soc[47] * 1000) + (soc[48] / 10.0) # 25247: ["Accumulated discharger power high", 1000, "kWh"],
-      iAccumulatedLoadPower = (soc[53] * 1000) + (soc[54] / 10.0)  # 25253: ["Accumulated load power high", 1, "kWh"],
-                                                      # 25254: ["Accumulated load power low", 0.1, "kWh"],
-      iAccumulatedSelfusePower = (soc[55] * 1000) + (soc[56] / 10.0 )    # 25255: ["Accumulated self_use power high", 1000, "kWh"],
-                                                      # 25256: ["Accumulated self_use power low", 0.1, "kWh"],
-      iError = bitmaskText(False, soc[61], iError1s)            # 25261	Error message 1
-      iError += bitmaskText(iError != "", soc[62], iError2s)    # 25262	Error message 2
-      iError += bitmaskText(iError != "", soc[63], iError3s)    # 25263	Error message 3
-      iWarning = bitmaskText(False, soc[65], iWarning1s)           # 25265	Warning message 1
-      iWarning += bitmaskText(iWarning != "", soc[66], iWarning2s) # 25266	Warning message 2
-
+      iAccumulatedSelfusePower = (soc[55] * 1000) + (soc[56] / 10.0 )    # 25255: ["Accumulated self_use power high", 1000, "kWh"], # 25256: ["Accumulated self_use power low", 0.1, "kWh"],
     """  
+    def setOutputSource(self, mode: str, cmd: str):
+        r = self.setSerial(cmd)
+        print(f"{mode} {cmd} set {'OK' if r else 'Fail'}")
+        return r
     """
     POP<NN><cr>: Setting device output source priority
     Computer: POP<NN><CRC><cr>
     Device: (ACK<CRC><cr> if device accepts this command, otherwise, responds (NAK<CRC><cr>
     Set output source priority, 00 for UtilitySolarBat, 01 for SolarUtilityBat, 02 for SolarBatUtility
     """
-    def setSBU(self):
-        return super.setSBU()
+    def setSBU(self): # POP02 504f503032e20a0d -> 0x504f503032e20b0d
+        return super.setSBU() and self.setOutputSource("SBU", "504f503032e20b0d")
 
-    def setSUB(self):
-        return super.setSUB()
+    def setSUB(self): # POP01 504f503031d2690d
+        return super.setSUB() and self.setOutputSource("SUB", "504f503031d2690d")
 
-    def setUtility(self):
-        return super.setUtility()
+    def setUtility(self): # POP00 504f503030c2480d
+        return super.setUtility() and self.setOutputSource("Utility", "504f503030c2480d")
+
+# unit test section
+def utRead():
+    r = input(f"Enter message for {cmd}: ").encode('utf-8')
+    if r != b'':
+        #todo: convert from hex
+        #todo: add CRC   
+        r = r + b'\r'
+    return r
 
 # Example usage
 if __name__ == "__main__":
+    utMessages = {
+        # QPI b'(PI30\x9a\x0b\r'
+        "515049beac0d": b'28504933309a0b0d',
+        # QPIGS b'(221.7 50.0 221.7 50.0 0309 0295 010 440 27.00 000 100 0036 00.0 030.1 00.00 00000 00010110 00 01 00000 110 0 01 0000d,\r'
+        "5150494753b7a90d": b'283232312e372035302e30203232312e372035302e302030333039203032393520303130203434302032372e3030203030302031303020303033362030302e30203033302e312030302e30302030303030302030303031303131302030302030312030303030302031313020302030312030303030642c0d',
+        # QPIRI b'(220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 21.0 28.2 27.0 0 40 040 1 1 2 1 01 0 0 27.0 0 1\x8d\xd2\r'
+        "5150495249f8540d": b'283232302e302031332e36203232302e302035302e302031332e36203330303020333030302032342e302032352e352032312e302032382e322032372e302030203430203034302031203120322031203031203020302032372e30203020318dd20d',
+        # QMOD b'(L\x06\x07\r'
+        "514d4f4449c10d": b'284c06070d',
+        # QPIWS b'(000000000000000000000000000000000000<\x8e\r'
+        "5150495753b4da0d": b'283030303030303030303030303030303030303030303030303030303030303030303030303c8e0d'
+    }
+    while True:
+        i = Axioma(True, "SIMULATOR")
+        print(i.jSON("Axioma"))
 
-    i = Axioma(True, "SIMULATOR")
-    print(i.jSON("Axioma"))
-
-    # (221.3 50.0 221.3 50.0 0420 0388 014 439 27.00 000 100 0037 01.0 113.1 00.00 00000 01010110 00 01 00117 110 0 01 0000
-    # (220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 21.0 28.2 27.0 0 40 040 1 1 2 1 01 0 0 27.0 0 1
-    # (L
-
+    """
     # QBEQI (0 060 030 040 030 29.20 000 120 0 0000
     # QFLAG (EbzDadjkuvxy]
     # QPIRI (220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 21.0 28.2 27.0 0 40 040 1 1 2 1 01 0 0 27.0 0 1
     # QVFW (VERFW:00043.19
     # QPI (PI30
+    """

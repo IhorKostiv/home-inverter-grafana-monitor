@@ -7,6 +7,16 @@ import serial
 from dataclasses import dataclass
 from gpiozero import CPUTemperature
 
+def addText(t1:str, t2: str):
+    return t1 + ", " + t2 if t1 != "" else t2
+
+def bitmaskText(newLine, Bitmask, Texts):
+        t = ""
+        for b in Texts:
+            if b & Bitmask == b:
+                t = addText(t, Texts[b])
+        return ", " + t if newLine and t != "" else t
+
 class UPS(object):
     def __init__(self, isDebug: bool):
         if platform.system() == "Linux":
@@ -111,17 +121,17 @@ class UPS(object):
     def setSBU(self):
         if self.isDebug:
             print("set SBU")
-        pass
+        return True
 
     def setSUB(self):
         if self.isDebug:
             print("set SUB")
-        pass
+        return True
 
     def setUtility(self):
         if self.isDebug:
             print("set UTI")
-        pass
+        return True
 
     def setFPVEstimate(self, estimate: int):
         self.fPVEstimate = estimate
@@ -180,3 +190,32 @@ class UPSserial(UPS):
     def __del__(self):
         if hasattr(self, 'scc'):
             self.scc.close()
+"""
+    def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
+        if self.iPInverter < self.iPLoad: # likely we work on battery or not fully utilise PV potential
+            match self.icEnergyUse.upper():
+                case "UTI" | "SUB": # Utility or PV mixing mode
+                    if self.fPVEstimate >= 0 and self.fPVEstimate > self.iPLoad: # estimate is higher than load
+                        print(f"Set Solar ON by Estimate {self.fPVEstimate} > {self.iPLoad}")
+                        self.setSBU()
+                    elif solarVoltageOn > 0 and self.pvVoltage > solarVoltageOn: # likely PV can produce more
+                        print(f"Set Solar ON by Voltage {self.pvVoltage} > {solarVoltageOn}")
+                        self.setSBU()
+                    #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
+                case "SBU": # PV full production mode
+                    if self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2: # battery is half depleted
+                        if self.fPVEstimate >= 0:
+                            if self.fPVEstimate < self.iPLoad: # estimate is less than load
+                                if solarVoltageOff > 0:
+                                    if self.pvVoltage < solarVoltageOff: # and PV production is likely suffering
+                                        print(f"Set Solar Off by Estimate and Voltage {self.fPVEstimate} < {self.iPLoad} {self.pvVoltage} < {solarVoltageOff}")
+                                        self.setSUB()
+                                else:
+                                    print(f"Set Solar Off by Estimate {self.fPVEstimate} < {self.iPLoad}")
+                                    self.setSUB()
+                        else: # no estimate, operate only by PV production Voltage
+                            # actually below better to be more sophisticated formula accounting MPPT since voltage depend on produced power
+                            if solarVoltageOff > 0 and self.pvVoltage < solarVoltageOff:
+                                print(f"Set Solar Off by Voltage {self.pvVoltage} < {solarVoltageOff}")
+                                self.setSUB()
+"""

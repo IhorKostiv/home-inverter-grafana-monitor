@@ -28,6 +28,7 @@ INVERTER_MODEL = os.environ.get("INVERTER_MODEL", "Axioma")
 isDebug = os.environ.get("IS_DEBUG", "True") == "True"
 solarVoltageOn = float(os.environ.get("SOLAR_VOLTAGE_ON", "0.96"))
 solarVoltageOff = float(os.environ.get("SOLAR_VOLTAGE_OFF", "0.82"))
+solarManagement = os.environ.get("SOLAR_MANAGEMENT", "False") == "True"
 
 client = InfluxDBClient(DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME)
 
@@ -54,21 +55,21 @@ if isDebug:
 if USB_DEVICE != "SIMULATOR":
     client.write_points(json_body)
 
-if solarVoltageOn > 0 and solarVoltageOff > 0 and (solarVoltageOn < 1 or solarVoltageOff < 1):
-    sv = client.query("SELECT max(""pvVoltage"") as pvVoltage FROM ""inverter"" WHERE time >= now() - 7d")
-    if (len(sv)) > 0:
-        for t in sv:
-            pv = float(t[0]['pvVoltage'])
-            if solarVoltageOn > 0 and solarVoltageOn < 1:
-                solarVoltageOn = solarVoltageOn * pv
-            if solarVoltageOff > 0 and solarVoltageOff < 1:
-                solarVoltageOff = solarVoltageOff * pv
+if solarManagement:
+    if solarVoltageOn > 0 and solarVoltageOff > 0 and (solarVoltageOn < 1 or solarVoltageOff < 1):
+        sv = client.query("SELECT max(""pvVoltage"") as pvVoltage FROM ""inverter"" WHERE time >= now() - 7d")
+        if (len(sv)) > 0:
+            for t in sv:
+                pv = float(t[0]['pvVoltage'])
+                if solarVoltageOn > 0 and solarVoltageOn < 1:
+                    solarVoltageOn = solarVoltageOn * pv
+                if solarVoltageOff > 0 and solarVoltageOff < 1:
+                    solarVoltageOff = solarVoltageOff * pv
+                if isDebug:
+                    print(f"Solar Voltage ON {solarVoltageOn} OFF {solarVoltageOff}")
+                break
+        else:
+            solarVoltageOn = solarVoltageOff = 0
             if isDebug:
-                print(f"Solar Voltage ON {solarVoltageOn} OFF {solarVoltageOff}")
-            break
-    else:
-        solarVoltageOn = solarVoltageOff = 0
-        if isDebug:
-            print("Solar Voltage Zero")
-
-inverter.setBestEnergyUse(solarVoltageOn, solarVoltageOff)
+                print("Solar Voltage Zero")
+    inverter.setBestEnergyUse(solarVoltageOn, solarVoltageOff)
