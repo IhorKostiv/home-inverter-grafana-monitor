@@ -22,7 +22,7 @@ class UPS(object):
         if platform.system() == "Linux":
             try:
                 with open('/sys/class/thermal/thermal_zone0/temp', 'r') as file:
-                    self.rpiTemperature: float = float(file.read()) / 1000.0
+                    self.rpiTemperature: float = round(float(file.read()) / 1000.0, 1)
             except:
                 pass
         else:
