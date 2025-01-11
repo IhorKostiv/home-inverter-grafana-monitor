@@ -68,7 +68,7 @@ class Axioma(UPSserial):
             time.sleep(1)
             self.scc.open()
 
-    def readSerial(self, cmd: str, retryCount: int, breakOnEmpty: bool = False): # todo: CRC check
+    def readSerial(self, cmd: str, retryCount: int, breakOnEmpty: bool = False): # with CRC check
         
         if retryCount <= 0:
             raise IOError("Error reading RS232 port")
@@ -87,14 +87,14 @@ class Axioma(UPSserial):
                 #if r != b'':
                 #    r = r + axiomaCRC(r) + '\r'
 
-        #if self.isDebug:
-        print(f"{datetime.now()} for {cmd} response\t{r}")
+        #if self.isDebug: 
+        print(f"{datetime.now()}\t{cmd}\t{r}") # format usable for putting into Excel (hopefully)
         
         if len(r) < 3 and not breakOnEmpty: # connection broken, reopen and re-read one more time
             self.reopenSerial()
             return self.readSerial(cmd, retryCount - 1, True)
         
-        # todo: check CRC and re-read if not match
+        # check CRC and re-read if not match
         crc = axiomaCRC(r[:-3])
         if r[-3:][:2] != crc: # CRC do not match, re-read
             print(f"Bad CRC {r[-3:][:2]} != {crc} ")
@@ -131,7 +131,7 @@ class Axioma(UPSserial):
         r = self.readSerial(cmdQPI, cmdRetryCount) # "QPI")
         return len(r) == 7 and r[:-2] == '(PI30' # one symbol gets lost :)
     
-    def readQPIRI(self): # todo: Device Rating Information inquiry
+    def readQPIRI(self): # Device Rating Information inquiry
         icEnergyUses = { 0: "Uti", 1: "SUB", 2: "SBU" }
 
         r = self.readSerial(cmdQPIRI, cmdRetryCount) # "QPIRI")
@@ -242,7 +242,7 @@ class Axioma(UPSserial):
             self.iPGrid = 0
         return v
 
-    def readQMOD(self): # todo: Device Mode inquiry
+    def readQMOD(self): # Device Mode inquiry
         r = self.readSerial(cmdQMOD, cmdRetryCount) # "QMOD")
         if len(r) > 2:
             iWorkStates = { 'P': "Power on", 'S': "Standby", 'L': "Line", 'B': "Battery", 'F': "Fault", 'D': "Shutdown" }
@@ -257,7 +257,7 @@ class Axioma(UPSserial):
         # MODE CODE(M) Notes
         return r
 
-    def readQPIWS(self): # todo: Device Warning Status inquiry (100000000000000000000000000000000000
+    def readQPIWS(self): # Device Warning Status inquiry (100000000000000000000000000000000000
         bitOK = "0"
         r = self.readSerial(cmdQPIWS, cmdRetryCount)[1:]
 
