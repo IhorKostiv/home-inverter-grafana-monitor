@@ -475,18 +475,19 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
+        "h": 6,
         "w": 11,
         "x": 11,
         "y": 0
       },
       "id": 4,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
+        "displayMode": "basic",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
         "orientation": "auto",
-        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -494,9 +495,9 @@
           "fields": "",
           "values": false
         },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
       },
       "pluginVersion": "11.2.0",
       "targets": [
@@ -548,8 +549,8 @@
           "resultFormat": "time_series"
         }
       ],
-      "title": "Accumulated",
-      "type": "stat"
+      "title": "Accumulated Period",
+      "type": "bargauge"
     },
     {
       "datasource": {
@@ -562,40 +563,6 @@
         "defaults": {
           "color": {
             "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": true,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "right",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 3,
-            "scaleDistribution": {
-              "log": 2,
-              "type": "log"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
           },
           "decimals": 1,
           "mappings": [],
@@ -626,24 +593,30 @@
         ]
       },
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 11,
         "x": 11,
-        "y": 4
+        "y": 6
       },
-      "id": 1,
+      "id": 5,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
+      "pluginVersion": "11.2.0",
       "targets": [
         {
           "alias": "Load",
@@ -654,7 +627,7 @@
           "groupBy": [
             {
               "params": [
-                "1d"
+                "$__interval"
               ],
               "type": "time"
             },
@@ -665,64 +638,23 @@
               "type": "fill"
             }
           ],
-          "measurement": "inverter",
           "orderByTime": "ASC",
           "policy": "default",
+          "query": "SELECT max(\"iAccumulatedLoadPower\") FROM \"inverter\" WHERE $timeFilter fill(null)",
+          "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "iAccumulatedLoadPower"
+                  "value"
                 ],
                 "type": "field"
               },
               {
                 "params": [],
-                "type": "max"
-              }
-            ]
-          ],
-          "tags": []
-        },
-        {
-          "alias": "Battery",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "PBDC07BC01591819D"
-          },
-          "groupBy": [
-            {
-              "params": [
-                "1d"
-              ],
-              "type": "time"
-            },
-            {
-              "params": [
-                "null"
-              ],
-              "type": "fill"
-            }
-          ],
-          "hide": false,
-          "measurement": "inverter",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "refId": "B",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "iAccumulatedSelfusePower"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "max"
+                "type": "mean"
               }
             ]
           ],
@@ -737,7 +669,7 @@
           "groupBy": [
             {
               "params": [
-                "1d"
+                "$__interval"
               ],
               "type": "time"
             },
@@ -749,30 +681,74 @@
             }
           ],
           "hide": false,
-          "measurement": "inverter",
           "orderByTime": "ASC",
           "policy": "default",
+          "query": "SELECT max(\"pvAccumulatedPower\") FROM \"inverter\" WHERE $timeFilter fill(null)",
+          "rawQuery": true,
           "refId": "C",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "pvAccumulatedPower"
+                  "value"
                 ],
                 "type": "field"
               },
               {
                 "params": [],
-                "type": "max"
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": []
+        },
+        {
+          "alias": "Battery",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PBDC07BC01591819D"
+          },
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "hide": false,
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT max(\"iAccumulatedSelfusePower\") FROM \"inverter\" WHERE $timeFilter fill(null)",
+          "rawQuery": true,
+          "refId": "B",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
               }
             ]
           ],
           "tags": []
         }
       ],
-      "title": "Total",
-      "type": "timeseries"
+      "title": "Accumulated Total",
+      "type": "stat"
     },
     {
       "datasource": {
@@ -1047,6 +1023,6 @@
   "timezone": "browser",
   "title": "Accumulated",
   "uid": "fdzhjy8x9jldsc",
-  "version": 24,
+  "version": 27,
   "weekStart": ""
 }

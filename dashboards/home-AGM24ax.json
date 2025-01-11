@@ -55,7 +55,7 @@
               "tooltip": false,
               "viz": false
             },
-            "insertNulls": false,
+            "insertNulls": 120000,
             "lineInterpolation": "smooth",
             "lineStyle": {
               "fill": "solid"
@@ -166,10 +166,11 @@
                 "id": "custom.lineStyle",
                 "value": {
                   "dash": [
-                    10,
-                    10
+                    0,
+                    3,
+                    3
                   ],
-                  "fill": "dash"
+                  "fill": "dot"
                 }
               }
             ]
@@ -733,7 +734,7 @@
               "tooltip": false,
               "viz": false
             },
-            "insertNulls": false,
+            "insertNulls": 120000,
             "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 3,
@@ -1129,7 +1130,7 @@
               "tooltip": false,
               "viz": false
             },
-            "insertNulls": false,
+            "insertNulls": 120000,
             "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 3,
@@ -1283,7 +1284,7 @@
               "tooltip": false,
               "viz": false
             },
-            "insertNulls": false,
+            "insertNulls": 120000,
             "lineInterpolation": "smooth",
             "lineStyle": {
               "fill": "solid"
@@ -1644,7 +1645,7 @@
               "tooltip": false,
               "viz": false
             },
-            "insertNulls": false,
+            "insertNulls": 120000,
             "lineWidth": 1,
             "spanNulls": false
           },
@@ -1703,7 +1704,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "/.* Error/"
+              "options": "/.*Error/"
             },
             "properties": [
               {
@@ -1718,7 +1719,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "/.* Warning/"
+              "options": "/.*Warning/"
             },
             "properties": [
               {
@@ -1961,7 +1962,7 @@
               "tooltip": false,
               "viz": false
             },
-            "insertNulls": false,
+            "insertNulls": 120000,
             "lineInterpolation": "smooth",
             "lineWidth": 1,
             "pointSize": 3,
@@ -2103,6 +2104,6 @@
   "timezone": "browser",
   "title": "Home AGM24ax",
   "uid": "be9lp416yitj4c",
-  "version": 1,
+  "version": 3,
   "weekStart": ""
 }
