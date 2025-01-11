@@ -8,6 +8,12 @@ if __name__ == "__main__":
 else:
     from . import UPSserial, addText
 
+cmdQPI = "515049beac0d"
+cmdQPIGS = "5150494753b7a90d"
+cmdQPIRI = "5150495249f8540d"
+cmdQMOD = "514d4f4449c10d"
+cmdQPIWS = "5150495753b4da0d"
+
 def extract_values(input_string):
     # Define the regular expression pattern to match numeric values (including decimal points)
     pattern = r"\d+\.\d+|\d+"
@@ -59,7 +65,10 @@ class Axioma(UPSserial):
             r = self.scc.readline()
             self.resetSerial()            
         else:
-            r = input(f"Enter message for {cmd}: ").encode('utf-8')
+            if cmd.lower() in utMessages:
+                r = utMessages[cmd.lower()]
+            else:
+                r = input(f"Enter message for {cmd}: ").encode('utf-8')
             if r != b'':
                 r = r + b'\r'
 
@@ -99,13 +108,13 @@ class Axioma(UPSserial):
         self.readQPIWS()
         
     def readQPI(self): # Device Protocol validation
-        r = self.readSerial("515049beac0d", False) # "QPI")
-        return len(r) == 8 and r[:-3] == b'(PI30'
+        r = self.readSerial(cmdQPI, False) # "QPI")
+        return len(r) == 7 and r[:-2] == '(PI30' # one symbol gets lost :)
     
     def readQPIRI(self): # todo: Device Rating Information inquiry
         icEnergyUses = { 0: "Uti", 1: "SUB", 2: "SBU" }
 
-        r = self.readSerial("5150495249F8540D", False) # "QPIRI")
+        r = self.readSerial(cmdQPIRI, False) # "QPIRI")
         v = extract_values(r)        
         """
         # BBB.B Grid rating voltage B is an integer ranging from 0 to 9. The units is V.
@@ -153,7 +162,7 @@ class Axioma(UPSserial):
         
         pvWorkStates = { '000': "Off", '100': "?c", '110': "Sc", '101': "Gc", '111': "SGc" }
     
-        r = self.readSerial("5150494753B7A90D", False) # "QPIGS")
+        r = self.readSerial(cmdQPIGS, False) # "QPIGS")
         v = extract_values(r)        
         if len(v) > 1:
             self.iGridVoltage = float(v[0]) # BBB.B Grid voltage B is an Integer number 0 to 9. The units is V
@@ -214,7 +223,7 @@ class Axioma(UPSserial):
         return v
 
     def readQMOD(self): # todo: Device Mode inquiry
-        r = self.readSerial("514d4f4449c10d", False) # "QMOD")
+        r = self.readSerial(cmdQMOD, False) # "QMOD")
         if len(r) > 2:
             iWorkStates = { 'P': "Power on", 'S': "Standby", 'L': "Line", 'B': "Battery", 'F': "Fault", 'D': "Shutdown" }
             s = r[1]
@@ -230,7 +239,7 @@ class Axioma(UPSserial):
 
     def readQPIWS(self): # todo: Device Warning Status inquiry (100000000000000000000000000000000000
         bitOK = "0"
-        r = self.readSerial("5150495753b4da0d", False)
+        r = self.readSerial(cmdQPIWS, False)[1:]
 
         messages = [
             ( 0, "pvWarning", "PV loss"),
@@ -330,20 +339,30 @@ def utRead():
 if __name__ == "__main__":
     utMessages = {
         # QPI b'(PI30\x9a\x0b\r'
-        "515049beac0d": b'28504933309a0b0d',
+        "515049beac0d": b'(PI30\x9a\x0b', # b'28504933309a0b0d',
         # QPIGS b'(221.7 50.0 221.7 50.0 0309 0295 010 440 27.00 000 100 0036 00.0 030.1 00.00 00000 00010110 00 01 00000 110 0 01 0000d,\r'
-        "5150494753b7a90d": b'283232312e372035302e30203232312e372035302e302030333039203032393520303130203434302032372e3030203030302031303020303033362030302e30203033302e312030302e30302030303030302030303031303131302030302030312030303030302031313020302030312030303030642c0d',
+        "5150494753b7a90d": b'(221.7 50.0 221.7 50.0 0309 0295 010 440 27.00 000 100 0036 00.0 030.1 00.00 00000 00010110 00 01 00000 110 0 01 0000d', # b'283232312e372035302e30203232312e372035302e302030333039203032393520303130203434302032372e3030203030302031303020303033362030302e30203033302e312030302e30302030303030302030303031303131302030302030312030303030302031313020302030312030303030642c0d',
         # QPIRI b'(220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 21.0 28.2 27.0 0 40 040 1 1 2 1 01 0 0 27.0 0 1\x8d\xd2\r'
-        "5150495249f8540d": b'283232302e302031332e36203232302e302035302e302031332e36203330303020333030302032342e302032352e352032312e302032382e322032372e302030203430203034302031203120322031203031203020302032372e30203020318dd20d',
+        "5150495249f8540d": b'(220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 21.0 28.2 27.0 0 40 040 1 1 2 1 01 0 0 27.0 0 1', # b'283232302e302031332e36203232302e302035302e302031332e36203330303020333030302032342e302032352e352032312e302032382e322032372e302030203430203034302031203120322031203031203020302032372e30203020318dd20d',
         # QMOD b'(L\x06\x07\r'
-        "514d4f4449c10d": b'284c06070d',
+        "514d4f4449c10d": b'(L', # b'284c06070d',
         # QPIWS b'(000000000000000000000000000000000000<\x8e\r'
-        "5150495753b4da0d": b'283030303030303030303030303030303030303030303030303030303030303030303030303c8e0d'
+        "5150495753b4da0d": b'(000000000000000000000000000000000000', # b'283030303030303030303030303030303030303030303030303030303030303030303030303c8e0d'
     }
     while True:
         i = Axioma(True, "SIMULATOR")
         print(i.jSON("Axioma"))
-
+     
+        for cmd in utMessages:
+            s = input(f"Enter message for {cmd}: ").encode('utf-8')
+            match s:
+                case b'':
+                    pass
+                case b'exit':
+                    exit()
+                case _:
+                    utMessages[cmd] = s
+        
     """
     # QBEQI (0 060 030 040 030 29.20 000 120 0 0000
     # QFLAG (EbzDadjkuvxy]
