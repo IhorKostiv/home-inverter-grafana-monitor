@@ -8,6 +8,7 @@ if __name__ == "__main__":
 else:
     from . import UPSserial, addText
 
+# constants: inverter communication commands
 cmdQPI = "515049beac0d"
 cmdQPIGS = "5150494753b7a90d"
 cmdQPIRI = "5150495249f8540d"
@@ -327,11 +328,11 @@ class Axioma(UPSserial):
         return super.setUtility() and self.setOutputSource("Utility", "504f503030c2480d")
 
 # unit test section
-def utRead():
+def utRead(cmd: str):
     r = input(f"Enter message for {cmd}: ").encode('utf-8')
     if r != b'':
-        #todo: convert from hex
-        #todo: add CRC   
+        #todo: convert from hex if needed
+        #todo: add CRC
         r = r + b'\r'
     return r
 
@@ -354,7 +355,7 @@ if __name__ == "__main__":
         print(i.jSON("Axioma"))
      
         for cmd in utMessages:
-            s = input(f"Enter message for {cmd}: ").encode('utf-8')
+            s = utRead(cmd)
             match s:
                 case b'':
                     pass

@@ -6,6 +6,7 @@ import minimalmodbus
 import serial
 from dataclasses import dataclass
 from gpiozero import CPUTemperature
+import contextlib
 
 def addText(t1:str, t2: str):
     return t1 + ", " + t2 if t1 != "" else t2
@@ -21,7 +22,8 @@ class UPS(object):
     def __init__(self, isDebug: bool):
         if platform.system() == "Linux":
             try:
-                self.rpiTemperature: float = float(CPUTemperature().temperature)
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.rpiTemperature: float = float(CPUTemperature().temperature)
             except:
                 pass
         else:
@@ -219,3 +221,8 @@ class UPSserial(UPS):
                                 print(f"Set Solar Off by Voltage {self.pvVoltage} < {solarVoltageOff}")
                                 self.setSUB()
 """
+
+# Example usage
+if __name__ == "__main__":
+    i = UPS(True)
+    print(i.jSON("UPS"))
