@@ -1,6 +1,7 @@
 import cmd
 import time
 import re
+import crcmod
 from typing import Self
 from datetime import datetime
 if __name__ == "__main__":
@@ -9,6 +10,7 @@ else:
     from . import UPSserial, addText
 
 # constants: inverter communication commands
+cmdRetryCount = 2
 cmdQPI = "515049beac0d"
 cmdQPIGS = "5150494753b7a90d"
 cmdQPIRI = "5150495249f8540d"
@@ -23,30 +25,38 @@ def extract_values(input_string):
     matches = re.findall(pattern, input_string)
     
     return matches
-"""
-def bitmaskText(newLine, Bitmask, Texts):
-        t = ""
-        for b in Texts:
-            if b & Bitmask:
-                if t != "":
-                    t = t + ", "
-                t = t + Texts[b]
-        if bool(newLine and t != ""):
-            return ", " + t
-        else:
-            return t   
 
-def bitmaskNegative(value):
-    if value > 32768:
-        return value - 65536
-    else:
-        return value
-"""
+def axiomaCustomCRC():
+    polynomial = 0x11021
+    initial_value = 0x0000
+    final_xor = 0x0000
+    reflect = False
+
+    crc_func = crcmod.mkCrcFun(polynomial, initCrc=initial_value, xorOut=final_xor, rev=reflect)
+    return crc_func
+
+def incrementSpecialChar(crc):
+    # Define the set of special characters to check against
+    specialChars = {0x28, 0x0d, 0x0a}
+
+    # Extract the high and low bytes
+    hb = (crc >> 8) & 0xFF
+    lb = crc & 0xFF
+
+    # Increment bytes if they are special ones
+    hb = (hb + 1) & 0xFF if hb in specialChars else hb
+    lb = (lb + 1) & 0xFF if lb in specialChars else lb
+
+    # Combine the high and low bytes back into a two-byte value
+    return (hb << 8) | lb
+
+def axiomaCRC(data):
+    crc_func = axiomaCustomCRC()
+    crc_value = incrementSpecialChar(crc_func(data))
+    return crc_value.to_bytes(2, byteorder='big')
+
 class Axioma(UPSserial):
         
-    def readSerialCRC(self, cmd: str): # todo : make CRC
-        pass
-
     def resetSerial(self):
         if hasattr(self, 'scc'):
             self.scc.reset_input_buffer()
@@ -58,7 +68,11 @@ class Axioma(UPSserial):
             time.sleep(1)
             self.scc.open()
 
-    def readSerial(self, cmd: str, nakPossible: bool, breakOnEmpty: bool = False): # todo: CRC check
+    def readSerial(self, cmd: str, retryCount: int, breakOnEmpty: bool = False): # todo: CRC check
+        
+        if retryCount <= 0:
+            raise IOError("Error reading RS232 port")
+
         if hasattr(self, 'scc'):
             self.resetSerial()
             self.scc.write(bytes.fromhex(cmd))
@@ -69,27 +83,32 @@ class Axioma(UPSserial):
             if cmd.lower() in utMessages:
                 r = utMessages[cmd.lower()]
             else:
-                r = input(f"Enter message for {cmd}: ").encode('utf-8')
-            if r != b'':
-                r = r + b'\r'
+                r = input(f"Enter message for {cmd} (with CRC and \r): ").encode('utf-8')
+                #if r != b'':
+                #    r = r + axiomaCRC(r) + '\r'
 
         #if self.isDebug:
         print(f"{datetime.now()} for {cmd} response\t{r}")
-                    
+        
         if len(r) < 3 and not breakOnEmpty: # connection broken, reopen and re-read one more time
             self.reopenSerial()
-            return self.readSerial(cmd, nakPossible, True)
-
-        if r[:-3] == b'(NAK' and not nakPossible: # if NAK received unexpectedly, try again just once to not recurse
-            time.sleep(0.4)
-            return self.readSerial(cmd, True)
+            return self.readSerial(cmd, retryCount - 1, True)
         
         # todo: check CRC and re-read if not match
+        crc = axiomaCRC(r[:-3])
+        if r[-3:][:2] != crc: # CRC do not match, re-read
+            print(f"Bad CRC {r[-3:][:2]} != {crc} ")
+            time.sleep(0.4)
+            return self.readSerial(cmd, retryCount - 1)
 
+        if r[:-3] == b'(NAK' : # if NAK received unexpectedly, try again just once to not recurse
+            time.sleep(0.4)
+            return self.readSerial(cmd, retryCount - 1)
+        
         return r.decode('utf-8', errors='ignore')
 
     def setSerial(self, cmd: str):
-        return self.readSerial(cmd, True)[:-3] == '(ACK'
+        return self.readSerial(cmd, cmdRetryCount)[:-3] == '(ACK'
 
     def batCurrent(self, charge: float, discharge: float):
         return discharge if discharge > 0.0 else -charge
@@ -109,13 +128,13 @@ class Axioma(UPSserial):
         self.readQPIWS()
         
     def readQPI(self): # Device Protocol validation
-        r = self.readSerial(cmdQPI, False) # "QPI")
+        r = self.readSerial(cmdQPI, cmdRetryCount) # "QPI")
         return len(r) == 7 and r[:-2] == '(PI30' # one symbol gets lost :)
     
     def readQPIRI(self): # todo: Device Rating Information inquiry
         icEnergyUses = { 0: "Uti", 1: "SUB", 2: "SBU" }
 
-        r = self.readSerial(cmdQPIRI, False) # "QPIRI")
+        r = self.readSerial(cmdQPIRI, cmdRetryCount) # "QPIRI")
         v = extract_values(r)        
         """
         # BBB.B Grid rating voltage B is an integer ranging from 0 to 9. The units is V.
@@ -163,7 +182,7 @@ class Axioma(UPSserial):
         
         pvWorkStates = { '000': "Off", '100': "?c", '110': "Sc", '101': "Gc", '111': "SGc" }
     
-        r = self.readSerial(cmdQPIGS, False) # "QPIGS")
+        r = self.readSerial(cmdQPIGS, cmdRetryCount) # "QPIGS")
         v = extract_values(r)        
         if len(v) > 1:
             self.iGridVoltage = float(v[0]) # BBB.B Grid voltage B is an Integer number 0 to 9. The units is V
@@ -224,7 +243,7 @@ class Axioma(UPSserial):
         return v
 
     def readQMOD(self): # todo: Device Mode inquiry
-        r = self.readSerial(cmdQMOD, False) # "QMOD")
+        r = self.readSerial(cmdQMOD, cmdRetryCount) # "QMOD")
         if len(r) > 2:
             iWorkStates = { 'P': "Power on", 'S': "Standby", 'L': "Line", 'B': "Battery", 'F': "Fault", 'D': "Shutdown" }
             s = r[1]
@@ -240,7 +259,7 @@ class Axioma(UPSserial):
 
     def readQPIWS(self): # todo: Device Warning Status inquiry (100000000000000000000000000000000000
         bitOK = "0"
-        r = self.readSerial(cmdQPIWS, False)[1:]
+        r = self.readSerial(cmdQPIWS, cmdRetryCount)[1:]
 
         messages = [
             ( 0, "pvWarning", "PV loss"),
@@ -333,22 +352,23 @@ def utRead(cmd: str):
     if r != b'':
         #todo: convert from hex if needed
         #todo: add CRC
-        r = r + b'\r'
+        #r = r + b'\r'
+        pass
     return r
 
 # Example usage
 if __name__ == "__main__":
     utMessages = {
         # QPI b'(PI30\x9a\x0b\r'
-        "515049beac0d": b'(PI30\x9a\x0b', # b'28504933309a0b0d',
+        "515049beac0d": b'(PI30\x9a\x0b\r', # b'28504933309a0b0d',
         # QPIGS b'(221.7 50.0 221.7 50.0 0309 0295 010 440 27.00 000 100 0036 00.0 030.1 00.00 00000 00010110 00 01 00000 110 0 01 0000d,\r'
-        "5150494753b7a90d": b'(221.7 50.0 221.7 50.0 0309 0295 010 440 27.00 000 100 0036 00.0 030.1 00.00 00000 00010110 00 01 00000 110 0 01 0000d', # b'283232312e372035302e30203232312e372035302e302030333039203032393520303130203434302032372e3030203030302031303020303033362030302e30203033302e312030302e30302030303030302030303031303131302030302030312030303030302031313020302030312030303030642c0d',
+        "5150494753b7a90d": b'(221.7 50.0 221.7 50.0 0309 0295 010 440 27.00 000 100 0036 00.0 030.1 00.00 00000 00010110 00 01 00000 110 0 01 0000d,\r', # b'283232312e372035302e30203232312e372035302e302030333039203032393520303130203434302032372e3030203030302031303020303033362030302e30203033302e312030302e30302030303030302030303031303131302030302030312030303030302031313020302030312030303030642c0d',
         # QPIRI b'(220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 21.0 28.2 27.0 0 40 040 1 1 2 1 01 0 0 27.0 0 1\x8d\xd2\r'
-        "5150495249f8540d": b'(220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 21.0 28.2 27.0 0 40 040 1 1 2 1 01 0 0 27.0 0 1', # b'283232302e302031332e36203232302e302035302e302031332e36203330303020333030302032342e302032352e352032312e302032382e322032372e302030203430203034302031203120322031203031203020302032372e30203020318dd20d',
+        "5150495249f8540d": b'(220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 21.0 28.2 27.0 0 40 040 1 1 2 1 01 0 0 27.0 0 1\x8d\xd2\r', # b'283232302e302031332e36203232302e302035302e302031332e36203330303020333030302032342e302032352e352032312e302032382e322032372e302030203430203034302031203120322031203031203020302032372e30203020318dd20d',
         # QMOD b'(L\x06\x07\r'
-        "514d4f4449c10d": b'(L', # b'284c06070d',
+        "514d4f4449c10d": b'(L\x06\x07\r', # b'284c06070d',
         # QPIWS b'(000000000000000000000000000000000000<\x8e\r'
-        "5150495753b4da0d": b'(000000000000000000000000000000000000', # b'283030303030303030303030303030303030303030303030303030303030303030303030303c8e0d'
+        "5150495753b4da0d": b'(000000000000000000000000000000000000<\x8e\r', # b'283030303030303030303030303030303030303030303030303030303030303030303030303c8e0d'
     }
     while True:
         i = Axioma(True, "SIMULATOR")
