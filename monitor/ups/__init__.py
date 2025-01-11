@@ -5,7 +5,6 @@ from unicodedata import east_asian_width
 import minimalmodbus
 import serial
 from dataclasses import dataclass
-from gpiozero import CPUTemperature
 import contextlib
 
 def addText(t1:str, t2: str):
@@ -22,8 +21,8 @@ class UPS(object):
     def __init__(self, isDebug: bool):
         if platform.system() == "Linux":
             try:
-                with contextlib.redirect_stdout(io.StringIO()):
-                    self.rpiTemperature: float = float(CPUTemperature().temperature)
+                with open('/sys/class/thermal/thermal_zone0/temp', 'r') as file:
+                    self.rpiTemperature: float = float(file.read()) / 1000.0
             except:
                 pass
         else:
