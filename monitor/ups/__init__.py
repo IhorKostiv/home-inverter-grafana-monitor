@@ -191,9 +191,9 @@ class UPSserial(UPS):
     def __del__(self):
         if hasattr(self, 'scc'):
             self.scc.close()
-"""
+
     def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
-        if self.iPInverter < self.iPLoad: # likely we work on battery or not fully utilise PV potential
+        if self.pvChargerPower < self.iPLoad: # likely we work on battery or not fully utilise PV potential
             match self.icEnergyUse.upper():
                 case "UTI" | "SUB": # Utility or PV mixing mode
                     if self.fPVEstimate >= 0 and self.fPVEstimate > self.iPLoad: # estimate is higher than load
@@ -219,7 +219,7 @@ class UPSserial(UPS):
                             if solarVoltageOff > 0 and self.pvVoltage < solarVoltageOff:
                                 print(f"Set Solar Off by Voltage {self.pvVoltage} < {solarVoltageOff}")
                                 self.setSUB()
-"""
+
 
 # Example usage
 if __name__ == "__main__":

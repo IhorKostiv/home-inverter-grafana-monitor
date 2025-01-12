@@ -83,9 +83,7 @@ class Axioma(UPSserial):
             if cmd.lower() in utMessages:
                 r = utMessages[cmd.lower()]
             else:
-                r = input(f"Enter message for {cmd} (with CRC and \r): ").encode('utf-8')
-                #if r != b'':
-                #    r = r + axiomaCRC(r) + '\r'
+                r = utRead(cmd)
 
         #if self.isDebug: 
         print(f"{datetime.now()}\t{cmd}\t{r}") # format usable for putting into Excel (hopefully)
@@ -338,45 +336,40 @@ class Axioma(UPSserial):
     Set output source priority, 00 for UtilitySolarBat, 01 for SolarUtilityBat, 02 for SolarBatUtility
     """
     def setSBU(self): # POP02 504f503032e20a0d -> 0x504f503032e20b0d
-        return super.setSBU() and self.setOutputSource("SBU", "504f503032e20b0d")
+        return super().setSBU() and self.setOutputSource("SBU", "504f503032e20b0d")
 
     def setSUB(self): # POP01 504f503031d2690d
-        return super.setSUB() and self.setOutputSource("SUB", "504f503031d2690d")
+        return super().setSUB() and self.setOutputSource("SUB", "504f503031d2690d")
 
     def setUtility(self): # POP00 504f503030c2480d
-        return super.setUtility() and self.setOutputSource("Utility", "504f503030c2480d")
+        return super().setUtility() and self.setOutputSource("Utility", "504f503030c2480d")
 
 # unit test section
 def utRead(cmd: str):
-    r = input(f"Enter message for {cmd}: ").encode('utf-8')
-    if r != b'':
+    r = input(f"Enter message for {bytes.fromhex(cmd[:-6]).decode('utf-8')}: ").encode('utf-8')
+    if r.lower() not in [b'', b'exit']:
         #todo: convert from hex if needed
-        #todo: add CRC
-        #r = r + b'\r'
-        pass
+        r = r + axiomaCRC(r) + b'\r'
     return r
 
 # Example usage
 if __name__ == "__main__":
     utMessages = {
-        # QPI b'(PI30\x9a\x0b\r'
-        "515049beac0d": b'(PI30\x9a\x0b\r', # b'28504933309a0b0d',
-        # QPIGS b'(221.7 50.0 221.7 50.0 0309 0295 010 440 27.00 000 100 0036 00.0 030.1 00.00 00000 00010110 00 01 00000 110 0 01 0000d,\r'
-        "5150494753b7a90d": b'(221.7 50.0 221.7 50.0 0309 0295 010 440 27.00 000 100 0036 00.0 030.1 00.00 00000 00010110 00 01 00000 110 0 01 0000d,\r', # b'283232312e372035302e30203232312e372035302e302030333039203032393520303130203434302032372e3030203030302031303020303033362030302e30203033302e312030302e30302030303030302030303031303131302030302030312030303030302031313020302030312030303030642c0d',
-        # QPIRI b'(220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 21.0 28.2 27.0 0 40 040 1 1 2 1 01 0 0 27.0 0 1\x8d\xd2\r'
-        "5150495249f8540d": b'(220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 21.0 28.2 27.0 0 40 040 1 1 2 1 01 0 0 27.0 0 1\x8d\xd2\r', # b'283232302e302031332e36203232302e302035302e302031332e36203330303020333030302032342e302032352e352032312e302032382e322032372e302030203430203034302031203120322031203031203020302032372e30203020318dd20d',
-        # QMOD b'(L\x06\x07\r'
-        "514d4f4449c10d": b'(L\x06\x07\r', # b'284c06070d',
-        # QPIWS b'(000000000000000000000000000000000000<\x8e\r'
-        "5150495753b4da0d": b'(000000000000000000000000000000000000<\x8e\r', # b'283030303030303030303030303030303030303030303030303030303030303030303030303c8e0d'
+        "515049beac0d": b'(PI30\x9a\x0b\r', # QPI
+        "5150494753b7a90d": b'(223.1 49.9 223.1 49.9 0535 0510 017 439 27.00 000 100 0039 01.0 054.6 00.00 00000 00010110 00 01 00058 110 0 01 0000\xcd\x8a\r', # QPIGS
+        "5150495249f8540d": b'(220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 23.0 28.2 27.0 2 40 040 1 1 2 1 01 0 0 27.0 0 1~\x8d\r', # QPIRI
+        "514d4f4449c10d": b'(L\x06\x07\r', # QMOD
+        "5150495753b4da0d": b'(000000000000000000000000000000000000<\x8e\r', # QPIWS
     }
     while True:
         i = Axioma(True, "SIMULATOR")
+        i.fPVEstimate = int(input("Enter PV Estimate: "))
         print(i.jSON("Axioma"))
+        i.setBestEnergyUse(150, 130)
      
         for cmd in utMessages:
             s = utRead(cmd)
-            match s:
+            match s.lower():
                 case b'':
                     pass
                 case b'exit':
@@ -389,5 +382,5 @@ if __name__ == "__main__":
     # QFLAG (EbzDadjkuvxy]
     # QPIRI (220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 21.0 28.2 27.0 0 40 040 1 1 2 1 01 0 0 27.0 0 1
     # QVFW (VERFW:00043.19
-    # QPI (PI30
+    # POP01 (ACK9 \r
     """
