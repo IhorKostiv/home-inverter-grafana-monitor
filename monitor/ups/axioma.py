@@ -96,9 +96,10 @@ class Axioma(UPSserial):
         
         # check CRC and re-read if not match
         crc = axiomaCRC(r[:-3])
-        if r[-3:][:2] != crc: # CRC do not match, re-read
+        if r[-3:][:2] != crc: # CRC do not match, reset and re-read
             print(f"Bad CRC {r[-3:][:2]} != {crc} ")
             time.sleep(0.4)
+            self.reopenSerial()
             return self.readSerial(cmd, retryCount - 1)
 
         if r[:-3] == b'(NAK' : # if NAK received unexpectedly, try again just once to not recurse
