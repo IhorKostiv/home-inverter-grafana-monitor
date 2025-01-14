@@ -110,6 +110,10 @@ class UPS(object):
         self.addNotEmpty(f, "iError", self.iError, '')
         self.addNotEmpty(f, "iWarning", self.iWarning, '')
         self.addNotEmpty(f, "rpiTemperature", self.rpiTemperature, 0)
+        if hasattr(self, "tRadiatorTemperature"):
+            self.addNotEmpty(f, "tRadiatorTemperature", self.tRadiatorTemperature, 0)
+        if hasattr(self, "bRadiatorTemperature"):
+            self.addNotEmpty(f, "bRadiatorTemperature", self.bRadiatorTemperature, 0)
 
         return [
             {

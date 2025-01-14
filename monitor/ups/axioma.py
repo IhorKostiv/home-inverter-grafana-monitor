@@ -5,7 +5,7 @@ import crcmod
 from typing import Self
 from datetime import datetime
 if __name__ == "__main__":
-    from __init__ import UPSserial, addText
+    from __init__ import UPS, UPSserial, addText
 else:
     from . import UPSserial, addText
 
@@ -16,6 +16,7 @@ cmdQPIGS = "5150494753b7a90d"
 cmdQPIRI = "5150495249f8540d"
 cmdQMOD = "514d4f4449c10d"
 cmdQPIWS = "5150495753b4da0d"
+cmdQ1 = "51311bfc0d"
 
 def extract_values(input_string):
     # Define the regular expression pattern to match numeric values (including decimal points)
@@ -125,6 +126,8 @@ class Axioma(UPSserial):
         self.readQMOD()
         time.sleep(0.5)
         self.readQPIWS()
+        time.sleep(0.5)
+        self.readQ1()
         
     def readQPI(self): # Device Protocol validation
         r = self.readSerial(cmdQPI, cmdRetryCount) # "QPI")
@@ -320,6 +323,19 @@ class Axioma(UPSserial):
         # iAccumulatedLoadPower = (soc[53] * 1000) + (soc[54] / 10.0)  # 25253: ["Accumulated load power high", 1, "kWh"],              # 25254: ["Accumulated load power low", 0.1, "kWh"],
         pass
 
+    def readQ1(self): # undocumented temperature data
+        
+        r = self.readSerial(cmdQ1, cmdRetryCount) # "QPIGS")
+        v = extract_values(r)        
+        if len(v) > 4:
+            self.tRadiatorTemperature = int(v[4])
+        if len(v) > 5:
+            self.bRadiatorTemperature = int(v[5])
+        if len(v) > 6:
+            self.iRadiatorTemperature = int(v[6])
+        if len(v) > 7:
+            self.pvRadiatorTemperature = int(v[7])
+
     """
       iSInverter = soc[17]                            # 25217: ["Inverter complex power(S)", 1, "VA"],
       iSGrid = soc[18]                                # 25218: ["Grid complex power(S)", 1, "VA"],
@@ -361,9 +377,10 @@ if __name__ == "__main__":
         "5150495249f8540d": b'(220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 23.0 28.2 27.0 2 40 040 1 1 2 1 01 0 0 27.0 0 1~\x8d\r', # QPIRI
         "514d4f4449c10d": b'(L\x06\x07\r', # QMOD
         "5150495753b4da0d": b'(000000000000000000000000000000000000<\x8e\r', # QPIWS
+        "51311bfc0d": b'(01 00 00 000 036 032 029 033 00 00 000 0030 0000 13\xbb\xf2\r' # Q1
     }
     while True:
-        i = Axioma(True, "SIMULATOR")
+        i: UPS = Axioma(True, "SIMULATOR")
         i.fPVEstimate = int(input("Enter PV Estimate: "))
         print(i.jSON("Axioma"))
         i.setBestEnergyUse(150, 130)
@@ -383,6 +400,5 @@ if __name__ == "__main__":
     # QFLAG (EbzDadjkuvxy]
     # QPIRI (220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 21.0 28.2 27.0 0 40 040 1 1 2 1 01 0 0 27.0 0 1
     # QVFW (VERFW:00043.19
-    # QPI (PI30
     # POP01 (ACK9 \r
     """
