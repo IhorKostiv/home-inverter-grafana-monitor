@@ -190,9 +190,9 @@ class Axioma(UPSserial):
             self.iVoltage = float(v[2])     # DDD.D AC output voltage D is an Integer number 0 to 9. The units is V.
                                             # EE.E AC output frequency E is an Integer number from 0 to 9. The units is Hz.
         if len(v) > 4:
-            self.iPLoad = int(v[4])         # FFFF AC output apparent power F is an Integer number from 0 to 9. The units is V
+            self.iSLoad = int(v[4])         # FFFF AC output apparent power F is an Integer number from 0 to 9. The units is VA
         if len(v) > 5:
-            self.iSLoad = int(v[5])         # GGGG AC output active power G is an Integer ranging from 0 to 9. The units is W
+            self.iPLoad = int(v[5])         # GGGG AC output active power G is an Integer ranging from 0 to 9. The units is W
         if len(v) > 6:
             self.iLoadPercent = int(v[6])   # HHH Output load percent DEVICE: HHH is Maximum of W% or VA%. VA% is a percent of apparent power. W% is a percent of active power. The units is %.
                                             # III BUS voltage I is an Integer ranging from 0 to 9. The units is V.
@@ -234,7 +234,7 @@ class Axioma(UPSserial):
                                         # AAAA Solar feed to grid power (reserved feature) A is an Integer ranging from 0 to 9. The units is W. # Device general status parameters inquiry
         self.iBattPower = self.iBattCurrent * self.iBatteryVoltage
         self.iPInverter = int(self.pvChargerPower + self.iBattPower)
-        self.iPGrid = self.iPLoad - self.iPInverter + 65  # include self consumption approximate
+        self.iPGrid = self.iPLoad - self.iPInverter + 65  # include self consumption approximate todo: substitute solar feed to grid
         if self.iPInverter < 0:
             self.iPInverter = 0
         if self.iPGrid < 0:
