@@ -94,9 +94,10 @@ class Axioma(UPSserial):
         
         # check CRC and re-read if not match
         crc = axiomaCRC(r[:-3])
-        if r[-3:][:2] != crc: # CRC do not match, re-read
+        if r[-3:][:2] != crc: # CRC do not match, reset and re-read
             print(f"Bad CRC {r[-3:][:2]} != {crc} ")
             time.sleep(0.4)
+            self.reopenSerial()
             return self.readSerial(cmd, retryCount - 1)
 
         if r[:-3] == b'(NAK' : # if NAK received unexpectedly, try again just once to not recurse
@@ -382,5 +383,6 @@ if __name__ == "__main__":
     # QFLAG (EbzDadjkuvxy]
     # QPIRI (220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 21.0 28.2 27.0 0 40 040 1 1 2 1 01 0 0 27.0 0 1
     # QVFW (VERFW:00043.19
+    # QPI (PI30
     # POP01 (ACK9 \r
     """
