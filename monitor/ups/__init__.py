@@ -194,6 +194,8 @@ class UPSserial(UPS):
 
     def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
         if self.pvChargerPower < self.iPLoad: # likely we work on battery or not fully utilise PV potential
+            if self.isDebug:
+                print(f"Check Solar Estimate {self.fPVEstimate} < {self.iPLoad} Voltage {self.pvVoltage} < {solarVoltageOff}")
             match self.icEnergyUse.upper():
                 case "UTI" | "SUB": # Utility or PV mixing mode
                     if self.fPVEstimate >= 0 and self.fPVEstimate > self.iPLoad: # estimate is higher than load
