@@ -5,7 +5,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
 import os
 from datetime import datetime
 from tzlocal import get_localzone
-from ups import UPS, greenCell, axioma #, must_ep3000, must_pv1800, must_ph18_5248
+from ups import UPSmgr, greenCell, axioma #, must_ep3000, must_pv1800, must_ph18_5248
 from forecastsolar import pvEstimate
 import json
 
@@ -36,7 +36,7 @@ if INVERTER_MODEL not in SUPPORTED_INVERTERS:
     print("Error: Unknown inverter model: {0}".format(INVERTER_MODEL))
     exit(1)
 
-inverter: UPS = SUPPORTED_INVERTERS[INVERTER_MODEL](isDebug, USB_DEVICE)
+inverter: UPSmgr = SUPPORTED_INVERTERS[INVERTER_MODEL](isDebug, USB_DEVICE)
 
 forecast = client.query("SELECT last(""Response"") as Response, last(""TimeZone"") as TimeZone FROM ""forecast"" ORDER BY time DESC")
 if isDebug:

@@ -2,12 +2,11 @@ import cmd
 import time
 import re
 import crcmod
-from typing import Self
 from datetime import datetime
 if __name__ == "__main__":
-    from __init__ import UPS, UPSserial, addText
+    from __init__ import UPSserial, UPShybrid, addText
 else:
-    from . import UPSserial, addText
+    from . import UPSserial, UPShybrid, addText
 
 # constants: inverter communication commands
 cmdRetryCount = 2
@@ -56,30 +55,15 @@ def axiomaCRC(data):
     crc_value = incrementSpecialChar(crc_func(data))
     return crc_value.to_bytes(2, byteorder='big')
 
-class Axioma(UPSserial):
+class Axioma(UPSserial, UPShybrid):
         
-    def resetSerial(self):
-        if hasattr(self, 'scc'):
-            self.scc.reset_input_buffer()
-            self.scc.reset_output_buffer()
-
-    def reopenSerial(self):
-        if hasattr(self, 'scc'):
-            self.scc.close()
-            time.sleep(1)
-            self.scc.open()
-
     def readSerial(self, cmd: str, retryCount: int, breakOnEmpty: bool = False): # with CRC check
         
         if retryCount <= 0:
             raise IOError("Error reading RS232 port")
 
         if hasattr(self, 'scc'):
-            self.resetSerial()
-            self.scc.write(bytes.fromhex(cmd))
-            self.scc.flush()
-            r = self.scc.readline()
-            self.resetSerial()            
+            r = super().readSerial(cmd)
         else:
             if cmd.lower() in utMessages:
                 r = utMessages[cmd.lower()]
@@ -317,10 +301,10 @@ class Axioma(UPSserial):
     def readQDI(self): # todo: The default setting value information (230.0 50.0 0030 21.0 27.0 28.2 23.0 60 0 0 2 0 0 0 0 0 1 1 1 0 1 0 27.0 0 1)F
         pass
     def readQET(self): # todo: Query total PV generated energy - NAK
-        # pvAccumulatedPower = (pv[17] * 1000) + (pv[18] / 10.0) # 15217 mWh, 15218  .1KWh
+        # pvAccumulatedPower
         pass
     def readQLT(self): # todo: Query total output load energy - NAK
-        # iAccumulatedLoadPower = (soc[53] * 1000) + (soc[54] / 10.0)  # 25253: ["Accumulated load power high", 1, "kWh"],              # 25254: ["Accumulated load power low", 0.1, "kWh"],
+        # iAccumulatedLoadPower
         pass
 
     def readQ1(self): # undocumented temperature data
@@ -380,7 +364,7 @@ if __name__ == "__main__":
         "51311bfc0d": b'(01 00 00 000 036 032 029 033 00 00 000 0030 0000 13\xbb\xf2\r' # Q1
     }
     while True:
-        i: UPS = Axioma(True, "SIMULATOR")
+        i: UPShybrid = Axioma(True, "SIMULATOR")
         i.fPVEstimate = int(input("Enter PV Estimate: "))
         print(i.jSON("Axioma"))
         i.setBestEnergyUse(150, 130)

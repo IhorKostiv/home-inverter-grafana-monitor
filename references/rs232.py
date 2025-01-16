@@ -35,13 +35,13 @@ def axiomaCRC(data):
 
 def main():
 
-    print("Type your message and press Enter. Type '' to quit.")
+    print("Type your message and press Enter. Type exit to quit.")
 
     while True:
         # Get input from the keyboard
         user_input = input("Enter message: ")
 
-        if user_input.lower() == '':
+        if user_input.lower() in ['', 'exit']:
             break
 
         b = user_input.encode("utf-8")
@@ -49,15 +49,15 @@ def main():
         if b[:2].lower() != b'0x':
             # Calculate CRC and append to the message
             crc = axiomaCRC(b)
-            message_with_crc = b + crc + 0x0D.to_bytes(1)
+            message_with_crc = b + crc + b'\r'
         else:
             message_with_crc = bytes.fromhex(b[2:].decode('utf-8'))
         # Convert message to hex format
         hex_message = binascii.hexlify(message_with_crc).decode('utf-8')
 
         print(f"Sending to RS232 (hex): {hex_message}")
-        # Open the RS232 port
         if platform.system() == "Linux":
+            # Open the RS232 port
             ser = serial.Serial('/dev/ttyUSB0', baudrate=2400, timeout=1)
             # Send the hex message to the RS232 port
             ser.write(bytes.fromhex(hex_message))

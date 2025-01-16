@@ -1,5 +1,5 @@
 import time
-from . import UPSmodbus
+from . import UPSmodbus, UPSoffgrid, addText
 
 def bitmaskNegative(value):
     if value > 32768:
@@ -7,7 +7,14 @@ def bitmaskNegative(value):
     else:
         return value
 
-class GreenCell(UPSmodbus):
+def bitmaskText(newLine, Bitmask, Texts):
+        t = ""
+        for b in Texts:
+            if b & Bitmask == b:
+                t = addText(t, Texts[b])
+        return ", " + t if newLine and t != "" else t
+
+class GreenCell(UPSmodbus, UPSoffgrid):
     
     def __init__(self, isDebug: bool, device_path: str):
       super().__init__(isDebug, device_path, 4, 19200)
