@@ -238,10 +238,7 @@ class Axioma(UPSserial, UPShybrid):
         if len(r) > 1:
             iWorkStates = { 'P': "Power on", 'S': "Standby", 'L': "Line", 'B': "Battery", 'F': "Fault", 'D': "Shutdown" }
             s = r[1]
-            if s in iWorkStates:
-                self.iWorkState = iWorkStates[s]
-            else:
-                self.iWorkState = s
+            self.iWorkState = iWorkStates[s] if s in iWorkStates else s
         # QMOD<cr>: Device Mode inquiry
         # Computer: QMOD<CRC><cr>
         # Device: (M<CRC><cr>
