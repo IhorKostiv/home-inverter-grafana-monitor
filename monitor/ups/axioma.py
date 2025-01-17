@@ -9,13 +9,18 @@ else:
     from . import UPSserial, UPShybrid, addText
 
 # constants: inverter communication commands
-cmdRetryCount = 2
+cmdRetryCount = 3
 cmdQPI = "515049beac0d"
 cmdQPIGS = "5150494753b7a90d"
 cmdQPIRI = "5150495249f8540d"
 cmdQMOD = "514d4f4449c10d"
 cmdQPIWS = "5150495753b4da0d"
 cmdQ1 = "51311bfc0d"
+cmdSBU = "504f503032e20b0d"
+cmdSUB = "504f503031d2690d"
+cmdUtility = "504f503030c2480d"
+
+compatibleProtocols = ['(PI30']
 
 def extract_values(input_string):
     # Define the regular expression pattern to match numeric values (including decimal points)
@@ -60,7 +65,7 @@ class Axioma(UPSserial, UPShybrid):
     def readSerial(self, cmd: str, retryCount: int, breakOnEmpty: bool = False): # with CRC check
         
         if retryCount <= 0:
-            raise IOError("Error reading RS232 port")
+            raise IOError(f"Error reading RS232 port {cmd}")
 
         if hasattr(self, 'scc'):
             r = super().readSerial(cmd)
@@ -80,7 +85,7 @@ class Axioma(UPSserial, UPShybrid):
         # check CRC and re-read if not match
         crc = axiomaCRC(r[:-3])
         if r[-3:][:2] != crc: # CRC do not match, reset and re-read
-            print(f"Bad CRC {r[-3:][:2]} != {crc} ")
+            print(f"Bad CRC {r[-3:][:2]} != {crc}")
             time.sleep(0.4)
             self.reopenSerial()
             return self.readSerial(cmd, retryCount - 1)
@@ -89,10 +94,10 @@ class Axioma(UPSserial, UPShybrid):
             time.sleep(0.4)
             return self.readSerial(cmd, retryCount - 1)
         
-        return r.decode('utf-8', errors='ignore')
+        return r[:-3].decode('utf-8', errors='ignore')
 
     def setSerial(self, cmd: str):
-        return self.readSerial(cmd, cmdRetryCount)[:-3] == '(ACK'
+        return self.readSerial(cmd, cmdRetryCount) == '(ACK'
 
     def batCurrent(self, charge: float, discharge: float):
         return discharge if discharge > 0.0 else -charge
@@ -100,7 +105,7 @@ class Axioma(UPSserial, UPShybrid):
     def __init__(self, isDebug: bool, device_path: str):
         super().__init__(isDebug, device_path, 2400)
         
-        if not self.readQPI():
+        if not self.readQPI() in compatibleProtocols:
             raise TypeError("Incompatible inverter protocol")
 
         self.readQPIGS()
@@ -115,7 +120,7 @@ class Axioma(UPSserial, UPShybrid):
         
     def readQPI(self): # Device Protocol validation
         r = self.readSerial(cmdQPI, cmdRetryCount) # "QPI")
-        return len(r) == 7 and r[:-2] == '(PI30' # one symbol gets lost :)
+        return r
     
     def readQPIRI(self): # Device Rating Information inquiry
         icEnergyUses = { 0: "Uti", 1: "SUB", 2: "SBU" }
@@ -337,13 +342,13 @@ class Axioma(UPSserial, UPShybrid):
     Set output source priority, 00 for UtilitySolarBat, 01 for SolarUtilityBat, 02 for SolarBatUtility
     """
     def setSBU(self): # POP02 504f503032e20a0d -> 0x504f503032e20b0d
-        return super().setSBU() and self.setOutputSource("SBU", "504f503032e20b0d")
+        return super().setSBU() and self.setOutputSource("SBU", cmdSBU)
 
     def setSUB(self): # POP01 504f503031d2690d
-        return super().setSUB() and self.setOutputSource("SUB", "504f503031d2690d")
+        return super().setSUB() and self.setOutputSource("SUB", cmdSUB)
 
     def setUtility(self): # POP00 504f503030c2480d
-        return super().setUtility() and self.setOutputSource("Utility", "504f503030c2480d")
+        return super().setUtility() and self.setOutputSource("Utility", cmdUtility)
 
 # unit test section
 def utRead(cmd: str):
@@ -357,11 +362,11 @@ def utRead(cmd: str):
 if __name__ == "__main__":
     utMessages = {
         "515049beac0d": b'(PI30\x9a\x0b\r', # QPI
-        "5150494753b7a90d": b'(223.1 49.9 223.1 49.9 0535 0510 017 439 27.00 000 100 0039 01.0 054.6 00.00 00000 00010110 00 01 00058 110 0 01 0000\xcd\x8a\r', # QPIGS
-        "5150495249f8540d": b'(220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 23.0 28.2 27.0 2 40 040 1 1 2 1 01 0 0 27.0 0 1~\x8d\r', # QPIRI
-        "514d4f4449c10d": b'(L\x06\x07\r', # QMOD
+        "5150494753b7a90d": b'(222.9 50.0 220.7 50.0 0529 0494 019 460 27.00 000 095 0028 03.6 151.2 00.00 00000 00010000 00 01 00544 010 0 01 00556\xb5\r', # QPIGS
+        "5150495249f8540d": b'(220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 23.0 28.2 27.0 2 40 040 1 2 2 1 01 0 0 27.0 0 1\x10\xb6\r', # QPIRI
+        "514d4f4449c10d": b'(B\xe7\xc9\r', # QMOD
         "5150495753b4da0d": b'(000000000000000000000000000000000000<\x8e\r', # QPIWS
-        "51311bfc0d": b'(01 00 00 000 036 032 029 033 00 00 000 0030 0000 13\xbb\xf2\r' # Q1
+        "51311bfc0d": b'(01 00 00 000 028 016 017 032 00 00 000 0030 0000 13EG\r' # Q1
     }
     while True:
         i: UPShybrid = Axioma(True, "SIMULATOR")
@@ -378,7 +383,7 @@ if __name__ == "__main__":
                     exit()
                 case _:
                     utMessages[cmd] = s
-        
+
     """
     # QBEQI (0 060 030 040 030 29.20 000 120 0 0000
     # QFLAG (EbzDadjkuvxy]
