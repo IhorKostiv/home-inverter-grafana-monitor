@@ -23,7 +23,7 @@ services:
       DAMPING: 0
       TZ: "Europe/Kyiv"
       SOLAR_VOLTAGE_ON: 150 # 0.96, 76 seems late
-      SOLAR_VOLTAGE_OFF: 130 # 0.82
+      SOLAR_VOLTAGE_OFF: 135 # 0.82 130 seems late
       SOLAR_MANAGEMENT: "True" # enable True or disable False
     depends_on:
       - influxdb
