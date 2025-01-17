@@ -235,7 +235,7 @@ class Axioma(UPSserial, UPShybrid):
 
     def readQMOD(self): # Device Mode inquiry
         r = self.readSerial(cmdQMOD, cmdRetryCount) # "QMOD")
-        if len(r) > 2:
+        if len(r) > 1:
             iWorkStates = { 'P': "Power on", 'S': "Standby", 'L': "Line", 'B': "Battery", 'F': "Fault", 'D': "Shutdown" }
             s = r[1]
             if s in iWorkStates:
