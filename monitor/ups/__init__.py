@@ -24,8 +24,6 @@ class UPS(object):
         self.icBatteryStopCharging: float = 0.0
         self.icBatteryEqualization: float = 0.0
 
-        self.fPVEstimate: int = 0
-
         self.pvWorkState: str = ""
         self.pvVoltage: float = 0.0
         self.pvBatteryVoltage: float = 0.0
@@ -82,7 +80,6 @@ class UPS(object):
         }
         optionalValues = [ # optional fields to save space and traffic
             ("icEnergyUse", ''),
-            ("fPVEstimate", 0),
             ("pvWorkState", ''),
             ("pvBatteryVoltage", 0.0),
             ("pvRadiatorTemperature", 0),
@@ -130,8 +127,6 @@ class UPSmgr(UPS):
             print("set UTI")
         return True
 
-    def setFPVEstimate(self, estimate: int):
-        self.fPVEstimate = estimate
     def moreSolar(self):
         return True
     def saveBattery(self):
@@ -139,32 +134,19 @@ class UPSmgr(UPS):
 
     def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
         if self.isDebug:
-            print(f"Check Solar Estimate {self.fPVEstimate} < {self.iPLoad} Voltage {solarVoltageOff} > {self.pvVoltage} > {solarVoltageOn}")
+            print(f"Check Solar Voltage {solarVoltageOff} > {self.pvVoltage} > {solarVoltageOn}")
         match self.icEnergyUse.upper():
             case "UTI" | "SUB": # Utility or PV mixing mode
-                if self.fPVEstimate >= 0 and self.fPVEstimate > self.iPLoad: # estimate is higher than load
-                    print(f"Set Solar ON by Estimate {self.fPVEstimate} > {self.iPLoad}")
-                    return self.moreSolar()
-                elif solarVoltageOn > 0 and self.pvVoltage > solarVoltageOn: # likely PV can produce more
+                if solarVoltageOn > 0 and self.pvVoltage > solarVoltageOn: # likely PV can produce more
                     print(f"Set Solar ON by Voltage {self.pvVoltage} > {solarVoltageOn}")
                     return self.moreSolar()
                 #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
             case "SBU": # PV full production mode
                 if (self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2) or (self.iPGrid > self.iPLoad and self.pvChargerPower < -self.iBattPower): # battery is half depleted discharging or solar power not enough while charging
-                    if self.fPVEstimate >= 0:
-                        if self.fPVEstimate < self.iPLoad: # estimate is less than load
-                            if solarVoltageOff > 0:
-                                if self.pvVoltage < solarVoltageOff: # and PV production is likely suffering
-                                    print(f"Set Solar Off by Estimate and Voltage {self.fPVEstimate} < {self.iPLoad} {self.pvVoltage} < {solarVoltageOff}")
-                                    return self.saveBattery()
-                            else:
-                                print(f"Set Solar Off by Estimate {self.fPVEstimate} < {self.iPLoad}")
-                                return self.saveBattery()
-                    else: # no estimate, operate only by PV production Voltage
-                        # actually below better to be more sophisticated formula accounting MPPT since voltage depend on produced power
-                        if solarVoltageOff > 0 and self.pvVoltage < solarVoltageOff:
-                            print(f"Set Solar Off by Voltage {self.pvVoltage} < {solarVoltageOff}")
-                            return self.saveBattery()
+                    # actually below better to be more sophisticated formula accounting MPPT since voltage depend on produced power
+                    if solarVoltageOff > 0 and self.pvVoltage < solarVoltageOff:
+                        print(f"Set Solar Off by Voltage {self.pvVoltage} < {solarVoltageOff}")
+                        return self.saveBattery()
         return False
 
 
@@ -238,5 +220,4 @@ class UPShybrid(UPSmgr):
 # Example usage
 if __name__ == "__main__":
     i = UPS(True)
-    i.fPVEstimate = 20
     print(i.jSON("UPS"))

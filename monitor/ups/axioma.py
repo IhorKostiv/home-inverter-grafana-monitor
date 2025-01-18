@@ -367,7 +367,6 @@ if __name__ == "__main__":
     }
     while True:
         i: UPShybrid = Axioma(True, "SIMULATOR")
-        i.fPVEstimate = int(input("Enter PV Estimate: "))
         print(i.jSON("Axioma"))
         i.setBestEnergyUse(150, 130)
      

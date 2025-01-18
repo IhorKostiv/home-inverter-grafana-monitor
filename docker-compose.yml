@@ -15,16 +15,8 @@ services:
       DB_NAME: ups
       INVERTER_MODEL: "Axioma"
       IS_DEBUG: "False"
-      LATITUDE: 49.842
-      LONGITUDE: 24.0316
-      AZIMUTH: 20
-      DECLINATION: 70
-      POWER: 1.8
-      DAMPING: 0
-      TZ: "Europe/Kyiv"
-      SOLAR_VOLTAGE_ON: 150 # 0.96, 76 seems late
-      SOLAR_VOLTAGE_OFF: 135 # 0.82 130 seems late
-      SOLAR_MANAGEMENT: "True" # enable True or disable False
+      SOLAR_VOLTAGE_ON: 150 # approx. 90% of field idle voltage
+      SOLAR_VOLTAGE_OFF: 135 # approx. field MPPT voltage
     depends_on:
       - influxdb
     tmpfs:
