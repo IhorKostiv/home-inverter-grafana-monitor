@@ -10,15 +10,15 @@ else:
 
 # constants: inverter communication commands
 cmdRetryCount = 3
-cmdQPI = "515049beac0d"
-cmdQPIGS = "5150494753b7a90d"
-cmdQPIRI = "5150495249f8540d"
-cmdQMOD = "514d4f4449c10d"
-cmdQPIWS = "5150495753b4da0d"
-cmdQ1 = "51311bfc0d"
-cmdSBU = "504f503032e20b0d"
-cmdSUB = "504f503031d2690d"
-cmdUtility = "504f503030c2480d"
+cmdQPI = "515049beac0d"         # QPI
+cmdQPIGS = "5150494753b7a90d"   # QPIGS
+cmdQPIRI = "5150495249f8540d"   # QPIRI
+cmdQMOD = "514d4f4449c10d"      # QMOD
+cmdQPIWS = "5150495753b4da0d"   # QPIWS
+cmdQ1 = "51311bfc0d"            # Q1
+cmdSBU = "504f503032e20b0d"     # POP02
+cmdSUB = "504f503031d2690d"     # POP01
+cmdUtility = "504f503030c2480d" # POP00
 
 compatibleProtocols = ['(PI30']
 
@@ -359,16 +359,16 @@ def utRead(cmd: str):
 if __name__ == "__main__":
     utMessages = {
         "515049beac0d": b'(PI30\x9a\x0b\r', # QPI
-        "5150494753b7a90d": b'(222.9 50.0 220.7 50.0 0529 0494 019 460 27.00 000 095 0028 03.6 151.2 00.00 00000 00010000 00 01 00544 010 0 01 00556\xb5\r', # QPIGS
+        "5150494753b7a90d": b'(221.9 49.9 220.7 49.9 0352 0318 012 404 26.20 000 075 0026 02.5 126.7 00.00 00001 00010000 00 01 00328 010 0 01 0000\x19\xe8\r', # QPIGS
         "5150495249f8540d": b'(220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.5 23.0 28.2 27.0 2 40 040 1 2 2 1 01 0 0 27.0 0 1\x10\xb6\r', # QPIRI
         "514d4f4449c10d": b'(B\xe7\xc9\r', # QMOD
         "5150495753b4da0d": b'(000000000000000000000000000000000000<\x8e\r', # QPIWS
-        "51311bfc0d": b'(01 00 00 000 028 016 017 032 00 00 000 0030 0000 13EG\r' # Q1
+        "51311bfc0d": b'(01 00 00 000 028 016 016 030 00 00 000 0030 0000 13\x0f\xd5\r' # Q1
     }
     while True:
         i: UPShybrid = Axioma(True, "SIMULATOR")
         print(i.jSON("Axioma"))
-        i.setBestEnergyUse(150, 130)
+        i.setBestEnergyUse(150, 135)
      
         for cmd in utMessages:
             s = utRead(cmd)

@@ -23,7 +23,7 @@ How to use:
    cd home-inverter-grafana-monitor
    ```
 6. Change `INVERTER_MODEL` on the [compose file](./docker-compose.yml) according to your model.
-7. Go into the repo folder and do `docker-compose up -d`
+7. Go into the repo folder and do `docker compose up -d --build`
 8. Give it ~~20m to install everything and boot
 9. Open `http://<rasperry-ip>:3000` and login with `admin/admin`
 10. You should be redirected to an empty list of dashboards. Click New -> Import
