@@ -31,9 +31,10 @@ How to use:
 
 <img src="dashboard.jpg">
 
-# Supporter Inverters
+# Supported Inverters
 
 * GreenCell `GreenCell`
+* Axioma `Axioma`
 
 # But I have different model
 
