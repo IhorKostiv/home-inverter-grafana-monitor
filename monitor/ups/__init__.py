@@ -142,7 +142,7 @@ class UPSmgr(UPS):
                     return self.moreSolar()
                 #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
             case "SBU": # PV full production mode
-                if (self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2) or (self.iPGrid > self.iPLoad and self.pvChargerPower < -self.iBattPower): # battery is half depleted discharging or solar power not enough while charging
+                if (self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2) or (self.iPGrid > self.iPLoad): # battery is half depleted discharging or solar power not enough while charging
                     # actually below better to be more sophisticated formula accounting MPPT since voltage depend on produced power
                     if solarVoltageOff > 0 and self.pvVoltage < solarVoltageOff:
                         print(f"Set Solar Off by Voltage {self.pvVoltage} < {solarVoltageOff}")
