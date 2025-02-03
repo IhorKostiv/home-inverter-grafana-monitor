@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 3,
+  "id": 5,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -86,11 +86,11 @@
               },
               {
                 "color": "orange",
-                "value": 3000
+                "value": 1000
               },
               {
                 "color": "red",
-                "value": 6000
+                "value": 2000
               }
             ]
           },
@@ -111,7 +111,7 @@
                 "id": "custom.lineStyle",
                 "value": {
                   "dash": [
-                    5,
+                    10,
                     10
                   ],
                   "fill": "dash"
@@ -141,7 +141,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Inverter"
+              "options": "Grid"
             },
             "properties": [
               {
@@ -159,7 +159,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Grid"
+              "options": "Inverter"
             },
             "properties": [
               {
@@ -177,12 +177,12 @@
         ]
       },
       "gridPos": {
-        "h": 8,
-        "w": 10,
+        "h": 10,
+        "w": 18,
         "x": 0,
         "y": 0
       },
-      "id": 18,
+      "id": 14,
       "options": {
         "legend": {
           "calcs": [],
@@ -218,7 +218,13 @@
               }
             ]
           ],
-          "tags": []
+          "tags": [
+            {
+              "key": "iPLoad::field",
+              "operator": "<",
+              "value": "6500"
+            }
+          ]
         },
         {
           "alias": "Grid",
@@ -242,8 +248,7 @@
                 "type": "field"
               }
             ]
-          ],
-          "tags": []
+          ]
         },
         {
           "alias": "Inverter",
@@ -270,7 +275,13 @@
               }
             ]
           ],
-          "tags": []
+          "tags": [
+            {
+              "key": "iPInverter::field",
+              "operator": "<",
+              "value": "6500"
+            }
+          ]
         },
         {
           "alias": "PV",
@@ -462,12 +473,20 @@
             },
             "properties": [
               {
+                "id": "min",
+                "value": -50
+              },
+              {
+                "id": "max",
+                "value": 150
+              },
+              {
                 "id": "thresholds",
                 "value": {
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "red",
+                      "color": "orange",
                       "value": null
                     },
                     {
@@ -480,36 +499,22 @@
                     },
                     {
                       "color": "text",
-                      "value": 0.1
+                      "value": 0.01
                     },
                     {
                       "color": "orange",
-                      "value": 80
+                      "value": 100
                     },
                     {
                       "color": "red",
-                      "value": 100
+                      "value": 125
                     }
                   ]
                 }
               },
               {
-                "id": "color",
-                "value": {
-                  "mode": "thresholds"
-                }
-              },
-              {
                 "id": "displayName",
                 "value": "A"
-              },
-              {
-                "id": "min",
-                "value": -100
-              },
-              {
-                "id": "max",
-                "value": 100
               }
             ]
           },
@@ -520,8 +525,12 @@
             },
             "properties": [
               {
+                "id": "fieldMinMax",
+                "value": false
+              },
+              {
                 "id": "min",
-                "value": 11
+                "value": 10
               },
               {
                 "id": "max",
@@ -538,31 +547,27 @@
                     },
                     {
                       "color": "red",
-                      "value": 10.8
+                      "value": 10.4
                     },
                     {
                       "color": "orange",
-                      "value": 12
+                      "value": 11.8
                     },
                     {
                       "color": "yellow",
-                      "value": 13
+                      "value": 12.9
                     },
                     {
-                      "color": "green",
-                      "value": 13.2
-                    },
-                    {
-                      "color": "light-green",
+                      "color": "super-light-green",
                       "value": 13.4
                     },
                     {
                       "color": "yellow",
-                      "value": 13.8
+                      "value": 14.1
                     },
                     {
                       "color": "orange",
-                      "value": 14.1
+                      "value": 14.6
                     },
                     {
                       "color": "red",
@@ -572,17 +577,8 @@
                 }
               },
               {
-                "id": "color",
-                "value": {
-                  "mode": "thresholds"
-                }
-              },
-              {
                 "id": "displayName",
                 "value": "V"
-              },
-              {
-                "id": "fieldMinMax"
               }
             ]
           }
@@ -591,13 +587,16 @@
       "gridPos": {
         "h": 5,
         "w": 4,
-        "x": 10,
+        "x": 18,
         "y": 0
       },
       "id": 8,
       "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
+        "displayMode": "gradient",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -606,38 +605,38 @@
           "fields": "",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
+        "showUnfilled": false,
+        "sizing": "auto",
+        "valueMode": "color"
       },
       "pluginVersion": "11.2.0",
       "targets": [
         {
-          "alias": "Current",
+          "alias": "Voltage",
           "datasource": {
             "type": "influxdb",
             "uid": "PBDC07BC01591819D"
           },
           "groupBy": [],
-          "hide": true,
+          "hide": false,
           "measurement": "inverter",
           "orderByTime": "ASC",
-          "policy": "default",
-          "query": "SELECT last(\"iBattCurrent\") FROM \"inverter\" WHERE $timeFilter",
-          "rawQuery": true,
-          "refId": "B",
+          "policy": "autogen",
+          "query": "SELECT last(\"iBatteryVoltage\") FROM \"autogen\".\"inverter\" WHERE $timeFilter",
+          "rawQuery": false,
+          "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "iBattCurrent"
+                  "iBatteryVoltage"
                 ],
                 "type": "field"
               },
               {
                 "params": [],
-                "type": "last"
+                "type": "max"
               }
             ]
           ],
@@ -655,14 +654,45 @@
           "orderByTime": "ASC",
           "policy": "autogen",
           "query": "SELECT last(\"iBatteryVoltage\") FROM \"autogen\".\"inverter\" WHERE $timeFilter",
-          "rawQuery": true,
-          "refId": "A",
+          "rawQuery": false,
+          "refId": "B",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
                   "iBatteryVoltage"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "min"
+              }
+            ]
+          ],
+          "tags": []
+        },
+        {
+          "alias": "Current",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PBDC07BC01591819D"
+          },
+          "groupBy": [],
+          "hide": false,
+          "measurement": "inverter",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT min(\"iBattPower\") / min(\"iBatteryVoltage\") FROM \"inverter\" WHERE $timeFilter",
+          "rawQuery": true,
+          "refId": "C",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "iBattPower"
                 ],
                 "type": "field"
               },
@@ -685,9 +715,9 @@
           "measurement": "inverter",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT last(\"iBattPower\") / last(\"iBatteryVoltage\") FROM \"inverter\" WHERE $timeFilter",
+          "query": "SELECT max(\"iBattPower\") / max(\"iBatteryVoltage\") FROM \"inverter\" WHERE $timeFilter",
           "rawQuery": true,
-          "refId": "C",
+          "refId": "D",
           "resultFormat": "time_series",
           "select": [
             [
@@ -707,7 +737,7 @@
         }
       ],
       "title": "Battery",
-      "type": "gauge"
+      "type": "bargauge"
     },
     {
       "datasource": {
@@ -715,44 +745,19 @@
         "type": "influxdb",
         "uid": "PBDC07BC01591819D"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
-          "custom": {
-            "axisBorderShow": true,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "right",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": 120000,
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 3,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "area"
+          "decimals": 1,
+          "links": [
+            {
+              "title": "Drill down",
+              "url": "http://inverter.local:3000/d/fdzhjy8x9jldsc/accumulated?orgId=1"
             }
-          },
+          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -760,67 +765,65 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": 50
-              },
-              {
-                "color": "orange",
-                "value": 70
-              },
-              {
-                "color": "red",
-                "value": 90
               }
             ]
           },
-          "unit": "celsius"
+          "unit": "kwatt"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
-        "w": 9,
-        "x": 14,
+        "h": 10,
+        "w": 2,
+        "x": 22,
         "y": 0
       },
-      "id": 20,
+      "id": 6,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
+        "showPercentChange": false,
+        "text": {},
+        "textMode": "auto",
+        "wideLayout": true
       },
+      "pluginVersion": "11.2.0",
       "targets": [
         {
-          "alias": "AC",
+          "alias": "Load",
           "datasource": {
             "type": "influxdb",
             "uid": "PBDC07BC01591819D"
           },
           "groupBy": [],
-          "hide": false,
           "measurement": "inverter",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT \"bat_amps\" FROM \"autogen\".\"logs\" WHERE $timeFilter",
-          "rawQuery": false,
+          "query": "SELECT max(\"iAccumulatedLoadPower\") - min(\"iAccumulatedLoadPower\") FROM \"inverter\" WHERE $timeFilter",
+          "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "iRadiatorTemperature"
+                  "iAccumulatedLoadPower"
                 ],
                 "type": "field"
+              },
+              {
+                "params": [],
+                "type": "last"
               }
             ]
           ],
@@ -837,24 +840,28 @@
           "measurement": "inverter",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT \"bat_amps\" FROM \"autogen\".\"logs\" WHERE $timeFilter",
-          "rawQuery": false,
+          "query": "SELECT max(\"pvAccumulatedPower\") - min(\"pvAccumulatedPower\") FROM \"inverter\" WHERE $timeFilter",
+          "rawQuery": true,
           "refId": "B",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "pvRadiatorTemperature"
+                  "pvAccumulatedPower"
                 ],
                 "type": "field"
+              },
+              {
+                "params": [],
+                "type": "last"
               }
             ]
           ],
           "tags": []
         },
         {
-          "alias": "rPi",
+          "alias": "Self",
           "datasource": {
             "type": "influxdb",
             "uid": "PBDC07BC01591819D"
@@ -864,25 +871,72 @@
           "measurement": "inverter",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT \"bat_amps\" FROM \"autogen\".\"logs\" WHERE $timeFilter",
-          "rawQuery": false,
+          "query": "SELECT max(\"iAccumulatedSelfusePower\") - min(\"iAccumulatedSelfusePower\") FROM \"inverter\" WHERE $timeFilter",
+          "rawQuery": true,
           "refId": "C",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "rpiTemperature"
+                  "iAccumulatedSelfusePower"
                 ],
                 "type": "field"
+              },
+              {
+                "params": [],
+                "type": "last"
               }
             ]
           ],
           "tags": []
+        },
+        {
+          "alias": "Discharge",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PBDC07BC01591819D"
+          },
+          "groupBy": [],
+          "hide": false,
+          "measurement": "inverter",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT max(\"iAccumulatedDischargerPower\") - min(\"iAccumulatedDischargerPower\") FROM \"inverter\" WHERE $timeFilter",
+          "rawQuery": true,
+          "refId": "D",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "iAccumulatedSelfusePower"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "last"
+              }
+            ]
+          ],
+          "tags": []
+        },
+        {
+          "alias": "Estimate",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PBDC07BC01591819D"
+          },
+          "hide": false,
+          "query": "SELECT sum(\"fPVEstimate\")/60000 FROM \"inverter\" WHERE $timeFilter fill(null)",
+          "rawQuery": true,
+          "refId": "E",
+          "resultFormat": "time_series"
         }
       ],
-      "title": "Temperature",
-      "type": "timeseries"
+      "title": "Accumulated",
+      "type": "stat"
     },
     {
       "datasource": {
@@ -1015,25 +1069,28 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 4,
-        "x": 10,
+        "w": 2,
+        "x": 18,
         "y": 5
       },
       "id": 15,
       "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
+        "displayMode": "gradient",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "vertical",
         "reduceOptions": {
           "calcs": [
-            "lastNotNull"
+            "max"
           ],
           "fields": "",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
       },
       "pluginVersion": "11.2.0",
       "targets": [
@@ -1048,7 +1105,7 @@
           "measurement": "inverter",
           "orderByTime": "ASC",
           "policy": "autogen",
-          "query": "SELECT last(\"pvVoltage\") FROM \"autogen\".\"inverter\" WHERE $timeFilter",
+          "query": "SELECT \"pvVoltage\" FROM \"autogen\".\"inverter\" WHERE $timeFilter",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -1079,7 +1136,7 @@
           "measurement": "inverter",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT last(\"pvChargerPower\") / last(\"pvVoltage\") FROM \"inverter\" WHERE $timeFilter",
+          "query": "SELECT \"pvChargerPower\" / \"pvVoltage\" FROM \"inverter\" WHERE $timeFilter",
           "rawQuery": true,
           "refId": "B",
           "resultFormat": "time_series",
@@ -1101,7 +1158,7 @@
         }
       ],
       "title": "PV",
-      "type": "gauge"
+      "type": "bargauge"
     },
     {
       "datasource": {
@@ -1109,98 +1166,64 @@
         "type": "influxdb",
         "uid": "PBDC07BC01591819D"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": true,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "right",
-            "axisSoftMax": 230,
-            "axisSoftMin": 210,
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 40,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": 120000,
-            "lineInterpolation": "smooth",
-            "lineWidth": 1,
-            "pointSize": 7,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "area"
-            }
+            "mode": "thresholds"
           },
           "mappings": [],
+          "max": 50,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
+                "color": "green",
                 "value": null
               },
               {
-                "color": "yellow",
-                "value": 170
+                "color": "#EAB839",
+                "value": 50
               },
               {
-                "color": "green",
-                "value": 184
-              },
-              {
-                "color": "yellow",
-                "value": 253
-              },
-              {
-                "color": "orange",
-                "value": 280
+                "color": "red",
+                "value": 80
               }
             ]
-          },
-          "unit": "volt"
+          }
         },
         "overrides": []
       },
       "gridPos": {
         "h": 5,
-        "w": 9,
-        "x": 14,
+        "w": 2,
+        "x": 20,
         "y": 5
       },
-      "id": 11,
+      "id": 18,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
+        "displayMode": "gradient",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
       },
+      "pluginVersion": "11.2.0",
       "targets": [
         {
-          "alias": "Grid",
+          "alias": "AC",
           "datasource": {
             "type": "influxdb",
             "uid": "PBDC07BC01591819D"
@@ -1208,53 +1231,86 @@
           "groupBy": [],
           "measurement": "inverter",
           "orderByTime": "ASC",
-          "policy": "autogen",
-          "query": "SELECT \"ac\" FROM \"autogen\".\"logs\" WHERE $timeFilter",
-          "rawQuery": false,
+          "policy": "default",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "iGridVoltage"
+                  "iRadiatorTemperature"
                 ],
                 "type": "field"
+              },
+              {
+                "params": [],
+                "type": "max"
               }
             ]
           ],
           "tags": []
         },
         {
-          "alias": "Inverter",
+          "alias": "PV",
           "datasource": {
             "type": "influxdb",
             "uid": "PBDC07BC01591819D"
           },
           "groupBy": [],
-          "hide": true,
+          "hide": false,
           "measurement": "inverter",
           "orderByTime": "ASC",
-          "policy": "autogen",
-          "query": "SELECT \"ac\" FROM \"autogen\".\"logs\" WHERE $timeFilter",
-          "rawQuery": false,
+          "policy": "default",
           "refId": "B",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "iVoltage"
+                  "pvRadiatorTemperature"
                 ],
                 "type": "field"
+              },
+              {
+                "params": [],
+                "type": "max"
+              }
+            ]
+          ],
+          "tags": []
+        },
+        {
+          "alias": "rPi",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "PBDC07BC01591819D"
+          },
+          "groupBy": [],
+          "hide": false,
+          "measurement": "inverter",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "refId": "C",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "rpiTemperature"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "max"
               }
             ]
           ],
           "tags": []
         }
       ],
-      "title": "Input AC Voltage",
-      "type": "timeseries"
+      "title": "Temperature",
+      "type": "bargauge"
     },
     {
       "datasource": {
@@ -1262,7 +1318,7 @@
         "type": "influxdb",
         "uid": "PBDC07BC01591819D"
       },
-      "description": "<table>\n<tr><td>13.5v</td><td>100%</td></tr>\n<tr><td>13.4v</td><td>99%</td></tr>\n<tr><td>13.3v</td><td>90%</td></tr>\n<tr><td>13.2v</td><td>70%</td></tr>\n<tr><td>13.1v</td><td>40%</td></tr>\n<tr><td>13.0v</td><td>30%</td></tr>\n<tr><td>12.8v</td><td>10%</td></tr>\n<tr><td>10.8v</td><td>1%</td></tr>\n</table>",
+      "description": "<table>\n<tr><td>13.5v</td><td>100%</td></tr>\n<tr><td>13.4v</td><td>99%</td></tr>\n<tr><td>13.3v</td><td>90-70%</td></tr>\n<tr><td>13.0v</td><td>30%</td></tr>\n<tr><td>12.8v</td><td>10%</td></tr>\n<tr><td>10.8v</td><td>1%</td></tr>\n</table>",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1327,15 +1383,15 @@
                 "value": 13
               },
               {
-                "color": "green",
+                "color": "super-light-green",
                 "value": 13.2
               },
               {
-                "color": "yellow",
+                "color": "green",
                 "value": 13.8
               },
               {
-                "color": "orange",
+                "color": "#EAB839",
                 "value": 14.1
               },
               {
@@ -1363,8 +1419,12 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "transparent",
+                      "color": "green",
                       "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
                     }
                   ]
                 }
@@ -1375,9 +1435,9 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 10,
+        "w": 18,
         "x": 0,
-        "y": 8
+        "y": 10
       },
       "id": 3,
       "options": {
@@ -1435,175 +1495,6 @@
       ],
       "title": "Battery",
       "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "default": true,
-        "type": "influxdb",
-        "uid": "PBDC07BC01591819D"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "decimals": 1,
-          "links": [
-            {
-              "title": "Drill down",
-              "url": "http://inverter.local:3000/d/fdzhjy8x9jldsc/accumulated?orgId=1"
-            }
-          ],
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "kwatt"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Load"
-            },
-            "properties": [
-              {
-                "id": "decimals",
-                "value": 1
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 2,
-        "x": 10,
-        "y": 10
-      },
-      "id": 21,
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "text": {},
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "11.2.0",
-      "targets": [
-        {
-          "alias": "Load",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "PBDC07BC01591819D"
-          },
-          "groupBy": [],
-          "measurement": "inverter",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "query": "SELECT max(\"iAccumulatedLoadPower\") - min(\"iAccumulatedLoadPower\") FROM \"inverter\" WHERE $timeFilter",
-          "rawQuery": true,
-          "refId": "A",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "iAccumulatedLoadPower"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "last"
-              }
-            ]
-          ],
-          "tags": []
-        },
-        {
-          "alias": "PV",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "PBDC07BC01591819D"
-          },
-          "groupBy": [],
-          "hide": false,
-          "measurement": "inverter",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "query": "SELECT max(\"pvAccumulatedPower\") - min(\"pvAccumulatedPower\") FROM \"inverter\" WHERE $timeFilter",
-          "rawQuery": true,
-          "refId": "B",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "pvAccumulatedPower"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "last"
-              }
-            ]
-          ],
-          "tags": []
-        },
-        {
-          "alias": "Battery",
-          "datasource": {
-            "type": "influxdb",
-            "uid": "PBDC07BC01591819D"
-          },
-          "groupBy": [],
-          "hide": false,
-          "measurement": "inverter",
-          "orderByTime": "ASC",
-          "policy": "default",
-          "query": "SELECT max(\"iAccumulatedDischargerPower\") - min(\"iAccumulatedDischargerPower\") FROM \"inverter\" WHERE $timeFilter",
-          "rawQuery": true,
-          "refId": "C",
-          "resultFormat": "time_series",
-          "select": [
-            [
-              {
-                "params": [
-                  "iAccumulatedSelfusePower"
-                ],
-                "type": "field"
-              },
-              {
-                "params": [],
-                "type": "last"
-              }
-            ]
-          ],
-          "tags": []
-        }
-      ],
-      "title": "Total",
-      "type": "stat"
     },
     {
       "datasource": {
@@ -1698,7 +1589,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "/.* Warning/"
+              "options": "Warning"
             },
             "properties": [
               {
@@ -1713,12 +1604,12 @@
         ]
       },
       "gridPos": {
-        "h": 8,
-        "w": 11,
-        "x": 12,
+        "h": 9,
+        "w": 6,
+        "x": 18,
         "y": 10
       },
-      "id": 22,
+      "id": 17,
       "options": {
         "alignValue": "left",
         "legend": {
@@ -1980,7 +1871,7 @@
               },
               {
                 "color": "red",
-                "value": 100
+                "value": 105
               }
             ]
           },
@@ -1996,22 +1887,18 @@
               {
                 "id": "unit",
                 "value": "amp"
-              },
-              {
-                "id": "custom.axisSoftMax",
-                "value": 1
               }
             ]
           }
         ]
       },
       "gridPos": {
-        "h": 5,
-        "w": 10,
+        "h": 4,
+        "w": 18,
         "x": 0,
-        "y": 13
+        "y": 15
       },
-      "id": 19,
+      "id": 16,
       "options": {
         "legend": {
           "calcs": [],
@@ -2057,25 +1944,57 @@
             "type": "influxdb",
             "uid": "PBDC07BC01591819D"
           },
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
           "hide": false,
+          "measurement": "inverter",
+          "orderByTime": "ASC",
+          "policy": "default",
           "query": "SELECT (\"pvChargerPower\") /(\"pvVoltage\") FROM \"inverter\" WHERE $timeFilter",
           "rawQuery": true,
           "refId": "B",
-          "resultFormat": "time_series"
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": []
         }
       ],
       "title": "PV",
       "type": "timeseries"
     }
   ],
-  "refresh": "30s",
+  "refresh": "",
   "schemaVersion": 39,
   "tags": [],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-1h",
+    "from": "now/d",
     "to": "now"
   },
   "timepicker": {
@@ -2106,8 +2025,8 @@
     "type": "timepicker"
   },
   "timezone": "browser",
-  "title": "Home LiFePo12",
-  "uid": "cdz3eu72pasjke",
-  "version": 25,
+  "title": "Day LiFePo12",
+  "uid": "de062ngp034zkc",
+  "version": 11,
   "weekStart": ""
 }
