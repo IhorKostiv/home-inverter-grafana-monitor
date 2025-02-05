@@ -30,8 +30,6 @@ class UPS(object):
         self.pvChargerCurrent: float = 0.0
         self.pvChargerPower: int = 0
         self.pvRadiatorTemperature: int = 0
-#        self.pvBatteryRelay: str = ""
-#        self.pvRelay: str = ""
         self.pvError: str = ""
         self.pvWarning: str = ""
         self.pvAccumulatedPower: float = 0.0
@@ -48,9 +46,6 @@ class UPS(object):
         self.iSGrid: int = 0
         self.iSLoad: int = 0
         self.iRadiatorTemperature: int = 0
- #       self.iRelayState: str = ""
- #       self.iGridRelayState: str = ""
- #       self.iLoadRelayState: str = ""
         self.iAccumulatedLoadPower: float = 0.0
         self.iAccumulatedDischargerPower: float = 0.0
         self.iAccumulatedSelfusePower: float = 0.0
@@ -142,8 +137,8 @@ class UPSmgr(UPS):
                     return self.moreSolar()
                 #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
             case "SBU": # PV full production mode
-                if (self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2) or (self.iPGrid > self.iPLoad): # battery is half depleted discharging or solar power not enough while charging
-                    # actually below better to be more sophisticated formula accounting MPPT since voltage depend on produced power
+                if self.iPGrid > self.iPLoad and self.pvChargerPower < self.iPLoad: # solar power not enough
+                    # actually below and above better to be more sophisticated formula accounting MPPT since voltage depend on produced power
                     if solarVoltageOff > 0 and self.pvVoltage < solarVoltageOff:
                         print(f"Set Solar Off by Voltage {self.pvVoltage} < {solarVoltageOff}")
                         return self.saveBattery()
@@ -165,7 +160,7 @@ class UPSmodbus(UPS):
 
 class UPSoffgrid(UPSmgr):
     def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
-        if self.iPInverter == 0:
+        if self.iPInverter == 0: # we are on grid, check if there can be more solar power
             return super().setBestEnergyUse(solarVoltageOn, solarVoltageOff)
     def moreSolar(self):
         return super().moreSolar() and self.setSBU()
@@ -195,13 +190,13 @@ class UPSserial(UPS):
             self.scc.open()
 
     def readSerial(self, cmd: str):
-        if hasattr(self, 'scc'):
+        if hasattr(self, 'scc'): # read data from serial device
             self.resetSerial()
             self.scc.write(bytes.fromhex(cmd))
             self.scc.flush()
             r = self.scc.readline()
             self.resetSerial()     
-        else:
+        else: # enter values manually for debug and test purposes
             r = input(f"Enter message for {bytes.fromhex(cmd[:-6]).decode('utf-8')}: ").encode('utf-8')
             #todo: convert from hex if needed
         return r
