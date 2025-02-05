@@ -33,8 +33,8 @@ How to use:
 
 # Supported Inverters
 
-* GreenCell `GreenCell`
-* Axioma `Axioma`
+* GreenCell `greenCell.py`
+* Axioma `axioma.py`
 
 # But I have different model
 
