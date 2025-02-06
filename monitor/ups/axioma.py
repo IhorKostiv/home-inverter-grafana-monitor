@@ -22,7 +22,7 @@ cmdUtility = "504f503030c2480d" # POP00
 
 compatibleProtocols = ['(PI30']
 
-def extract_values(input_string):
+def extract_values(input_string): # extracting values from response into array
     # Define the regular expression pattern to match numeric values (including decimal points)
     pattern = r"\d+\.\d+|\d+"
     
@@ -31,7 +31,7 @@ def extract_values(input_string):
     
     return matches
 
-def axiomaCustomCRC():
+def axiomaCustomCRC(): # custom CRC function for Axioma inverter
     polynomial = 0x11021
     initial_value = 0x0000
     final_xor = 0x0000
@@ -40,7 +40,7 @@ def axiomaCustomCRC():
     crc_func = crcmod.mkCrcFun(polynomial, initCrc=initial_value, xorOut=final_xor, rev=reflect)
     return crc_func
 
-def incrementSpecialChar(crc):
+def incrementSpecialChar(crc): # apecial characters are being replaced
     # Define the set of special characters to check against
     specialChars = {0x28, 0x0d, 0x0a}
 
@@ -55,19 +55,19 @@ def incrementSpecialChar(crc):
     # Combine the high and low bytes back into a two-byte value
     return (hb << 8) | lb
 
-def axiomaCRC(data):
+def axiomaCRC(data): # CRC function for Axioma inverter
     crc_func = axiomaCustomCRC()
     crc_value = incrementSpecialChar(crc_func(data))
     return crc_value.to_bytes(2, byteorder='big')
 
-class Axioma(UPSserial, UPShybrid):
+class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axioma inverter
         
-    def readSerial(self, cmd: str, retryCount: int, breakOnEmpty: bool = False): # with CRC check
+    def readSerial(self, cmd: str, retryCount: int, breakOnEmpty: bool = False): # read data with CRC check
         
         if retryCount <= 0:
             raise IOError(f"Error reading RS232 port {cmd}")
 
-        if hasattr(self, 'scc'):
+        if hasattr(self, 'scc'): # check if we are live in production or unit testing
             r = super().readSerial(cmd)
         else:
             if cmd.lower() in utMessages:
@@ -96,10 +96,10 @@ class Axioma(UPSserial, UPShybrid):
         
         return r[:-3].decode('utf-8', errors='ignore')
 
-    def setSerial(self, cmd: str):
+    def setSerial(self, cmd: str): # send command to change values within inverter
         return self.readSerial(cmd, cmdRetryCount) == '(ACK'
 
-    def batCurrent(self, charge: float, discharge: float):
+    def batCurrent(self, charge: float, discharge: float): # merge battery current into one variable instead of two
         return discharge if discharge > 0.0 else -charge
     
     def __init__(self, isDebug: bool, device_path: str):
@@ -169,7 +169,7 @@ class Axioma(UPSserial, UPShybrid):
         """
         return v
 
-    def readQPIGS(self): # done: Device general status parameters inquiry
+    def readQPIGS(self): # Device general status parameters inquiry
         
         pvWorkStates = { '000': "Off", '100': "?c", '110': "Sc", '101': "Gc", '111': "SGc" }
     
@@ -290,7 +290,7 @@ class Axioma(UPSserial, UPShybrid):
 
         fault = len(r) > 1 and r[1] != bitOK
 
-        for index, attr, message, *optional in messages:
+        for index, attr, message, *optional in messages: # converting bitmask to text
             if len(r) > index and r[index] != bitOK:
                 if optional and not fault:
                     setattr(self, optional[0], addText(getattr(self, optional[0], ""), message))
@@ -328,7 +328,7 @@ class Axioma(UPSserial, UPShybrid):
       iAccumulatedDischargerPower = (soc[47] * 1000) + (soc[48] / 10.0) # 25247: ["Accumulated discharger power high", 1000, "kWh"],
       iAccumulatedSelfusePower = (soc[55] * 1000) + (soc[56] / 10.0 )    # 25255: ["Accumulated self_use power high", 1000, "kWh"], # 25256: ["Accumulated self_use power low", 0.1, "kWh"],
     """  
-    def setOutputSource(self, mode: str, cmd: str):
+    def setOutputSource(self, mode: str, cmd: str): # change inverter output source mode
         r = self.setSerial(cmd)
         print(f"{mode} {cmd} set {'OK' if r else 'Fail'}")
         return r
@@ -338,17 +338,17 @@ class Axioma(UPSserial, UPShybrid):
     Device: (ACK<CRC><cr> if device accepts this command, otherwise, responds (NAK<CRC><cr>
     Set output source priority, 00 for UtilitySolarBat, 01 for SolarUtilityBat, 02 for SolarBatUtility
     """
-    def setSBU(self): # POP02 504f503032e20a0d -> 0x504f503032e20b0d
+    def setSBU(self): # Solar Battery Utility POP02 504f503032e20a0d -> 0x504f503032e20b0d
         return super().setSBU() and self.setOutputSource("SBU", cmdSBU)
 
-    def setSUB(self): # POP01 504f503031d2690d
+    def setSUB(self): # Solar Utility Battery POP01 504f503031d2690d
         return super().setSUB() and self.setOutputSource("SUB", cmdSUB)
 
-    def setUtility(self): # POP00 504f503030c2480d
+    def setUtility(self): # Utility first POP00 504f503030c2480d
         return super().setUtility() and self.setOutputSource("Utility", cmdUtility)
 
 # unit test section
-def utRead(cmd: str):
+def utRead(cmd: str): # ask for inverter response from console
     r = input(f"Enter message for {bytes.fromhex(cmd[:-6]).decode('utf-8')}: ").encode('utf-8')
     if r.lower() not in [b'', b'exit']:
         #todo: convert from hex if needed
@@ -356,7 +356,7 @@ def utRead(cmd: str):
     return r
 
 # Example usage
-if __name__ == "__main__":
+if __name__ == "__main__": # testing and debugging
     utMessages = {
         "515049beac0d": b'(PI30\x9a\x0b\r', # QPI
         "5150494753b7a90d": b'(221.9 49.9 220.7 49.9 0352 0318 012 404 26.20 000 075 0026 02.5 126.7 00.00 00001 00010000 00 01 00328 010 0 01 0000\x19\xe8\r', # QPIGS

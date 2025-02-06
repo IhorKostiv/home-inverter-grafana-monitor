@@ -3,10 +3,10 @@ import time
 import minimalmodbus
 import serial
 
-def addText(t1:str, t2: str):
+def addText(t1:str, t2: str): # used to concatenate strings in warning and error messages to add comma separation where needed
     return t1 + ", " + t2 if t1 != "" else t2
 
-class UPS(object):
+class UPS(object): # base class for everything
     def __init__(self, isDebug: bool):
         if platform.system() == "Linux": # read Raspberry CPU temperature
             try:
@@ -108,7 +108,7 @@ class UPS(object):
             }
         ]
 
-class UPSmgr(UPS):
+class UPSmgr(UPS): # base class for smarter solar power and battery management (use most of solar but still save battery)
     def setSBU(self):
         if self.isDebug:
             print("set SBU")
@@ -137,7 +137,7 @@ class UPSmgr(UPS):
                     return self.moreSolar()
                 #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
             case "SBU": # PV full production mode
-                if self.iPGrid > self.iPLoad and self.pvChargerPower < self.iPLoad: # solar power not enough
+                if self.iPGrid >= self.iPLoad and self.pvChargerPower < self.iPLoad: # solar power not enough
                     # actually below and above better to be more sophisticated formula accounting MPPT since voltage depend on produced power
                     if solarVoltageOff > 0 and self.pvVoltage < solarVoltageOff:
                         print(f"Set Solar Off by Voltage {self.pvVoltage} < {solarVoltageOff}")
@@ -145,20 +145,38 @@ class UPSmgr(UPS):
         return False
 
 
-class UPSmodbus(UPS):
+class UPSmodbus(UPS): # base class for modbus communication (USB)
     def __init__(self, isDebug: bool, device_path: str, device_id: int, baud_rate: int):
         super().__init__(isDebug)
 
-        self.device_path = device_path
-        self.device_id = device_id
-        self.baud_rate = baud_rate
+        if device_path != "SIMULATOR":
+            self.scc = minimalmodbus.Instrument(device_path, device_id)
+            self.scc.serial.baudrate = baud_rate
+            self.scc.serial.timeout = 0.5
+            self.scc.debug = isDebug
 
-        self.scc = minimalmodbus.Instrument(device_path, device_id)
-        self.scc.serial.baudrate = baud_rate
-        self.scc.serial.timeout = 0.5
-        self.scc.debug = isDebug
+    def __del__(self):
+        if hasattr(self, 'scc'):
+            self.scc.serial.close()
 
-class UPSoffgrid(UPSmgr):
+    def readRegister(self, register: int, length: int):
+        if hasattr(self, 'scc'): # read data from USB device
+            time.sleep(0.02) # let interface to calm down
+            r = self.scc.read_registers(register, length)
+        else: # enter values manually for debug and test purposes
+            r = input(f"Enter message for {register}: ").encode('utf-8')
+        return r
+
+    def writeRegister(self, register: int, value: int):
+        if hasattr(self, 'scc'): # read data from USB device
+            time.sleep(0.1) # just in case, let interface calm down
+            return self.scc.write_register(register, value)
+        else:
+            print(f'write register {register} value {value}')
+            return
+
+
+class UPSoffgrid(UPSmgr): # base class for off grid type invertors
     def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
         if self.iPInverter == 0: # we are on grid, check if there can be more solar power
             return super().setBestEnergyUse(solarVoltageOn, solarVoltageOff)
@@ -167,7 +185,7 @@ class UPSoffgrid(UPSmgr):
     def saveBattery(self):
         return super().saveBattery() and self.setUtility()
 
-class UPSserial(UPS):
+class UPSserial(UPS): # base class for serial communication (RS232)
     def __init__(self, isDebug: bool, device_path: str, baud_rate: int):
         super().__init__(isDebug)
 
@@ -202,7 +220,7 @@ class UPSserial(UPS):
         return r
 
 
-class UPShybrid(UPSmgr):
+class UPShybrid(UPSmgr): # base class for hybrid type invertors
     def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
         if self.pvChargerPower < self.iPLoad: # likely we work on battery or not fully utilise PV potential
             return super().setBestEnergyUse(solarVoltageOn, solarVoltageOff)
