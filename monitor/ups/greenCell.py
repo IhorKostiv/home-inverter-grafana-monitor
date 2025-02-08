@@ -31,7 +31,7 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
         if hasattr(self, 'scc'): # check if we are live in production or unit testing
             r = super().readRegister(register, length)
             #if self.isDebug:
-            print(f"{datetime.now()}\t{debugMessage} Message: {r}")
+            print(f"{datetime.now().strftime("%Y-%m-%d %H:%M")} {debugMessage}: {r}")
         else:
             if register in utMessages:
                 r = utMessages[register]
@@ -42,7 +42,7 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
     def readInverterControl(self): # read inverter control message values
         icEnergyUses = { 1: "SBU", 2: "SUB", 3: "UTI", 4: "SOL"}
 
-        ic = self.readRegister(20100, 45, "iControl")
+        ic = self.readRegister(20100, 45, "iC")
                                                # 20101	RW	Inverter offgrid work enable	0：OFF 1：ON  
                                                # 20102	RW	Inverter output voltage Set	220.0V-240.0V
                                                # 20103	RW	Inverter output frequency Set	50.00Hz/60.00Hz
@@ -236,7 +236,7 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
         6: "Grid charging"
       }
 
-        i = self.readRegister(25200, 75, "Inverter")
+        i = self.readRegister(25200, 75, "I")
        
         self.iWorkState = iWorkStates[i[1]] # 25201
         self.iBatteryVoltage = i[5] / 10.0  # 25205: ["Battery voltage", 0.1, "V"],
