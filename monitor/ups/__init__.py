@@ -33,6 +33,7 @@ class UPS(object): # base class for everything
         self.pvError: str = ""
         self.pvWarning: str = ""
         self.pvAccumulatedPower: float = 0.0
+        self.pvReturnGrid: int = 0
 
         self.iWorkState: str =""
         self.iBatteryVoltage: float = 0.0
@@ -95,7 +96,8 @@ class UPS(object): # base class for everything
             ("iWarning", ''),
             ("rpiTemperature", 0),
             ("tRadiatorTemperature", 0),
-            ("bRadiatorTemperature", 0)
+            ("bRadiatorTemperature", 0),
+            ("pvReturnGrid", 0)
         ]
         for key, value in optionalValues:
             self.addNotEmpty(f, key, value)

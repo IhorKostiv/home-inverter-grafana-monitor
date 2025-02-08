@@ -68,6 +68,7 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
             raise IOError(f"Error reading RS232 port {cmd}")
 
         if hasattr(self, 'scc'): # check if we are live in production or unit testing
+            time.sleep(0.5)
             r = super().readSerial(cmd)
         else:
             if cmd.lower() in utMessages:
@@ -109,13 +110,9 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
             raise TypeError("Incompatible inverter protocol")
 
         self.readQPIGS()
-        time.sleep(0.5)
         self.readQPIRI()
-        time.sleep(0.5)
         self.readQMOD()
-        time.sleep(0.5)
         self.readQPIWS()
-        time.sleep(0.5)
         self.readQ1()
         
     def readQPI(self): # Device Protocol validation
@@ -194,10 +191,10 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
             self.iBattCurrent = self.batCurrent(float(v[9]), float(v[15]))  # KKK Battery charging current K is an Integer ranging from 0 to 9. The units is A.
                                             # OOO Battery capacity X is an Integer ranging from 0 to 9. The units is %.
             self.pvRadiatorTemperature = self.iRadiatorTemperature = int(v[11]) # TTTT Inverter heat sink temperature T is an integer ranging from 0 to 9. The units is ℃（NTC A/D value for Axpert 1~3K）
-            self.pvChargerCurrent = float(v[12])        # EE.E PV1 Input current E is an Integer ranging from 0 to 9. The units is A.
-            self.pvVoltage = float(v[13])               # UUU.U PV1 Input voltage U is an Integer ranging from 0 to 9. The units is V.
-            self.pvBatteryVoltage = float(v[14])        # WW.WW Battery voltage from SCCW is an Integer ranging from 0 to 9. The units is V.
-            # self.iBattCurrent = int(v[15])            # PPPPP Battery discharge current P is an Integer ranging from 0 to 9. The units is A.
+            self.pvChargerCurrent = float(v[12])    # EE.E PV1 Input current E is an Integer ranging from 0 to 9. The units is A.
+            self.pvVoltage = float(v[13])           # UUU.U PV1 Input voltage U is an Integer ranging from 0 to 9. The units is V.
+            self.pvBatteryVoltage = float(v[14])    # WW.WW Battery voltage from SCCW is an Integer ranging from 0 to 9. The units is V.
+            # self.iBattCurrent = int(v[15])        # PPPPP Battery discharge current P is an Integer ranging from 0 to 9. The units is A.
                                             # b7b6b5b4b3b2b1b0  Device status b7: add SBU priority version, 1: yes,0: no
                                             # b6: configuration status: 1: Change 0: unchanged
                                             # b5: SCC firmware version 1: Updated 0: unchanged
@@ -220,15 +217,20 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
                     self.pvWorkState = self.pvWorkState + "+"   
                 case '0':
                     self.pvWorkState = self.pvWorkState + "-"
-                                                            # b8: flag for dustproof installed(1-dustproof installed,0-no dustproof, only available for Axpert V series)
-                                        # Y Solar feed to grid status (reserved feature) 0: normal 1: solar feed to grid
-                                        # ZZ Set country customized regulation (reserved feature) 00: India 01: Germany 02: South America
-                                        # AAAA Solar feed to grid power (reserved feature) A is an Integer ranging from 0 to 9. The units is W. # Device general status parameters inquiry
+                                            # b8: flag for dustproof installed(1-dustproof installed,0-no dustproof, only available for Axpert V series)
+                                            # Y Solar feed to grid status (reserved feature) 0: normal 1: solar feed to grid
+                                            # ZZ Set country customized regulation (reserved feature) 00: India 01: Germany 02: South America
+                                            # AAAA Solar feed to grid power (reserved feature) A is an Integer ranging from 0 to 9. The units is W. 
+                                            # Device general status parameters inquiry
         self.iBattPower = self.iBattCurrent * self.iBatteryVoltage
         self.iPInverter = int(self.pvChargerPower + self.iBattPower)
-        self.iPGrid = self.iPLoad - self.iPInverter + 65 - (int(v[23] if len(v) > 23 else 0)) # include self consumption approximate and exclude return to grid power
+        if len(v) > 23:
+            self.pvReturnGrid = int(v[23])
+        # todo: there shall be more sophisticated formula accounting VA and VAr
+        self.iPGrid = int(self.iPLoad - (self.iPInverter * .95) + 65 - self.pvReturnGrid) # include self consumption approximate, efficiency and exclude return to grid power
+        self.iSGrid = int(self.iSLoad * self.iPGrid / self.iPLoad) # hopefully it is proportional
         if self.iPInverter < 0:
-            self.iPInverter = 0
+            self.iPInverter = 0 # it happens when battery is charged from grid
         #if self.iPGrid < 0:
         #    self.iPGrid = 0
         return v
