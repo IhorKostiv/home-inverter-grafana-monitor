@@ -1,4 +1,4 @@
-import time
+from datetime import datetime
 if __name__ == "__main__":
 #    import re
     from __init__ import UPSmodbus, UPSoffgrid, addText
@@ -30,8 +30,8 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
     def readRegister(self, register: int, length: int, debugMessage: str):
         if hasattr(self, 'scc'): # check if we are live in production or unit testing
             r = super().readRegister(register, length)
-            if self.isDebug:
-                print(f"{debugMessage} Message: {r}")
+            #if self.isDebug:
+            print(f"{datetime.now()}\t{debugMessage} Message: {r}")
         else:
             if register in utMessages:
                 r = utMessages[register]
@@ -361,19 +361,7 @@ if __name__ == "__main__": # testing and debugging
                 22535, # 25274: ["Battery current", 1, "A"], bitmasked
                 0,0] # 75 values expected
     }
-#    while True:
+
     i: UPSoffgrid = GreenCell(True, "SIMULATOR")
     print(i.jSON("GreenCell"))
-    i.setBestEnergyUse(50, 44)
-"""
-        for r in utMessages:
-            s = utRead(r)
-            match s.lower():
-                case b'':
-                    pass
-                case b'exit':
-                    exit()
-                case _:
-                    a = re.findall(b'\d+\.\d+|\d+', s)
-                    utMessages[r] = [int(v.decode('utf-8')) for v in a]
-"""
+    i.setBestEnergyUse(50.5, 44)
