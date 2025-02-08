@@ -142,7 +142,7 @@ class UPSmgr(UPS): # base class for smarter solar power and battery management (
                 if self.iPGrid >= self.iPLoad and self.pvChargerPower < self.iPLoad: # solar power not enough
                         print(f"Set Solar Off by Power {self.iPGrid} >= {self.iPLoad} > {self.pvChargerPower}")
                         return self.saveBattery()
-                if self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2    # actually below and above better to be more sophisticated formula accounting MPPT since voltage depend on produced power
+                if self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2: # actually below and above better to be more sophisticated formula accounting MPPT since voltage depend on produced power
                     if solarVoltageOff > 0 and self.pvVoltage < solarVoltageOff:
                         print(f"Set Solar Off by Voltage {self.pvVoltage} < {solarVoltageOff}")
                         return self.saveBattery()

@@ -31,7 +31,7 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
         if hasattr(self, 'scc'): # check if we are live in production or unit testing
             r = super().readRegister(register, length)
             #if self.isDebug:
-            print(f"{datetime.now().strftime("%Y-%m-%d %H:%M")} {debugMessage}: {r}")
+            print(f"{datetime.now().strftime('%Y-%m-%d %H:%M')} {debugMessage}: {r}")
         else:
             if register in utMessages:
                 r = utMessages[register]
