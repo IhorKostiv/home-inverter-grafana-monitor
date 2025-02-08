@@ -140,6 +140,7 @@ class UPSmgr(UPS): # base class for smarter solar power and battery management (
                 #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
             case "SBU": # PV full production mode
                 if self.iPGrid >= self.iPLoad and self.pvChargerPower < self.iPLoad: # solar power not enough
+                    if solarVoltageOn > 0 and self.pvVoltage < solarVoltageOn:
                         print(f"Set Solar Off by Power {self.iPGrid} >= {self.iPLoad} > {self.pvChargerPower}")
                         return self.saveBattery()
                 if self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2: # actually below and above better to be more sophisticated formula accounting MPPT since voltage depend on produced power

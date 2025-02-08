@@ -77,7 +77,7 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
                 r = utRead(cmd)
 
         #if self.isDebug: 
-        print(f"{datetime.now()}\t{cmd}\t{r}") # format usable for putting into Excel (hopefully)
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M')}\t{cmd}\t{r}") # format usable for putting into Excel (hopefully)
         
         if len(r) < 3 and not breakOnEmpty: # connection broken, reopen and re-read one more time
             self.reopenSerial()
