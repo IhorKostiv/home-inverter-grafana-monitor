@@ -101,7 +101,7 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
         return self.readSerial(cmd, cmdRetryCount) == '(ACK'
 
     def batCurrent(self, charge: float, discharge: float): # merge battery current into one variable instead of two
-        return discharge if discharge > 0.0 else -charge
+        return discharge - charge
     
     def __init__(self, isDebug: bool, device_path: str):
         super().__init__(isDebug, device_path, 2400)
@@ -223,11 +223,11 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
                                             # AAAA Solar feed to grid power (reserved feature) A is an Integer ranging from 0 to 9. The units is W. 
                                             # Device general status parameters inquiry
         self.iBattPower = self.iBattCurrent * self.iBatteryVoltage
-        self.iPInverter = int(self.pvChargerPower + self.iBattPower)
+        self.iPInverter = int((self.pvChargerPower + self.iBattPower) * (.95 if self.pvChargerPower > -self.iBattPower else 1)) # approx efficiency
         if len(v) > 23:
             self.pvReturnGrid = int(v[23])
         # todo: there shall be more sophisticated formula accounting VA and VAr
-        self.iPGrid = int(self.iPLoad - (self.iPInverter * .95) + 65 - self.pvReturnGrid) # include self consumption approximate, efficiency and exclude return to grid power
+        self.iPGrid = int(self.iPLoad - self.iPInverter + 65 - self.pvReturnGrid) # include self consumption approximate and exclude return to grid power
         self.iSGrid = int(self.iSLoad * self.iPGrid / self.iPLoad) # hopefully it is proportional
         if self.iPInverter < 0:
             self.iPInverter = 0 # it happens when battery is charged from grid
