@@ -134,17 +134,17 @@ class UPSmgr(UPS): # base class for smarter solar power and battery management (
             print(f"Check Solar Voltage {solarVoltageOff} > {self.pvVoltage} > {solarVoltageOn}")
         match self.icEnergyUse.upper():
             case "UTI" | "SUB": # Utility or PV mixing mode
-                if solarVoltageOn > 0 and self.pvVoltage > solarVoltageOn: # likely PV can produce more
+                if solarVoltageOn > 1 and self.pvVoltage > solarVoltageOn: # likely PV can produce more
                     print(f"Set Solar ON by Voltage {self.pvVoltage} > {solarVoltageOn}")
                     return self.moreSolar()
                 #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
             case "SBU": # PV full production mode
                 if self.iPGrid >= self.iPLoad and self.pvChargerPower < self.iPLoad: # solar power not enough
-                    if solarVoltageOn > 0 and self.pvVoltage < solarVoltageOn:
+                    if solarVoltageOn < 1 or solarVoltageOff < 1 or self.pvVoltage < (solarVoltageOff + solarVoltageOn)/2:
                         print(f"Set Solar Off by Power {self.iPGrid} >= {self.iPLoad} > {self.pvChargerPower}")
                         return self.saveBattery()
                 if self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2: # actually below and above better to be more sophisticated formula accounting MPPT since voltage depend on produced power
-                    if solarVoltageOff > 0 and self.pvVoltage < solarVoltageOff:
+                    if solarVoltageOff < 1 or self.pvVoltage < solarVoltageOff:
                         print(f"Set Solar Off by Voltage {self.pvVoltage} < {solarVoltageOff}")
                         return self.saveBattery()
         return False
