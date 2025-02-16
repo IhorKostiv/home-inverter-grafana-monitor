@@ -104,6 +104,7 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
         return discharge - charge
     
     def __init__(self, isDebug: bool, device_path: str):
+        self.InverterInternalUsePower = 65
         super().__init__(isDebug, device_path, 2400)
         
         if not self.readQPI() in compatibleProtocols:
@@ -227,7 +228,7 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
         if len(v) > 23:
             self.pvReturnGrid = int(v[23])
         # todo: there shall be more sophisticated formula accounting VA and VAr
-        self.iPGrid = int(self.iPLoad - self.iPInverter + 65 - self.pvReturnGrid) # include self consumption approximate and exclude return to grid power
+        self.iPGrid = int(self.iPLoad - self.iPInverter + self.InverterInternalUsePower - self.pvReturnGrid) # include self consumption approximate and exclude return to grid power
         self.iSGrid = int(self.iSLoad * self.iPGrid / self.iPLoad) # hopefully it is proportional
         if self.iPInverter < 0:
             self.iPInverter = 0 # it happens when battery is charged from grid

@@ -21,6 +21,7 @@ def bitmaskText(newLine, Bitmask, Texts): # used to convert error or warning bit
 class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage GreenCell inverter
     
     def __init__(self, isDebug: bool, device_path: str):
+        self.InverterInternalUsePower = 24
         super().__init__(isDebug, device_path, 4, 19200)
 
         self.readInverterControl()

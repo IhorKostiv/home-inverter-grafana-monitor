@@ -13,7 +13,7 @@ class UPS(object): # base class for everything
                 with open('/sys/class/thermal/thermal_zone0/temp', 'r') as file:
                     self.rpiTemperature: float = round(float(file.read()) / 1000.0, 1)
             except:
-                pass
+                self.rpiTemperature: float = 0.0
         else:
             print(f"Platform is {platform.system()}")
             self.rpiTemperature: float = 0.0
@@ -137,14 +137,16 @@ class UPSmgr(UPS): # base class for smarter solar power and battery management (
                 if solarVoltageOn > 1 and self.pvVoltage > solarVoltageOn: # likely PV can produce more
                     print(f"Set Solar ON by Voltage {self.pvVoltage} > {solarVoltageOn}")
                     return self.moreSolar()
+                elif self.pvChargerPower > self.iPLoad + self.InverterInternalUsePower: # PV produces enough just charging - technically charging can be delayed
+                    print(f"Set Solar ON by Power {self.pvChargerPower} > {self.iPLoad}")
+                    return self.moreSolar()
                 #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
             case "SBU": # PV full production mode
-                if self.iPGrid >= self.iPLoad and self.pvChargerPower < self.iPLoad: # solar power not enough
-                    if solarVoltageOff < 1 or self.pvVoltage < solarVoltageOff:
+                if solarVoltageOff < 1 or self.pvVoltage < solarVoltageOff: # better to be more sophisticated formula accounting MPPT since voltage depend on produced power
+                    if self.iPGrid >= self.iPLoad and self.pvChargerPower < self.iPLoad: # solar power not enough
                         print(f"Set Solar Off by Power {self.iPGrid} >= {self.iPLoad} > {self.pvChargerPower}")
                         return self.saveBattery()
-                if self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2: # actually below and above better to be more sophisticated formula accounting MPPT since voltage depend on produced power
-                    if solarVoltageOff < 1 or self.pvVoltage < solarVoltageOff:
+                    elif self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2: # battery is draining
                         print(f"Set Solar Off by Voltage {self.pvVoltage} < {solarVoltageOff}")
                         return self.saveBattery()
         return False
