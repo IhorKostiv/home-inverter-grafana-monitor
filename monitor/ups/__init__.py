@@ -134,7 +134,7 @@ class UPSmgr(UPS): # base class for smarter solar power and battery management (
             print(f"Check Solar Voltage {solarVoltageOff} > {self.pvVoltage} > {solarVoltageOn}")
         match self.icEnergyUse.upper():
             case "UTI" | "SUB": # Utility or PV mixing mode
-                if solarVoltageOn > 1 and self.pvVoltage > solarVoltageOn: # likely PV can produce more
+                if solarVoltageOn > 1 and self.pvVoltage > solarVoltageOn: # likely PV can produce more - however more sophisticated formula needed since voltage depends on power produced
                     print(f"Set Solar ON by Voltage {self.pvVoltage} > {solarVoltageOn}")
                     return self.moreSolar()
                 elif self.pvChargerPower > self.iPLoad + self.InverterInternalUsePower: # PV produces enough just charging - technically charging can be delayed
@@ -185,7 +185,7 @@ class UPSmodbus(UPS): # base class for modbus communication (USB)
 
 class UPSoffgrid(UPSmgr): # base class for off grid type invertors
     def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
-        if self.iPInverter == 0: # we are on grid, check if there can be more solar power
+        #if self.iPInverter == 0: # we are on grid, check if there can be more solar power
             return super().setBestEnergyUse(solarVoltageOn, solarVoltageOff)
     def moreSolar(self):
         return super().moreSolar() and self.setSBU()
