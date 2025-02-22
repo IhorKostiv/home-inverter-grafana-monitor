@@ -53,7 +53,7 @@ class UPS(object): # base class for everything
         self.iError:  str = ""
         self.iWarning: str = ""
         self.iBattPower: int = 0
-        self.iBattCurrent: float = 0.0
+        self.iBattCurrent: int = 0
 
     def addNotEmpty(self, f: dict, key: str, e:any):
         if hasattr(self, key):

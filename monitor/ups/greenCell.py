@@ -294,7 +294,7 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
                                             # 25272: ["Software version", 1, ""],
         self.iBattPower = bitmaskNegative(i[73])    # 25273: ["Battery power", 1, "W"],
         #self.iBattCurrent = bitmaskNegative(i[74])  # 25274: ["Battery current", 1, "A"],
-        self.iBattCurrent = float(self.iBattPower / self.iBatteryVoltage) # it gives more accurate values
+        self.iBattCurrent = int(self.iBattPower / self.iBatteryVoltage) # it gives more accurate values
         return i
   
     def setSBU(self): # Solar Battery Utility
