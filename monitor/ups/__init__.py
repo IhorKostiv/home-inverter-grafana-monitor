@@ -137,7 +137,7 @@ class UPSmgr(UPS): # base class for smarter solar power and battery management (
                 if solarVoltageOn > 1 and self.pvVoltage > solarVoltageOn: # likely PV can produce more - however more sophisticated formula needed since voltage depends on power produced
                     print(f"Set Solar ON by Voltage {self.pvVoltage} > {solarVoltageOn}")
                     return self.moreSolar()
-                elif self.pvChargerPower > self.iPLoad #+ self.InverterInternalUsePower: # PV produces enough just charging - technically charging can be delayed
+                elif self.pvChargerPower > self.iPLoad: #+ self.InverterInternalUsePower: # PV produces enough just charging - technically charging can be delayed
                     print(f"Set Solar ON by Power {self.pvChargerPower} > {self.iPLoad}")
                     return self.moreSolar()
                 #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
