@@ -53,7 +53,7 @@ class UPS(object): # base class for everything
         self.iError:  str = ""
         self.iWarning: str = ""
         self.iBattPower: int = 0
-        self.iBattCurrent: int = 0
+        self.iBattCurrent: float = 0.0
 
     def addNotEmpty(self, f: dict, key: str, e:any):
         if hasattr(self, key):
@@ -137,7 +137,7 @@ class UPSmgr(UPS): # base class for smarter solar power and battery management (
                 if solarVoltageOn > 1 and self.pvVoltage > solarVoltageOn: # likely PV can produce more - however more sophisticated formula needed since voltage depends on power produced
                     print(f"Set Solar ON by Voltage {self.pvVoltage} > {solarVoltageOn}")
                     return self.moreSolar()
-                elif self.pvChargerPower > self.iPLoad + self.InverterInternalUsePower: # PV produces enough just charging - technically charging can be delayed
+                elif self.pvChargerPower > self.iPLoad #+ self.InverterInternalUsePower: # PV produces enough just charging - technically charging can be delayed
                     print(f"Set Solar ON by Power {self.pvChargerPower} > {self.iPLoad}")
                     return self.moreSolar()
                 #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
@@ -184,9 +184,9 @@ class UPSmodbus(UPS): # base class for modbus communication (USB)
 
 
 class UPSoffgrid(UPSmgr): # base class for off grid type invertors
-    def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
-        #if self.iPInverter == 0: # we are on grid, check if there can be more solar power
-            return super().setBestEnergyUse(solarVoltageOn, solarVoltageOff)
+#    def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
+#        if self.iPInverter == 0: # we are on grid, check if there can be more solar power - actually at the end of the day this code waits until battery is depleted which is not dood
+#            return super().setBestEnergyUse(solarVoltageOn, solarVoltageOff)
     def moreSolar(self):
         return super().moreSolar() and self.setSBU()
     def saveBattery(self):

@@ -293,7 +293,8 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
                                             # 25271: ["Hardware version", 1, ""],
                                             # 25272: ["Software version", 1, ""],
         self.iBattPower = bitmaskNegative(i[73])    # 25273: ["Battery power", 1, "W"],
-        self.iBattCurrent = bitmaskNegative(i[74])  # 25274: ["Battery current", 1, "A"],
+        #self.iBattCurrent = bitmaskNegative(i[74])  # 25274: ["Battery current", 1, "A"],
+        self.iBattCurrent = float(self.iBattPower / self.iBatteryVoltage) # it gives more accurate values
         return i
   
     def setSBU(self): # Solar Battery Utility
@@ -361,8 +362,8 @@ if __name__ == "__main__": # testing and debugging
                 10101, # 25273: ["Battery power", 1, "W"], bitmasked
                 22535, # 25274: ["Battery current", 1, "A"], bitmasked
                 0,0] # 75 values expected
-    }
+        }
 
     i: UPSoffgrid = GreenCell(True, "SIMULATOR")
     print(i.jSON("GreenCell"))
-    i.setBestEnergyUse(50.5, 44)
+    i.setBestEnergyUse(50.5, 40)
