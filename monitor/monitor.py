@@ -43,5 +43,5 @@ if isDebug:
 if USB_DEVICE != "SIMULATOR":
     client.write_points(json_body)
 
-if solarVoltageOn > 1 and solarVoltageOff > 1:
+if solarVoltageOn > 1 or solarVoltageOff > 1:
     inverter.setBestEnergyUse(solarVoltageOn, solarVoltageOff)

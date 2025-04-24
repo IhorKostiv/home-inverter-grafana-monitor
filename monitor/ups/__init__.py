@@ -142,7 +142,7 @@ class UPSmgr(UPS): # base class for smarter solar power and battery management (
                     return self.moreSolar()
                 #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
             case "SBU": # PV full production mode
-                if solarVoltageOff < 1 or self.pvVoltage < solarVoltageOff: # better to be more sophisticated formula accounting MPPT since voltage depend on produced power
+                if solarVoltageOff > 1 and self.pvVoltage < solarVoltageOff: # better to be more sophisticated formula accounting MPPT since voltage depend on produced power
                     if (self.iPGrid >= self.iPLoad or self.iBattPower > self.pvChargerPower) and self.pvChargerPower < self.iPLoad: # solar power not enough
                         print(f"Set Solar Off by Power {self.iPGrid} >= {self.iPLoad} > {self.pvChargerPower}")
                         return self.saveBattery()
@@ -169,6 +169,10 @@ class UPSmodbus(UPS): # base class for modbus communication (USB)
     def readRegister(self, register: int, length: int):
         if hasattr(self, 'scc'): # read data from USB device
             time.sleep(0.02) # let interface to calm down
+            try:
+                r = self.scc.read_registers(register, length)
+            except:
+                time.sleep(1) # wait a while and try to read once more
             r = self.scc.read_registers(register, length)
         else: # enter values manually for debug and test purposes
             r = input(f"Enter message for {register}: ").encode('utf-8')
@@ -177,6 +181,10 @@ class UPSmodbus(UPS): # base class for modbus communication (USB)
     def writeRegister(self, register: int, value: int):
         if hasattr(self, 'scc'): # read data from USB device
             time.sleep(0.1) # just in case, let interface calm down
+            try:
+                return self.scc.write_register(register, value)
+            except:
+                time.sleep(1) # wait a while and try to read once more
             return self.scc.write_register(register, value)
         else:
             print(f'write register {register} value {value}')
