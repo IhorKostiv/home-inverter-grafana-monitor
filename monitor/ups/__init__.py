@@ -142,12 +142,15 @@ class UPSmgr(UPS): # base class for smarter solar power and battery management (
                     return self.moreSolar()
                 #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
             case "SBU": # PV full production mode
-                if solarVoltageOff > 1 and self.pvVoltage < solarVoltageOff: # better to be more sophisticated formula accounting MPPT since voltage depend on produced power
-                    if (self.iPGrid >= self.iPLoad or self.iBattPower > self.pvChargerPower) and self.pvChargerPower < self.iPLoad: # solar power not enough
-                        print(f"Set Solar Off by Power {self.iPGrid} >= {self.iPLoad} > {self.pvChargerPower}")
+                if solarVoltageOff > 1 and self.pvChargerPower < self.iPLoad: # solar power not enough
+                    if self.iPGrid >= self.iPLoad and self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2: # working from Grid
+                        print(f"Set Solar Off by Grid {self.iPGrid} >= {self.iPLoad} > {self.pvChargerPower} & {self.iBatteryVoltage} < avg({self.icBatteryStopCharging} {self.icBatteryStopDischarging})")
+                        return self.saveBattery()                            
+                    elif self.iBattPower > self.pvChargerPower and self.iBatteryVoltage <= self.icBatteryStopDischarging: # depleting battery too much
+                        print(f"Set Solar Off by Batt {self.iPGrid} >= {self.iPLoad} > {self.pvChargerPower} & {self.iBatteryVoltage} < avg({self.icBatteryStopCharging} {self.icBatteryStopDischarging})")
                         return self.saveBattery()
-                    elif self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2: # battery is draining
-                        print(f"Set Solar Off by Voltage {self.pvVoltage} < {solarVoltageOff}")
+                    elif self.pvVoltage < solarVoltageOff: # better to be more sophisticated formula accounting MPPT since voltage depend on produced power
+                        print(f"Set Solar Off by PV {self.iPGrid} >= {self.iPLoad} > {self.pvChargerPower} & {self.pvVoltage} < {solarVoltageOff}")
                         return self.saveBattery()
         return False
 
