@@ -25,10 +25,8 @@ compatibleProtocols = ['(PI30']
 def extract_values(input_string): # extracting values from response into array
     # Define the regular expression pattern to match numeric values (including decimal points)
     pattern = r"\d+\.\d+|\d+"
-    
     # Find all matches in the input string
     matches = re.findall(pattern, input_string)
-    
     return matches
 
 def axiomaCustomCRC(): # custom CRC function for Axioma inverter
@@ -223,7 +221,7 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
                                             # ZZ Set country customized regulation (reserved feature) 00: India 01: Germany 02: South America
                                             # AAAA Solar feed to grid power (reserved feature) A is an Integer ranging from 0 to 9. The units is W. 
                                             # Device general status parameters inquiry
-        self.iBattPower = self.iBattCurrent * self.iBatteryVoltage
+        self.iBattPower = int(self.iBattCurrent * self.iBatteryVoltage)
         self.iPInverter = int((self.pvChargerPower + self.iBattPower) * (.95 if self.pvChargerPower > -self.iBattPower else 1)) # approx efficiency
         if len(v) > 23:
             self.pvReturnGrid = int(v[23])

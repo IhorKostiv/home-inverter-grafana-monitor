@@ -1,6 +1,5 @@
 from datetime import datetime
-if __name__ == "__main__":
-#    import re
+if __name__ == "__main__": #   import redirection based on execution option
     from __init__ import UPSmodbus, UPSoffgrid, addText
 else:
     from . import UPSmodbus, UPSoffgrid, addText
@@ -294,7 +293,7 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
                                             # 25272: ["Software version", 1, ""],
         self.iBattPower = bitmaskNegative(i[73])    # 25273: ["Battery power", 1, "W"],
         #self.iBattCurrent = bitmaskNegative(i[74])  # 25274: ["Battery current", 1, "A"],
-        self.iBattCurrent = int(self.iBattPower / self.iBatteryVoltage) # it gives more accurate values
+        self.iBattCurrent = self.iBattPower / self.iBatteryVoltage # it gives more accurate values
         return i
   
     def setSBU(self): # Solar Battery Utility

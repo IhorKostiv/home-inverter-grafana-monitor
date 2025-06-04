@@ -36,12 +36,13 @@ if INVERTER_MODEL not in SUPPORTED_INVERTERS:
 
 inverter: UPSmgr = SUPPORTED_INVERTERS[INVERTER_MODEL](isDebug, USB_DEVICE)
 
+if solarVoltageOn > 1 or solarVoltageOff > 1:
+    inverter.setBestEnergyUse(solarVoltageOn, solarVoltageOff)
+
+# todo: switch SNU if midnight (0..5am) and battery depleted, OSO if PV Voltage > 0
+ 
 json_body = inverter.jSON(INVERTER_MODEL)
 if isDebug:
     print(datetime.now(), " ", json_body)
-
 if USB_DEVICE != "SIMULATOR":
     client.write_points(json_body)
-
-if solarVoltageOn > 1 or solarVoltageOff > 1:
-    inverter.setBestEnergyUse(solarVoltageOn, solarVoltageOff)

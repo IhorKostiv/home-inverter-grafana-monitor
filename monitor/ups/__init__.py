@@ -55,7 +55,9 @@ class UPS(object): # base class for everything
         self.iBattPower: int = 0
         self.iBattCurrent: int = 0
 
-    def addNotEmpty(self, f: dict, key: str, e:any):
+        self.BestEnergyMsg: str = ""
+
+    def addNotEmpty(self, f: dict, key: str, e:any): # add only not empty values to json in order to save memory and bandwith
         if hasattr(self, key):
             v = getattr(self, key)
             if v != e:
@@ -97,7 +99,8 @@ class UPS(object): # base class for everything
             ("rpiTemperature", 0),
             ("tRadiatorTemperature", 0),
             ("bRadiatorTemperature", 0),
-            ("pvReturnGrid", 0)
+            ("pvReturnGrid", 0),
+            ("BestEnergyMsg", "")
         ]
         for key, value in optionalValues:
             self.addNotEmpty(f, key, value)
@@ -125,8 +128,10 @@ class UPSmgr(UPS): # base class for smarter solar power and battery management (
         return True
 
     def moreSolar(self):
+        print(self.BestEnergyMsg)
         return True
     def saveBattery(self):
+        print(self.BestEnergyMsg)
         return True
 
     def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
@@ -135,25 +140,28 @@ class UPSmgr(UPS): # base class for smarter solar power and battery management (
         match self.icEnergyUse.upper():
             case "UTI" | "SUB": # Utility or PV mixing mode
                 if solarVoltageOn > 1 and self.pvVoltage > solarVoltageOn: # likely PV can produce more - however more sophisticated formula needed since voltage depends on power produced
-                    print(f"Set Solar ON by Voltage {self.pvVoltage} > {solarVoltageOn}")
+                    self.BestEnergyMsg = f"Set Solar ON by Voltage {self.pvVoltage} > {solarVoltageOn} V"
                     return self.moreSolar()
                 elif self.pvChargerPower > self.iPLoad: #+ self.InverterInternalUsePower: # PV produces enough just charging - technically charging can be delayed
-                    print(f"Set Solar ON by Power {self.pvChargerPower} > {self.iPLoad}")
+                    self.BestEnergyMsg = f"Set Solar ON by Power {self.pvChargerPower} > Load {self.iPLoad} W"
                     return self.moreSolar()
                 #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
             case "SBU": # PV full production mode
                 if solarVoltageOff > 1 and self.pvChargerPower < self.iPLoad: # solar power not enough
-                    if self.iPGrid >= self.iPLoad and self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2: # working from Grid
-                        print(f"Set Solar Off by Grid {self.iPGrid} >= {self.iPLoad} > {self.pvChargerPower} & {self.iBatteryVoltage} < avg({self.icBatteryStopCharging} {self.icBatteryStopDischarging})")
+                    if self.iBattCurrent > 0: # mind 1V voltage drop under 50A high load
+                        stopDischarge = self.icBatteryStopDischarging - (self.iBattCurrent / 50) 
+                    else:
+                        stopDischarge = self.icBatteryStopDischarging
+                    if self.iPGrid >= self.iPLoad and self.iBatteryVoltage < (self.icBatteryStopCharging + stopDischarge) / 2: # working from Grid
+                        self.BestEnergyMsg = f"Set Solar Off by Grid {self.iPGrid} >= Load {self.iPLoad} > PV {self.pvChargerPower} W & {self.iBatteryVoltage} < avg({self.icBatteryStopCharging} {stopDischarge}) V"
                         return self.saveBattery()                            
-                    elif self.iBattPower > self.pvChargerPower and self.iBatteryVoltage <= self.icBatteryStopDischarging: # depleting battery too much
-                        print(f"Set Solar Off by Batt {self.iPGrid} >= {self.iPLoad} > {self.pvChargerPower} & {self.iBatteryVoltage} < avg({self.icBatteryStopCharging} {self.icBatteryStopDischarging})")
+                    elif self.iBattPower > self.pvChargerPower and self.iBatteryVoltage <= stopDischarge: # depleting battery too much
+                        self.BestEnergyMsg = f"Set Solar Off by Batt {self.iBattPower} > PV {self.pvChargerPower} < Load {self.iPLoad} W & {self.iBatteryVoltage} <= {stopDischarge} V"
                         return self.saveBattery()
                     elif self.pvVoltage < solarVoltageOff: # better to be more sophisticated formula accounting MPPT since voltage depend on produced power
-                        print(f"Set Solar Off by PV {self.iPGrid} >= {self.iPLoad} > {self.pvChargerPower} & {self.pvVoltage} < {solarVoltageOff}")
+                        self.BestEnergyMsg = f"Set Solar Off by PV {self.pvVoltage} < {solarVoltageOff} V"
                         return self.saveBattery()
         return False
-
 
 class UPSmodbus(UPS): # base class for modbus communication (USB)
     def __init__(self, isDebug: bool, device_path: str, device_id: int, baud_rate: int):
@@ -176,7 +184,7 @@ class UPSmodbus(UPS): # base class for modbus communication (USB)
                 r = self.scc.read_registers(register, length)
             except:
                 time.sleep(1) # wait a while and try to read once more
-            r = self.scc.read_registers(register, length)
+                r =  self.scc.read_registers(register, length) # 2nd attempt, here might be error with indent for no reason
         else: # enter values manually for debug and test purposes
             r = input(f"Enter message for {register}: ").encode('utf-8')
         return r
@@ -193,11 +201,7 @@ class UPSmodbus(UPS): # base class for modbus communication (USB)
             print(f'write register {register} value {value}')
             return
 
-
 class UPSoffgrid(UPSmgr): # base class for off grid type invertors
-#    def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
-#        if self.iPInverter == 0: # we are on grid, check if there can be more solar power - actually at the end of the day this code waits until battery is depleted which is not dood
-#            return super().setBestEnergyUse(solarVoltageOn, solarVoltageOff)
     def moreSolar(self):
         return super().moreSolar() and self.setSBU()
     def saveBattery(self):
@@ -237,12 +241,7 @@ class UPSserial(UPS): # base class for serial communication (RS232)
             #todo: convert from hex if needed
         return r
 
-
 class UPShybrid(UPSmgr): # base class for hybrid type invertors
-    def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
-        if self.pvChargerPower < self.iPLoad: # likely we work on battery or not fully utilise PV potential
-            return super().setBestEnergyUse(solarVoltageOn, solarVoltageOff)
-
     def moreSolar(self):
         return super().moreSolar() and self.setSBU()
     def saveBattery(self):
@@ -250,5 +249,14 @@ class UPShybrid(UPSmgr): # base class for hybrid type invertors
 
 # Example usage
 if __name__ == "__main__":
-    i = UPS(True)
+    i = UPSmgr(True)
+    i.icEnergyUse = "SBU"
+    i.pvVoltage = 10
+    i.pvChargerPower = 50
+    i.iPLoad = 100
+    i.iBattCurrent = 20
+    i.icBatteryStopDischarging = 24
+    i.icBatteryStopCharging = 29
+
+    i.setBestEnergyUse(70,30)
     print(i.jSON("UPS"))
