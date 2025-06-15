@@ -139,27 +139,28 @@ class UPSmgr(UPS): # base class for smarter solar power and battery management (
             print(f"Check Solar Voltage {solarVoltageOff} > {self.pvVoltage} > {solarVoltageOn}")
         match self.icEnergyUse.upper():
             case "UTI" | "SUB": # Utility or PV mixing mode
-                if solarVoltageOn > 1 and self.pvVoltage > solarVoltageOn: # likely PV can produce more - however more sophisticated formula needed since voltage depends on power produced
-                    self.BestEnergyMsg = f"Set Solar ON by Voltage {self.pvVoltage} > {solarVoltageOn} V"
+                if solarVoltageOn > 1 and self.pvVoltage > solarVoltageOn and self.pvChargerPower > 0: # likely PV can produce more - however more sophisticated formula needed since voltage depends on power produced
+                    self.BestEnergyMsg = f"Solar ON by Voltage {self.pvVoltage} > {solarVoltageOn} V"
                     return self.moreSolar()
                 elif self.pvChargerPower > self.iPLoad: #+ self.InverterInternalUsePower: # PV produces enough just charging - technically charging can be delayed
-                    self.BestEnergyMsg = f"Set Solar ON by Power {self.pvChargerPower} > Load {self.iPLoad} W"
+                    self.BestEnergyMsg = f"Solar ON by Power {self.pvChargerPower} > Load {self.iPLoad} W"
                     return self.moreSolar()
                 #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
             case "SBU": # PV full production mode
                 if solarVoltageOff > 1 and self.pvChargerPower < self.iPLoad: # solar power not enough
+                    solarVoltageOff = solarVoltageOff * (1 - (self.pvChargerPower / 10000)) # mind possible 1% drop for every 100W production
                     if self.iBattCurrent > 0: # mind 1V voltage drop under 50A high load
                         stopDischarge = self.icBatteryStopDischarging - (self.iBattCurrent / 50) 
                     else:
                         stopDischarge = self.icBatteryStopDischarging
                     if self.iPGrid >= self.iPLoad and self.iBatteryVoltage < (self.icBatteryStopCharging + stopDischarge) / 2: # working from Grid
-                        self.BestEnergyMsg = f"Set Solar Off by Grid {self.iPGrid} >= Load {self.iPLoad} > PV {self.pvChargerPower} W & {self.iBatteryVoltage} < avg({self.icBatteryStopCharging} {stopDischarge}) V"
+                        self.BestEnergyMsg = f"Solar Off by Grid {self.iPGrid} >= Load {self.iPLoad} > PV {self.pvChargerPower} W & {self.iBatteryVoltage} < avg({self.icBatteryStopCharging} {stopDischarge}) V"
                         return self.saveBattery()                            
                     elif self.iBattPower > self.pvChargerPower and self.iBatteryVoltage <= stopDischarge: # depleting battery too much
-                        self.BestEnergyMsg = f"Set Solar Off by Batt {self.iBattPower} > PV {self.pvChargerPower} < Load {self.iPLoad} W & {self.iBatteryVoltage} <= {stopDischarge} V"
+                        self.BestEnergyMsg = f"Solar Off by Batt {self.iBattPower} > PV {self.pvChargerPower} < Load {self.iPLoad} W & {self.iBatteryVoltage} <= {stopDischarge} V"
                         return self.saveBattery()
                     elif self.pvVoltage < solarVoltageOff: # better to be more sophisticated formula accounting MPPT since voltage depend on produced power
-                        self.BestEnergyMsg = f"Set Solar Off by PV {self.pvVoltage} < {solarVoltageOff} V"
+                        self.BestEnergyMsg = f"Solar Off by PV {self.pvVoltage} < {solarVoltageOff} V"
                         return self.saveBattery()
         return False
 

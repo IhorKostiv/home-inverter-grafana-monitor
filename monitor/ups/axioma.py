@@ -114,6 +114,9 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
         self.readQPIWS()
         self.readQ1()
         
+        if self.iWorkState == "Battery": # no power is taken from Grid in Battery mode
+            self.iPGrid = self.iSGrid = 2 if self.iGridVoltage > 100 else 0
+        
     def readQPI(self): # Device Protocol validation
         r = self.readSerial(cmdQPI, cmdRetryCount) # "QPI")
         return r
@@ -222,7 +225,7 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
                                             # AAAA Solar feed to grid power (reserved feature) A is an Integer ranging from 0 to 9. The units is W. 
                                             # Device general status parameters inquiry
         self.iBattPower = int(self.iBattCurrent * self.iBatteryVoltage)
-        self.iPInverter = int((self.pvChargerPower + self.iBattPower) * (.95 if self.pvChargerPower > -self.iBattPower else 1)) # approx efficiency
+        self.iPInverter = int((self.pvChargerPower + self.iBattPower) * (.93 if self.pvChargerPower + self.iBattPower > 0 else 1)) # approx efficiency
         if len(v) > 23:
             self.pvReturnGrid = int(v[23])
         # todo: there shall be more sophisticated formula accounting VA and VAr
