@@ -1,4 +1,5 @@
 from datetime import datetime
+import time
 if __name__ == "__main__": #   import redirection based on execution option
     from __init__ import UPSmodbus, UPSoffgrid, addText
 else:
@@ -26,6 +27,12 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
         self.readInverterControl()
         self.readPV()
         self.readInverter()
+
+        if self.iPInverter > 65000: # error, wait and re-read
+            time.sleep(10)
+            self.readInverterControl()
+            self.readPV()
+            self.readInverter()
 
     def readRegister(self, register: int, length: int, debugMessage: str):
         if hasattr(self, 'scc'): # check if we are live in production or unit testing

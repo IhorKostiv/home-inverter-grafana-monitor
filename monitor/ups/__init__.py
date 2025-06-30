@@ -154,13 +154,13 @@ class UPSmgr(UPS): # base class for smarter solar power and battery management (
                     else:
                         stopDischarge = self.icBatteryStopDischarging
                     if self.iPGrid >= self.iPLoad and self.iBatteryVoltage < (self.icBatteryStopCharging + stopDischarge) / 2: # working from Grid
-                        self.BestEnergyMsg = f"Solar Off by Grid {self.iPGrid} >= Load {self.iPLoad} > PV {self.pvChargerPower} W & {self.iBatteryVoltage} < avg({self.icBatteryStopCharging} {stopDischarge}) V"
+                        self.BestEnergyMsg = f"Solar Off by Grid {self.iPGrid} >= Load {self.iPLoad} > PV {self.pvChargerPower} W & {self.iBatteryVoltage} < avg({self.icBatteryStopCharging} {stopDischarge:.2f}) V"
                         return self.saveBattery()                            
                     elif self.iBattPower > self.pvChargerPower and self.iBatteryVoltage <= stopDischarge: # depleting battery too much
-                        self.BestEnergyMsg = f"Solar Off by Batt {self.iBattPower} > PV {self.pvChargerPower} < Load {self.iPLoad} W & {self.iBatteryVoltage} <= {stopDischarge} V"
+                        self.BestEnergyMsg = f"Solar Off by Batt {self.iBattPower} > PV {self.pvChargerPower} < Load {self.iPLoad} W & {self.iBatteryVoltage} <= {stopDischarge:.2f} V"
                         return self.saveBattery()
                     elif self.pvVoltage < solarVoltageOff: # better to be more sophisticated formula accounting MPPT since voltage depend on produced power
-                        self.BestEnergyMsg = f"Solar Off by PV {self.pvVoltage} < {solarVoltageOff} V"
+                        self.BestEnergyMsg = f"Solar Off by PV {self.pvVoltage} < {solarVoltageOff:.2f} V"
                         return self.saveBattery()
         return False
 
