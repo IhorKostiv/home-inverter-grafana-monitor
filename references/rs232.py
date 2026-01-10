@@ -3,6 +3,7 @@ import binascii
 import crcmod
 import platform
 import sys
+import os
 
 # Define the custom CRC function with a 16-bit polynomial
 def axiomaCustomCRC():
@@ -56,10 +57,25 @@ def sendMessage(msg: str):
             ser.close()
             print("RS232 port closed.")
 
-def main():
+def translateComand(cmd: str):
+    commands = {
+        "SBU": "POP02",
+        "SUB": "POP01",
+        "UTI": "POP00",
+        "CSO": "PCP01",
+        "SNU": "PCP02",
+        "OSO": "PCP03"
+    }
+    if cmd.upper() in commands:
+        return commands[cmd.upper()]
+    else:
+        return cmd
 
-    if len(sys.argv) > 0:
-        sendMessage(sys.argv[1])
+def main():
+    print(os.path.abspath(sys.argv[0]).replace(".py", ".json"))
+
+    if len(sys.argv) > 1:
+        sendMessage(translateComand(sys.argv[1]))
     else:
         print("Type your message and press Enter. Type exit to quit.")
         while True:
@@ -67,7 +83,7 @@ def main():
             user_input = input("Enter message: ")
             if user_input.lower() in ['', 'exit']:
                 break
-            sendMessage(user_input)
+            sendMessage(translateComand(user_input))
 
 def hex_to_string(hex_string):
     try:

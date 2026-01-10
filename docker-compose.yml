@@ -6,17 +6,26 @@ services:
     privileged: true
     devices:
       - "/dev/ttyUSB0:/dev/ttyUSB0"
+      - "/dev/ttyACM0:/dev/ttyACM0"
     environment:
-      USB_DEVICE: "/dev/ttyUSB0"
       DB_HOST: home-inverter-grafana-monitor-influxdb-1
       DB_PORT: 8086
       DB_USERNAME: root
       DB_PASSWORD: root
       DB_NAME: ups
-      INVERTER_MODEL: "Axioma"
       IS_DEBUG: "False"
-      SOLAR_VOLTAGE_ON: 150 # approx. 90% of field idle voltage
-      SOLAR_VOLTAGE_OFF: 135 # approx. field MPPT voltage
+      USB_DEVICE: "/dev/ttyUSB0"
+      INVERTER_MODEL: "Axioma"
+      SOLAR_VOLTAGE_ON: 140 # approx. 90% of field idle voltage
+      SOLAR_VOLTAGE_OFF: 100 # approx. inverter min MPPT voltage
+      ACM_DEVICE: "/dev/ttyACM0"
+      BMS_MODEL: "MUST"
+      GRID_TIED: ""
+      SOLCAST_ESTIMATE: "(pvEstimate10+pvEstimate+pvEstimate)/3"
+      MAX_POWER_LIMIT: 5120
+      TARGET_POWER: 4850 # 4550 27.5 4880 27.9
+      LOW_POWER: 1500
+      MIN_POWER: 1024
     depends_on:
       - influxdb
     tmpfs:
@@ -32,12 +41,12 @@ services:
       DOCKER_INFLUXDB_INIT_PASSWORD: root
       DOCKER_INFLUXDB_INIT_ORG: org
       DOCKER_INFLUXDB_INIT_BUCKET: bucket
-      DOCKER_INFLUXDB_INIT_RETENTION: 365d
+      DOCKER_INFLUXDB_INIT_RETENTION: 1095d
       INFLUXDB_DB: ups
     volumes:
       - "metrics:/var/lib/influxdb"
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.2.6 #latest
     restart: always
     ports:
       - "3000:3000" # expose for localhost

@@ -1,13 +1,14 @@
 import minimalmodbus
 import sys
 
-device_id = int(sys.argv[1])
-baud_rate = int(sys.argv[2])
-registers_from = int(sys.argv[3])
-registers_to = int(sys.argv[4])
-forArray = len(sys.argv)>5 and str(sys.argv[5]).upper() == "TRUE"
+device_port = sys.argv[1]
+device_id = int(sys.argv[2])
+baud_rate = int(sys.argv[3])
+registers_from = int(sys.argv[4])
+registers_to = int(sys.argv[5])
+forArray = len(sys.argv)>6 and str(sys.argv[6]).upper() == "TRUE"
 
-SERPORT = '/dev/ttyUSB0'
+SERPORT = f'/dev/tty{device_port}'
 SERTIMEOUT = 0.5
 SERBAUD = baud_rate
 

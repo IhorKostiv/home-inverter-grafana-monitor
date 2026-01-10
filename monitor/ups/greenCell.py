@@ -21,15 +21,16 @@ def bitmaskText(newLine, Bitmask, Texts): # used to convert error or warning bit
 class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage GreenCell inverter
     
     def __init__(self, isDebug: bool, device_path: str):
-        self.InverterInternalUsePower = 24
         super().__init__(isDebug, device_path, 4, 19200)
 
+        self.readChargerControl()
         self.readInverterControl()
         self.readPV()
         self.readInverter()
 
         if self.iPInverter > 65000: # error, wait and re-read
             time.sleep(10)
+            self.readChargerControl()
             self.readInverterControl()
             self.readPV()
             self.readInverter()
@@ -46,8 +47,14 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
                 r = utRead(register)
         return r
 
+    def readChargerControl(self):
+        cc = self.readRegister(10100, 3, "cC")
+        self.icBatteryFloatVoltage = cc[3] / 10.0  # 10103	RW	Battery float voltage	0.1V
+        return cc
+        
     def readInverterControl(self): # read inverter control message values
         icEnergyUses = { 1: "SBU", 2: "SUB", 3: "UTI", 4: "SOL"}
+        icChargerSourcePriorities = { 0: "Sol", 2: "SNU", 3: "OSO" }
 
         ic = self.readRegister(20100, 45, "iC")
                                                # 20101	RW	Inverter offgrid work enable	0：OFF 1：ON  
@@ -66,7 +73,7 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
                                                # 20128	RW	Battery high voltage	0.1V
                                                # 20132	RW	Max Combine charger current	0.1A(DC)(for PV;PH)
                                                # 20142	RW	System setting	
-                                               # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
+        self.icChargerSourcePriority = icChargerSourcePriorities[ic[43]]  # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
                                                # 20144	RW	Solar power balance	"0:SBD 1:SBE"
         return ic
 
@@ -126,7 +133,7 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
         }
 
         pv = self.readRegister(15200, 22, "PV")
-        if pv[1]==2: # work mode                                    # 15201 15202 15203
+        if pv[1] == 2: # work mode                                    # 15201 15202 15203
             self.pvWorkState = mpptStates[pv[2]] + "-" + chargingStates[pv[3]]   
         else:
             self.pvWorkState = pvWorkStates[pv[1]]
@@ -142,110 +149,116 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
   
     def readInverter(self): # read Inverter message values
         iError1s = {
-        1: "Fan is locked when inverter is off",
-        2: "Inverter transformer over temperature",
-        4: "battery voltage is too high",
-        8: "battery voltage is too low",
-        16: "Output short circuited",
-        32: "Inverter output voltage is high",
-        64: "Overload time out",
-        128: "Inverter bus voltage is too high",
-        256: "Bus soft start failed",
-        512: "Main relay failed",
-        1024: "Inverter output voltage sensor error",
-        2048: "Inverter grid voltage sensor error",
-        4096: "Inverter output current sensor error",
-        8192: "Inverter grid current sensor error",
-        16384: "Inverter load current sensor error",
-        32768: "Inverter grid over current error"
-      }
+            1: "Fan is locked when inverter is off",
+            2: "Inverter transformer over temperature",
+            4: "battery voltage is too high",
+            8: "battery voltage is too low",
+            16: "Output short circuited",
+            32: "Inverter output voltage is high",
+            64: "Overload time out",
+            128: "Inverter bus voltage is too high",
+            256: "Bus soft start failed",
+            512: "Main relay failed",
+            1024: "Inverter output voltage sensor error",
+            2048: "Inverter grid voltage sensor error",
+            4096: "Inverter output current sensor error",
+            8192: "Inverter grid current sensor error",
+            16384: "Inverter load current sensor error",
+            32768: "Inverter grid over current error"
+        }
         iError2s = {
-        1: "Inverter radiator over temperature",
-        2: "Solar charger battery voltage class error",
-        4: "Solar charger current sensor error",
-        8: "Solar charger current is uncontrollable",
-        16: "Inverter grid voltage is low",
-        32: "Inverter grid voltage is high",
-        64: "Inverter grid under frequency",
-        128: "Inverter grid over frequency",
-        256: "Inverter over current protection error",
-        512: "Inverter bus voltage is too low",
-        1024: "Inverter soft start failed",
-        2048: "Over DC voltage in AC output",
-        4096: "Battery connection is open",
-        8192: "Inverter control current sensor error",
-        16384: "Inverter output voltage is too low",
-        32768: "Unknown Error 2-15"
-      }
+            1: "Inverter radiator over temperature",
+            2: "Solar charger battery voltage class error",
+            4: "Solar charger current sensor error",
+            8: "Solar charger current is uncontrollable",
+            16: "Inverter grid voltage is low",
+            32: "Inverter grid voltage is high",
+            64: "Inverter grid under frequency",
+            128: "Inverter grid over frequency",
+            256: "Inverter over current protection error",
+            512: "Inverter bus voltage is too low",
+            1024: "Inverter soft start failed",
+            2048: "Over DC voltage in AC output",
+            4096: "Battery connection is open",
+            8192: "Inverter control current sensor error",
+            16384: "Inverter output voltage is too low",
+            32768: "Unknown Error 2-15"
+        }
         iError3s = {
-        1: "Unknown Error 3-0",
-        2: "Unknown Error 3-1",
-        4: "Unknown Error 3-2",
-        8: "Unknown Error 3-3",
-        16: "Unknown Error 3-4",
-        32: "Unknown Error 3-5",
-        64: "Unknown Error 3-6",
-        128: "Unknown Error 3-7",
-        256: "Unknown Error 3-8",
-        512: "Unknown Error 3-9",
-        1024: "Unknown Error 3-10",
-        2048: "Unknown Error 3-11",
-        4096: "Unknown Error 3-12",
-        8192: "Unknown Error 2-13",
-        16384: "Unknown Error 2-14",
-        32768: "Unknown Error 3-15"
-      }
+            1: "Unknown Error 3-0",
+            2: "Unknown Error 3-1",
+            4: "Unknown Error 3-2",
+            8: "Unknown Error 3-3",
+            16: "Unknown Error 3-4",
+            32: "Unknown Error 3-5",
+            64: "Unknown Error 3-6",
+            128: "Unknown Error 3-7",
+            256: "Unknown Error 3-8",
+            512: "Unknown Error 3-9",
+            1024: "Unknown Error 3-10",
+            2048: "Unknown Error 3-11",
+            4096: "Unknown Error 3-12",
+            8192: "Unknown Error 2-13",
+            16384: "Unknown Error 2-14",
+            32768: "Unknown Error 3-15"
+        }
 
         iWarning1s = {
-        1: "Fan is locked when inverter is on",
-        2: "Fan2 is locked when inverter is on",
-        4: "Battery is over-charged",
-        8: "Low battery",
-        16: "Overload",
-        32: "Output power derating",
-        64: "Solar charger stops due to low battery",
-        128: "Solar charger stops due to high PV voltage",
-        256: "Solar charger stops due to over load",
-        512: "Solar charger over temperature",
-        1024: "PV charger communication error",
-        2048: "Unknown Warning 3-11",
-        4096: "Unknown Warning 3-12",
-        8192: "Unknown Warning 2-13",
-        16384: "Unknown Warning 2-14",
-        32768: "Unknown Warning 3-15"
-      }
+            1: "Fan is locked when inverter is on",
+            2: "Fan2 is locked when inverter is on",
+            4: "Battery is over-charged",
+            8: "Low battery",
+            16: "Overload",
+            32: "Output power derating",
+            64: "Solar charger stops due to low battery",
+            128: "Solar charger stops due to high PV voltage",
+            256: "Solar charger stops due to over load",
+            512: "Solar charger over temperature",
+            1024: "PV charger communication error",
+            2048: "Unknown Warning 3-11",
+            4096: "Unknown Warning 3-12",
+            8192: "Unknown Warning 2-13",
+            16384: "Unknown Warning 2-14",
+            32768: "Unknown Warning 3-15"
+        }
         iWarning2s = {
-        1: "Unknown Warning 2-0",
-        2: "Unknown Warning 2-1",
-        4: "Unknown Warning 2-2",
-        8: "Unknown Warning 2-3",
-        16: "Unknown Warning 2-4",
-        32: "Unknown Warning 2-5",
-        64: "Unknown Warning 2-6",
-        128: "Unknown Warning 2-7",
-        256: "Unknown Warning 2-8",
-        512: "Unknown Warning 2-9",
-        1024: "Unknown Warning 2-10",
-        2048: "Unknown Warning 2-11",
-        4096: "Unknown Warning 2-12",
-        8192: "Unknown Warning 2-13",
-        16384: "Unknown Warning 2-14",
-        32768: "Unknown Warning 2-15"
-      }
+            1: "Unknown Warning 2-0",
+            2: "Unknown Warning 2-1",
+            4: "Unknown Warning 2-2",
+            8: "Unknown Warning 2-3",
+            16: "Unknown Warning 2-4",
+            32: "Unknown Warning 2-5",
+            64: "Unknown Warning 2-6",
+            128: "Unknown Warning 2-7",
+            256: "Unknown Warning 2-8",
+            512: "Unknown Warning 2-9",
+            1024: "Unknown Warning 2-10",
+            2048: "Unknown Warning 2-11",
+            4096: "Unknown Warning 2-12",
+            8192: "Unknown Warning 2-13",
+            16384: "Unknown Warning 2-14",
+            32768: "Unknown Warning 2-15"
+        }
 
         iWorkStates = {
-        0: "Power On", 
-        1: "Self Test", 
-        2: "Off Grid", 
-        3: "Grid-Tie", 
-        4: "ByPass", 
-        5: "Stop", 
-        6: "Grid charging"
-      }
+            0: "Power On", 
+            1: "Self Test", 
+            2: "Off Grid", 
+            3: "Grid-Tie", 
+            4: "ByPass", 
+            5: "Stop", 
+            6: "Grid charging"
+        }
 
         i = self.readRegister(25200, 75, "I")
        
         self.iWorkState = iWorkStates[i[1]] # 25201
+                                            # 25202	RO	AC voltage grade, 230/120 V
+        if i[3] == 1000:                    # 25203	RO	Rated power(VA)
+            iInternalUsePower = 25
+        else:
+            iInternalUsePower = 50 if i[1] == 4 else 100
+                                            # 25204	RO	reserved
         self.iBatteryVoltage = i[5] / 10.0  # 25205: ["Battery voltage", 0.1, "V"],
         self.iVoltage = i[6] / 10.0         # 25206: ["Inverter voltage", 0.1, "V"],
         self.iGridVoltage = i[7] / 10.0     # 25207: ["Grid voltage", 0.1, "V"],
@@ -255,11 +268,11 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
                                             # 25211: ["Grid current", 0.1, "A"],
                                             # 25212: ["Load current", 0.1, "A"],
         self.iPInverter = i[13]             # 25213: ["Inverter power(P)", 1, "W"],
-        self.iPGrid = i[14]                 # 25214: ["Grid power(P)", 1, "W"],
+        self.iPGrid = i[14] + iInternalUsePower # 25214: ["Grid power(P)", 1, "W"],
         self.iPLoad = i[15]                 # 25215: ["Load power(P)", 1, "W"],
         self.iLoadPercent = i[16]           # 25216: ["Load percent", 1, "%"],
         self.iSInverter = i[17]             # 25217: ["Inverter complex power(S)", 1, "VA"],
-        self.iSGrid = i[18]                 # 25218: ["Grid complex power(S)", 1, "VA"],
+        self.iSGrid = i[18] + iInternalUsePower # 25218: ["Grid complex power(S)", 1, "VA"],
         self.iSLoad = i[19]                 # 25219: ["Load complex power(S)", 1, "VA"],
                                             # 25221: ["Inverter reactive power(Q)", 1, "var"],
                                             # 25222: ["Grid reactive power(Q)", 1, "var"],
@@ -314,6 +327,17 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
     def setUtility(self): # Utility first
         self.writeRegister(20109, 3) # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
         return super().setUtility()
+
+    def setSNU(self):
+        self.writeRegister(20143, 2) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
+        return super().setSNU()
+    def setOSO(self):
+        self.writeRegister(20143, 3) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
+        return super().setOSO()
+    
+    def setFloat(self, voltage):
+        self.writeRegister(10103, int(voltage * 10))  # 10103	RW	Battery float voltage	0.1V
+        return super().setFloat(voltage)
 
 '''# unit test section
 def utRead(register: int): # ask for inverter response from console
