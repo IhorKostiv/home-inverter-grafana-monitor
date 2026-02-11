@@ -31,7 +31,7 @@ def getSolarProductionEstimate(resourceID: str, apiKey: str) -> str:
         print(f"Error: Received status code {response.status_code}")
         print(f"Retry after {response.headers.get('Retry-After', 'N/A')}")
         return f"Error {response.status_code}" # "error: Failed to fetch data"
-def saveSolarProductionEstimateToDB(solarData: str, client: InfluxDBClient, isDebug: bool):
+def saveSolarProductionEstimateToDB(solarData: str, client: InfluxDBClient, logDetail: int):
     solarDataJson = json.loads(solarData)
     forecasts = solarDataJson["forecasts"]
     for forecast in forecasts:
@@ -45,7 +45,7 @@ def saveSolarProductionEstimateToDB(solarData: str, client: InfluxDBClient, isDe
                 "pvDuration": forecast["period"]
             }
         }]
-        if isDebug:
+        if logDetail >= 3:
             print(datetime.now(), " ", json_body)
 
         client.write_points(json_body)
@@ -59,42 +59,45 @@ class Solcast(object):
     TargetPower: int
     LowPower: int
     MinPower: int
-    isDebug: bool = False
+    logDetail: int = 0
 
     TargetDetected = None
     LowDetected = None
     MinDetected = None
+    LoadAverages = {} 
 
-    def __init__(self, client: InfluxDBClient, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int, isDebug: bool = False):
+    def __init__(self, client: InfluxDBClient, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int, gridTied: list = {}, logDetail: int = 0):
         self.client = client
         self.MaxPowerLimit = maxPowerLimit
         self.TargetPower = targetPower
         self.LowPower = lowPower
         self.MinPower = minPower 
-        self.isDebug = isDebug
-    
-    def Calculate(self, CalcTime: datetime, Estimate: str, InternalConsumption: int, gridTied: list = {}):
-        calcTime = CalcTime.strftime('%Y-%m-%dT%H:%M:%SZ')
-        self.TargetDetected = None
-        self.LowDetected = None
-        self.MinDetected = None
+        self.logDetail = logDetail
 
+        self.LoadAverages(gridTied)
+    
+    def LoadAverages(self, gridTied: list = {}):
         LoadHistory = self.client.query("SELECT mean(""iPLoad"") FROM ""inverter"" WHERE time >= now() - 3d GROUP BY time(30m) tz('Europe/Kiev')")
-        LoadAverages = {} 
         for table in LoadHistory: # compute average load approximation for each 30min slot using last 3 days data
             for record in table:
                 t = datetime.strptime(record['time'], '%Y-%m-%dT%H:%M:%SZ').strftime('%H:%M')
                 if t not in gridTied: # ignore grid tied time slots
                     if record['mean'] is None:
-                        if self.isDebug:
+                        if self.logDetail >= 3:
                             print(f"!!!\a No load data for {record['time']}, skip")
                     else:
-                        if t in LoadAverages:
-                            LoadAverages[t] = int((LoadAverages[t] + int(record['mean'])) /2)
+                        if t in self.LoadAverages:
+                            self.LoadAverages[t] = int((self.LoadAverages[t] + int(record['mean'])) /2)
                         else:
-                            LoadAverages[t] = int(record['mean'])
+                            self.LoadAverages[t] = int(record['mean'])
                 else:
-                    LoadAverages[t] = 2 #todo: replace with actual grid tied load
+                    self.LoadAverages[t] = 2 #todo: replace with actual grid tied load
+
+    def Calculate(self, CalcTime: datetime, Estimate: str, InternalConsumption: int):
+        calcTime = CalcTime.strftime('%Y-%m-%dT%H:%M:%SZ')
+        self.TargetDetected = None
+        self.LowDetected = None
+        self.MinDetected = None
 
         BatteryRemain = list(self.client.query("SELECT last(\"bRemain\") * 25.6 FROM \"bms\"").get_points())[0]['last']
         print(f"{calcTime} Remain {BatteryRemain:.0f}W {BatteryRemain/51.2:.0f}% for {Estimate}")
@@ -105,8 +108,8 @@ class Solcast(object):
             for record in table:
                 d = datetime.strptime(record['time'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
                 t = d.strftime('%H:%M')
-                if t in LoadAverages:
-                    le = LoadAverages[t]                # Load Estimate, W
+                if t in self.LoadAverages:
+                    le = self.LoadAverages[t]                # Load Estimate, W
                     ge = record['Estimate']             # Generation Estimate, W
                     if d < CalcTime:                    # partial interval
                         diff = (((ge - le) * 0.5) - InternalConsumption) * (30+((d-CalcTime).total_seconds()/60))/30
@@ -122,22 +125,22 @@ class Solcast(object):
                         #print(f"Battery shall be fully charged at {d} UTC")
                     if self.LowDetected is None and BatteryRemain <= self.LowPower:
                         self.LowDetected = d
-                        if self.isDebug:
+                        if self.logDetail >= 3:
                             print(f"Low level detected at {dtKyiv(self.LowDetected)} for {Estimate}")
                     if self.TargetDetected is None and BatteryRemain >= self.TargetPower and diff > 0:
                         self.TargetDetected = d
-                        if self.isDebug:
+                        if self.logDetail >= 3:
                             print(f"Target level detected at {dtKyiv(self.TargetDetected)} for {Estimate}")
                     if BatteryRemain <= self.MinPower:
                         self.MinDetected = d
-                        if self.isDebug:
+                        if self.logDetail >= 3:
                             print(f"!!!\a Battery would be depleted below {self.MinPower}W at {dtKyiv(d)}")
                         break
-                    if self.isDebug:
+                    if self.logDetail >= 3:
                         print(f"{dtKyiv(d)} load {le:.0f}W gen {ge:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
             
                 else:
-                    if self.isDebug:
+                    if self.logDetail >= 3:
                         print(f"!!!\a {dtKyiv(d)} load ?? gen {record['Estimate']:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
                     #print(f"{d.astimezone(ZoneInfo('Europe/Kyiv')).strftime('%Y-%m-%d %H:%M')} load ? gen {record['pvEstimate']:.0f}W cre {cre:.0f} {nre:.0f}W")
 
@@ -194,10 +197,10 @@ def prev30min():
 # Example usage
 if __name__ == "__main__":
     # refer to https://toolkit.solcast.com.au/ for details
-    if len(sys.argv) > 1: # retrieve solcast data and save to DB for further use
+    if len(sys.argv) > 2: # retrieve solcast data and save to DB for further use
         apiKey = sys.argv[1] # os.environ.get("apiKey", "")         # API Key
         resourceID = sys.argv[2] # os.environ.get("resourceID", "") # resource ID
-        isDebug = sys.argv[3] # os.environ.get("IS_DEBUG", "False") == "True"
+        logDetail = sys.argv[3] # os.environ.get("IS_DEBUG", "False") == "True"
 
         solcastResponse = getSolarProductionEstimate(resourceID, apiKey)
         print(datetime.now(), " ", solcastResponse)
@@ -205,7 +208,7 @@ if __name__ == "__main__":
         if solcastResponse != "":            
             client = getClient()
 
-            saveSolarProductionEstimateToDB(solcastResponse, client, isDebug)
+            saveSolarProductionEstimateToDB(solcastResponse, client, logDetail)
         else:
             print(datetime.now(), "Error reading forecast")
     else: # calculate which targets are met
@@ -214,12 +217,15 @@ if __name__ == "__main__":
         sc = Solcast(client, 5120, 4600, 1500, 1024, os.environ.get("IS_DEBUG", "True") == "True")
         gridTied = os.environ.get("GRID_TIED", "").split(",") 
         #gridTied = os.environ.get("GRID_TIED", "20:00,20:30,21:00,21:30,22:00,22:30,23:00,23:30,00:00,00:30,01:00,01:30,02:00,02:30,03:00,03:30").split(",")
-        #Estimate = 'pvEstimate10'
-        #Estimate = '(pvEstimate + pvEstimate10 + pvEstimate10 + pvEstimate10)/4'
-        #Estimate = os.environ.get("SOLCAST_ESTIMATE", '(pvEstimate + pvEstimate10 + pvEstimate10)/3')
-        #Estimate = '(pvEstimate + pvEstimate + pvEstimate + pvEstimate10)/4'
-        #Estimate = '(pvEstimate + pvEstimate10)/2'
-        Estimate = 'pvEstimate' # seems reliable enough to us it as is
+        if len(sys.argv) > 1:
+            Estimate = sys.argv[1]
+        else:
+            #Estimate = 'pvEstimate10'
+            #Estimate = '(pvEstimate + pvEstimate10 + pvEstimate10 + pvEstimate10)/4'
+            #Estimate = os.environ.get("SOLCAST_ESTIMATE", '(pvEstimate + pvEstimate10 + pvEstimate10)/3')
+            #Estimate = '(pvEstimate + pvEstimate + pvEstimate + pvEstimate10)/4'
+            #Estimate = '(pvEstimate + pvEstimate10)/2'
+            Estimate = 'pvEstimate' # seems reliable enough to use it as is
 
         sc.Calculate(datetime.now(timezone.utc), Estimate, gridTied)
 

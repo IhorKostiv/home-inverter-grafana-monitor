@@ -1,9 +1,11 @@
 import serial
-import binascii
+#import binascii
 import crcmod
 import platform
 import sys
 import os
+import time
+from datetime import datetime
 
 # Define the custom CRC function with a 16-bit polynomial
 def axiomaCustomCRC():
@@ -40,9 +42,16 @@ def sendMessage(msg: str):
         else:
             message_with_crc = bytes.fromhex(b[2:].decode('utf-8'))
         # Convert message to hex format
-        hex_message = binascii.hexlify(message_with_crc).decode('utf-8')
+        hex_message = message_with_crc.hex() # binascii.hexlify(message_with_crc).decode('utf-8')
 
-        print(f"Sending to RS232 (hex): {hex_message}")
+        # Wait until the current second is greater than 30
+        # there might be interference with other RS232 scheduled tasks
+        s = 35 - datetime.now().second
+        if s > 0:
+            print(f"Wait {s}s...")
+            time.sleep(s)
+
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\tSending to RS232 (hex): {hex_message}")
         if platform.system() == "Linux":
             # Open the RS232 port
             ser = serial.Serial('/dev/ttyUSB0', baudrate=2400, timeout=1)
@@ -51,7 +60,7 @@ def sendMessage(msg: str):
             # Read and print the response from the RS232 port
             ser.flush()
             response = ser.readline()
-            hex_response = binascii.hexlify(response).decode('utf-8')
+            hex_response = response.hex() # binascii.hexlify(response).decode('utf-8')
             print(f"Response from RS232: {response}\nHex : {hex_response}")
             # Close the RS232 port
             ser.close()
@@ -59,12 +68,21 @@ def sendMessage(msg: str):
 
 def translateComand(cmd: str):
     commands = {
-        "SBU": "POP02",
-        "SUB": "POP01",
-        "UTI": "POP00",
-        "CSO": "PCP01",
-        "SNU": "PCP02",
-        "OSO": "PCP03"
+        "SBU"  : "POP02",
+        "SUB"  : "POP01",
+        "UTI"  : "POP00",
+        "CSO"  : "PCP01",
+        "SNU"  : "PCP02",
+        "OSO"  : "PCP03",
+          "0A" : "MUCHGC000",
+          "2A" : "MUCHGC002",
+         "10A" : "MUCHGC010",
+         "20A" : "MUCHGC020",
+         "30A" : "MUCHGC030",
+         "40A" : "MUCHGC040",
+        "27.8V": "PBFT27.8",
+        "27.9V": "PBFT27.9",
+        "26.6V": "PBFT26.6"
     }
     if cmd.upper() in commands:
         return commands[cmd.upper()]
@@ -72,10 +90,9 @@ def translateComand(cmd: str):
         return cmd
 
 def main():
-    print(os.path.abspath(sys.argv[0]).replace(".py", ".json"))
-
     if len(sys.argv) > 1:
-        sendMessage(translateComand(sys.argv[1]))
+        for cmd in sys.argv[1:]:
+           sendMessage(translateComand(cmd))
     else:
         print("Type your message and press Enter. Type exit to quit.")
         while True:
@@ -97,7 +114,6 @@ def hex_to_string(hex_string):
     except ValueError as e:
         return f"Invalid hex string: {e}"
 
-    
 def main2():
     while True:
         s = input("Enter Mesage: ")

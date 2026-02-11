@@ -1,15 +1,18 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import platform
 import time
 import minimalmodbus
 import serial
-from solcast import dtKyiv
 
-def addText(t1:str, t2: str): # used to concatenate strings in warning and error messages to add comma separation where needed
-    return t1 + ", " + t2 if t1 != "" else t2
+def addText(t1:str, t2: str, separator: str = ", "): # used to concatenate strings in warning and error messages to add comma separation where needed
+    return t1 + separator + t2 if t1 != "" else t2
+
+def dtKyiv(t:datetime):
+    return t.astimezone(ZoneInfo('Europe/Kyiv')).strftime('%d@%H:%M')
 
 class UPS(object): # base class for everything
-    def __init__(self, isDebug: bool):
+    def __init__(self, logDetail: int):
         if platform.system() == "Linux": # read Raspberry CPU temperature
             try:
                 with open('/sys/class/thermal/thermal_zone0/temp', 'r') as file:
@@ -20,15 +23,17 @@ class UPS(object): # base class for everything
             print(f"Platform is {platform.system()}")
             self.rpiTemperature: float = 0.0
 
-        self.isDebug: bool = isDebug
+        self.logDetail: int = logDetail
 
         self.ccBatteryFloatVoltage: float = 0.0
 
         self.icEnergyUse: str = ""
+        self.icSolarUseAim: str = ""
         self.icBatteryStopDischarging: float = 0.0
         self.icBatteryStopCharging: float = 0.0
         self.icBatteryEqualization: float = 0.0
         self.icChargerSourcePriority: str = ""
+        self.icMaxUtiChargeCurrent: int = 0
 
         self.pvWorkState: str = ""
         self.pvVoltage: float = 0.0
@@ -84,6 +89,7 @@ class UPS(object): # base class for everything
         }
         optionalValues = [ # optional fields to save space and traffic
             ("icEnergyUse", ''),
+            ("icSolarUseAim", ''),
             ("pvWorkState", ''),
             ("pvBatteryVoltage", 0.0),
             ("pvRadiatorTemperature", 0),
@@ -120,46 +126,56 @@ class UPS(object): # base class for everything
             }
         ]
 
+    def Log(self, logLevel: int, message: str):
+        if self.logDetail >= logLevel:
+            print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\t{message}")
+
 class UPSmgr(UPS): # base class for smarter solar power and battery management (use most of solar but still save battery)
     def setSBU(self):
-        if self.isDebug:
-            print("set SBU")
+        self.Log(1, "set SBU")
         return True
+
     def setSUB(self):
-        if self.isDebug:
-            print("set SUB")
+        self.Log(1, "set SUB")
         return True
+
     def setUtility(self):
-        if self.isDebug:
-            print("set UTI")
+        self.Log(1, "set UTI")
         return True
 
     def setCSO(self):
-        if self.isDebug:
-            print("set CSO")
+        self.Log(1, "set CSO")
         return True
+
     def setSNU(self):
-        if self.isDebug:
-            print("set SNU")
+        self.Log(1, "set SNU")
         return True
+
     def setOSO(self):
-        if self.isDebug:
-            print("set OSO")
+        self.Log(1, "set OSO")
         return True
 
     def moreSolar(self):
-        print(self.BestEnergyMsg)
+        self.Log(2, self.BestEnergyMsg)
         return self.setOSO()
+
     def saveBattery(self, intenseCharge: bool = False):
-        print(self.BestEnergyMsg)
+        self.Log(2, self.BestEnergyMsg)
         if intenseCharge:
             return self.setSNU()
         else:
             return self.setOSO()
         
     def setFloat(self, voltage: float):
-        if self.isDebug:
-            print(f"set FLoat {voltage} V")
+        self.Log(1, f"set FLoat {voltage}V")
+        return True
+
+    def setGridChargingCurrent(self, current: int):
+        self.Log(1, f"set Grid Charging {current}A")
+        return True
+
+    def setGridCharging(self, mode: str, curent: int):
+        self.Log(1, f"set Grid Charging {mode} {curent}A")
         return True
 
     # todo: Solar Use Aim LBU - BLU depending on battery SOC and future estimate
@@ -167,32 +183,32 @@ class UPSmgr(UPS): # base class for smarter solar power and battery management (
 
     def setBestEnergySOC(self, TargetDetected: datetime, LowDetected: datetime, MinDetected: datetime):
         if TargetDetected is not None and (LowDetected is None or TargetDetected < LowDetected):
-            if self.isDebug:
-                print(f"Target level shall be reached first at {dtKyiv(TargetDetected)}, Low at {LowDetected}")
+            self.Log(3, f"Target level shall be reached first at {dtKyiv(TargetDetected)}, Low at {LowDetected}")
             if self.icEnergyUse.upper() in {"UTI", "SUB"}:
-                self.BestEnergyMsg = f"Target @{dtKyiv(TargetDetected)}"
-                return self.moreSolar()
+                self.BestEnergyMsg = f"T {dtKyiv(TargetDetected)}"
+                return 1 if self.moreSolar() else 0
         elif LowDetected is not None:
-            if self.isDebug:
-                print(f"Low level could be reached first at {dtKyiv(LowDetected)}, Target at {TargetDetected}")
+            self.Log(3, f"Low level could be reached first on {dtKyiv(LowDetected)}, Target on {TargetDetected}")
             if self.icEnergyUse.upper() in {"SBU", "SUB"}:
-                self.BestEnergyMsg = f"Low @{dtKyiv(LowDetected)}"
+                self.BestEnergyMsg = f"L {dtKyiv(LowDetected)}"
                 if self.pvChargerPower < self.iPLoad:
-                    return self.saveBattery(MinDetected is not None)
+                    return -1 if self.saveBattery(MinDetected is not None) else 0
             if MinDetected is not None:
-                self.BestEnergyMsg += f" (Minimum @{dtKyiv(MinDetected)})"
-                print(f"!!! Battery would be depleted below minimum at {dtKyiv(MinDetected)}")
+                self.BestEnergyMsg = addText(self.BestEnergyMsg, f"M {dtKyiv(MinDetected)})")
+                self.Log(2, f"!!! Battery would be depleted below minimum on {dtKyiv(MinDetected)}")
+        return None
 
     def setBestEnergyUse(self, solarVoltageOn: float, solarVoltageOff: float):
-        if self.isDebug:
+        if self.logDetail >= 3:
             print(f"Check Solar Voltage {solarVoltageOff} > {self.pvVoltage} > {solarVoltageOn}")
         match self.icEnergyUse.upper():
             case "UTI" | "SUB": # Utility or PV mixing mode
-                if solarVoltageOn > 1:
+                if solarVoltageOn > 1 and self.iBatteryVoltage > self.icBatteryStopCharging:
                     if self.pvVoltage > solarVoltageOn and self.pvChargerPower > 0: # likely PV can produce more - however more sophisticated formula needed since voltage depends on power produced
                         self.BestEnergyMsg = f"Solar ON by Voltage {self.pvVoltage} > {solarVoltageOn} V"
                         return self.moreSolar()
-                    elif self.pvChargerPower > self.iPLoad and self.pvVoltage > solarVoltageOff: #+ self.iInternalUsePower: # PV produces enough just charging - technically charging can be delayed
+                    # todo: mind solar use aim LBU - BLU here
+                    elif self.icSolarUseAim == "LBU" and self.pvChargerPower > self.iPLoad and self.pvVoltage > solarVoltageOff: #+ self.iInternalUsePower: # PV produces enough just charging - technically charging can be delayed
                         self.BestEnergyMsg = f"Solar ON by Power {self.pvChargerPower} > {self.iPLoad} W"
                         return self.moreSolar()
                 #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
@@ -215,14 +231,14 @@ class UPSmgr(UPS): # base class for smarter solar power and battery management (
         return False
 
 class UPSmodbus(UPS): # base class for modbus communication (USB)
-    def __init__(self, isDebug: bool, device_path: str, device_id: int, baud_rate: int):
-        super().__init__(isDebug)
+    def __init__(self, logDetail: int, device_path: str, device_id: int, baud_rate: int):
+        super().__init__(logDetail)
 
         if device_path != "SIMULATOR":
             self.scc = minimalmodbus.Instrument(device_path, device_id)
             self.scc.serial.baudrate = baud_rate
             self.scc.serial.timeout = 0.5
-            self.scc.debug = isDebug
+            self.scc.debug = logDetail >= 3
 
     def __del__(self):
         if hasattr(self, 'scc'):
@@ -244,13 +260,15 @@ class UPSmodbus(UPS): # base class for modbus communication (USB)
         if hasattr(self, 'scc'): # read data from USB device
             time.sleep(0.1) # just in case, let interface calm down
             try:
-                return self.scc.write_register(register, value)
+                self.scc.write_register(register, value)
+                return True
             except:
                 time.sleep(1) # wait a while and try to read once more
-                return self.scc.write_register(register, value)
+                self.scc.write_register(register, value)
+                return True
         else:
             print(f'write register {register} value {value}')
-            return
+            return True
 
 class UPSoffgrid(UPSmgr): # base class for off grid type invertors
     def moreSolar(self):
@@ -264,8 +282,8 @@ class UPSoffgrid(UPSmgr): # base class for off grid type invertors
         return super().saveBattery() and self.setUtility()
 
 class UPSserial(UPS): # base class for serial communication (RS232)
-    def __init__(self, isDebug: bool, device_path: str, baud_rate: int):
-        super().__init__(isDebug)
+    def __init__(self, logDetail: int, device_path: str, baud_rate: int):
+        super().__init__(logDetail)
 
         if device_path != "SIMULATOR":
             self.scc = serial.Serial(device_path, baud_rate, timeout=1)
@@ -300,13 +318,13 @@ class UPSserial(UPS): # base class for serial communication (RS232)
 
 class UPShybrid(UPSmgr): # base class for hybrid type invertors
     def moreSolar(self):
-        print(f"More Solar {self.iBatteryVoltage} >= avg({self.icBatteryStopCharging} {self.icBatteryStopDischarging}) V")
+        self.Log(1, f"More Solar {self.iBatteryVoltage} >= avg({self.icBatteryStopCharging} {self.icBatteryStopDischarging}) V")
         if self.iBatteryVoltage > (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2:
             return super().moreSolar() and self.setSBU()
         else:
             return super().moreSolar() and self.setSUB()
     def saveBattery(self):
-        print(f"Save Battery {self.iBatteryVoltage} <= avg({self.icBatteryStopCharging} {self.icBatteryStopDischarging}) V")
+        self.Log(1, f"Save Battery {self.iBatteryVoltage} <= avg({self.icBatteryStopCharging} {self.icBatteryStopDischarging}) V")
         if self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2:
             return super().saveBattery() and self.setUtility()
         else:

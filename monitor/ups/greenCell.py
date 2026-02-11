@@ -20,8 +20,8 @@ def bitmaskText(newLine, Bitmask, Texts): # used to convert error or warning bit
 
 class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage GreenCell inverter
     
-    def __init__(self, isDebug: bool, device_path: str):
-        super().__init__(isDebug, device_path, 4, 19200)
+    def __init__(self, logDetail: int, device_path: str):
+        super().__init__(logDetail, device_path, 4, 19200)
 
         self.readChargerControl()
         self.readInverterControl()
@@ -35,11 +35,10 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
             self.readPV()
             self.readInverter()
 
-    def readRegister(self, register: int, length: int, debugMessage: str):
+    def readRegister(self, register: int, length: int, message: str):
         if hasattr(self, 'scc'): # check if we are live in production or unit testing
             r = super().readRegister(register, length)
-            #if self.isDebug:
-            print(f"{datetime.now().strftime('%Y-%m-%d %H:%M')} {debugMessage}: {r}")
+            self.Log(2, f"{message}: {r}")
         else:
             if register in utMessages:
                 r = utMessages[register]
@@ -49,12 +48,13 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
 
     def readChargerControl(self):
         cc = self.readRegister(10100, 3, "cC")
-        self.icBatteryFloatVoltage = cc[3] / 10.0  # 10103	RW	Battery float voltage	0.1V
+        self.ccBatteryFloatVoltage = cc[3] / 10.0  # 10103	RW	Battery float voltage	0.1V
         return cc
         
     def readInverterControl(self): # read inverter control message values
-        icEnergyUses = { 1: "SBU", 2: "SUB", 3: "UTI", 4: "SOL"}
-        icChargerSourcePriorities = { 0: "Sol", 2: "SNU", 3: "OSO" }
+        icEnergyUses = { 0: "Nil", 1: "SBU", 2: "SUB", 3: "UTI", 4: "SOL"}
+        icChargerSourcePriorities = { 0: "CSO", 2: "SNU", 3: "OSO" }
+        icSolarUseAims = { 0: "LBU", 1: "BLU" }
 
         ic = self.readRegister(20100, 45, "iC")
                                                # 20101	RW	Inverter offgrid work enable	0：OFF 1：ON  
@@ -64,7 +64,7 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
                                                # 20108	RW	Inverter discharger to grid enable	"48V:   0：OFF  1：ON 24V:  Null"
         self.icEnergyUse = icEnergyUses[ic[9]] # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
                                                # 20111	RW	Grid protect standard	0：VDE4105; 1：UPS  ;  2：home ;3:GEN
-        #icSolarUseAim = icSolarUseAims[ic[12]] # 20112	RW	SolarUse Aim	"0:LBU  1:BLU(defalut)(for PV;PH) | 0:LB  1:LU(defalut)  (for EP)"
+        self.icSolarUseAim = icSolarUseAims[ic[12]] # 20112	RW	SolarUse Aim	"0:LBU  1:BLU(defalut)(for PV;PH) | 0:LB  1:LU(defalut)  (for EP)"
                                                # 20113	RW	Inverter max discharger current	"48V:  0.1A（AC）| 12V 24V:  Null"
         self.icBatteryStopDischarging = ic[18] / 10.0 # 20118	RW	Battery stop discharging voltage	0.1V  
         self.icBatteryStopCharging = ic[19] / 10.0    # 20119	RW	Battery stop charging voltage	0.1V  
@@ -267,13 +267,13 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
                                             # 25210: ["Inverter current", 0.1, "A"],
                                             # 25211: ["Grid current", 0.1, "A"],
                                             # 25212: ["Load current", 0.1, "A"],
-        self.iPInverter = i[13]             # 25213: ["Inverter power(P)", 1, "W"],
-        self.iPGrid = i[14] + iInternalUsePower # 25214: ["Grid power(P)", 1, "W"],
-        self.iPLoad = i[15]                 # 25215: ["Load power(P)", 1, "W"],
+        self.iPInverter = bitmaskNegative(i[13]) # 25213: ["Inverter power(P)", 1, "W"],
+        self.iPGrid = bitmaskNegative(i[14]) + iInternalUsePower # 25214: ["Grid power(P)", 1, "W"],
+        self.iPLoad = bitmaskNegative(i[15])  # 25215: ["Load power(P)", 1, "W"],
         self.iLoadPercent = i[16]           # 25216: ["Load percent", 1, "%"],
-        self.iSInverter = i[17]             # 25217: ["Inverter complex power(S)", 1, "VA"],
-        self.iSGrid = i[18] + iInternalUsePower # 25218: ["Grid complex power(S)", 1, "VA"],
-        self.iSLoad = i[19]                 # 25219: ["Load complex power(S)", 1, "VA"],
+        self.iSInverter = bitmaskNegative(i[17]) # 25217: ["Inverter complex power(S)", 1, "VA"],
+        self.iSGrid = bitmaskNegative(i[18]) + iInternalUsePower # 25218: ["Grid complex power(S)", 1, "VA"],
+        self.iSLoad = bitmaskNegative(i[19]) # 25219: ["Load complex power(S)", 1, "VA"],
                                             # 25221: ["Inverter reactive power(Q)", 1, "var"],
                                             # 25222: ["Grid reactive power(Q)", 1, "var"],
                                             # 25223: ["Load reactive power(Q)", 1, "var"],
@@ -317,27 +317,42 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
         return i
   
     def setSBU(self): # Solar Battery Utility
-        self.writeRegister(20109, 1)  # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
-        return super().setSBU()
+        if self.icEnergyUse != "SBU":
+            return super().setSBU() and self.writeRegister(20109, 1)  # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
+        else:
+            return True
 
     def setSUB(self): # todo: Solar Utility Battery
         raise NotImplementedError("SUB is not available for this inverter") # there shall be compatiblity check since likely 48v inverter may have this function
         return super().setSUB()
 
     def setUtility(self): # Utility first
-        self.writeRegister(20109, 3) # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
-        return super().setUtility()
+        if self.icEnergyUse != "UTI":
+            return super().setUtility() and self.writeRegister(20109, 3) # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
+        else:
+            return True
 
     def setSNU(self):
-        self.writeRegister(20143, 2) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
-        return super().setSNU()
+        if self.icChargerSourcePriority != "SNU":
+            return super().setSNU() and self.writeRegister(20143, 2) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
+        else:
+            return True
+    def setCSO(self):
+        if self.icChargerSourcePriority != "CSO":
+            return super().setCSO() and self.writeRegister(20143, 0) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
+        else:
+            return True
     def setOSO(self):
-        self.writeRegister(20143, 3) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
-        return super().setOSO()
-    
+        if self.icChargerSourcePriority != "OSO":
+            return super().setOSO() and self.writeRegister(20143, 3) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
+        else:
+            return True
+
     def setFloat(self, voltage):
-        self.writeRegister(10103, int(voltage * 10))  # 10103	RW	Battery float voltage	0.1V
-        return super().setFloat(voltage)
+        if self.ccBatteryFloatVoltage != voltage:
+            return super().setFloat(voltage) and self.writeRegister(10103, int(voltage * 10))  # 10103	RW	Battery float voltage	0.1V
+        else:
+            return True
 
 '''# unit test section
 def utRead(register: int): # ask for inverter response from console

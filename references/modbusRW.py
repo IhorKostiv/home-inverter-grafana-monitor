@@ -1,6 +1,7 @@
 import time
 import minimalmodbus
 import sys
+from datetime import datetime
 
 device_port = sys.argv[1]
 device_id = int(sys.argv[2])
@@ -15,7 +16,10 @@ SERPORT = f'/dev/tty{device_port}'
 SERTIMEOUT = 0.5
 SERBAUD = baud_rate
 
-time.sleep(1)
+s = 20 - datetime.now().second
+if s > 0:
+    print(f"Wait {s}s...")
+    time.sleep(s+1)
 
 i = minimalmodbus.Instrument(SERPORT, device_id)
 i.serial.timeout= SERTIMEOUT

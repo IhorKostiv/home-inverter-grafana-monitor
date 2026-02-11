@@ -8,21 +8,27 @@ if __name__ == "__main__":
 else:
     from . import UPSserial, UPShybrid, addText
 
-# constants: inverter communication commands
+# inverter communication commands
 cmdRetryCount = 3
-cmdQPI = "515049beac0d"         # QPI   Device Protocol ID Inquiry
-cmdQPIGS = "5150494753b7a90d"   # QPIGS Device general status parameters inquiry
-cmdQPIRI = "5150495249f8540d"   # QPIRI Device Rating Information inquiry
-cmdQMOD = "514d4f4449c10d"      # QMOD  Device Mode inquiry
-cmdQPIWS = "5150495753b4da0d"   # QPIWS Device Warning Status inquiry
-cmdQ1 = "51311bfc0d"            # Q1    undocumented Temperature data inquiry
-cmdSBU = "504f503032e20b0d"     # POP02 Setting device output source priority SBU
-cmdSUB = "504f503031d2690d"     # POP01 Setting device output source priority SOL
-cmdUtility = "504f503030c2480d" # POP00 Setting device output source priority Utility
-cmdCSO = "50435030319d5b0d"     # PCP01 Solar first charging
-cmdSNU = "5043503032ad380d"     # PCP02 Solar & Utility charging
-cmdOSO = "5043503033bd190d"     # PCP03 only Solar charging
+cmdQPI      = "QPI"     # "515049beac0d"     # QPI   Device Protocol ID Inquiry
+cmdQPIGS    = "QPIGS"   # "5150494753b7a90d" # QPIGS Device general status parameters inquiry
+cmdQPIRI    = "QPIRI"   # "5150495249f8540d" # QPIRI Device Rating Information inquiry
+cmdQMOD     = "QMOD"    # "514d4f4449c10d"   # QMOD  Device Mode inquiry
+cmdQPIWS    = "QPIWS"   # "5150495753b4da0d" # QPIWS Device Warning Status inquiry
+cmdQ1       = "Q1"      # "51311bfc0d"       # Q1    undocumented Temperature data inquiry
+cmdSBU      = "POP02"   # "504f503032e20b0d" # POP02 Setting device output source priority SBU
+cmdSUB      = "POP01"   # "504f503031d2690d" # POP01 Setting device output source priority SOL
+cmdUtility  = "POP00"   # "504f503030c2480d" # POP00 Setting device output source priority Utility
+cmdCSO      = "PCP01"   # "50435030319d5b0d" # PCP01 Solar first charging
+cmdSNU      = "PCP02"   # "5043503032ad380d" # PCP02 Solar & Utility charging
+cmdOSO      = "PCP03"   # "5043503033bd190d" # PCP03 only Solar charging
+cmdGridChargingModes = { "CSO": cmdCSO, "SNU": cmdSNU, "OSO": cmdOSO }
+def cmdFloatVoltage(voltage: float):         # PBFTnn.n Setting battery float voltage
+    return f"PBFT{voltage:04.1f}"       
+def cmdUtiChargeCurrent(current: int):       # MUCHGCnnn Setting utility max charge current
+    return f"MUCHGC{current:03d}"
 
+# inveter communication responses
 compatibleProtocols = ['(PI30']
 
 def extract_values(input_string): # extracting values from response into array
@@ -62,8 +68,17 @@ def axiomaCRC(data): # CRC function for Axioma inverter
     return crc_value.to_bytes(2, byteorder='big')
 
 class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axioma inverter
+    
+    def readSerial(self, cmd: str):
+        if "utMessages" in globals() and cmd in utMessages:
+            return utMessages[cmd][:-3].decode('utf-8', errors='ignore')
+        else:
+            b = cmd.encode("utf-8")
+            crc = axiomaCRC(b) # Calculate CRC and append to the message
+            b_crc = (b + crc + b'\r').hex() # concatenate altogether in hex format
+            return self.readSerialR(b_crc, cmdRetryCount)
         
-    def readSerial(self, cmd: str, retryCount: int, breakOnEmpty: bool = False): # read data with CRC check
+    def readSerialR(self, cmd: str, retryCount: int, breakOnEmpty: bool = False): # read data with CRC check
         
         if retryCount <= 0:
             raise IOError(f"Error reading RS232 port {cmd}")
@@ -77,38 +92,37 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
             else:
                 r = utRead(cmd)
 
-        #if self.isDebug: 
-        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M')}\t{cmd}\t{r}") # format usable for putting into Excel (hopefully)
+        self.Log(2, f"{bytes.fromhex(cmd[:-6]).decode('utf-8')}\t{r}") # format usable for putting into Excel (hopefully)
         
         if len(r) < 3 and not breakOnEmpty: # connection broken, reopen and re-read one more time
             self.reopenSerial()
             time.sleep(1.0)
-            return self.readSerial(cmd, retryCount - 1, True)
+            return self.readSerialR(cmd, retryCount - 1, True)
         
         # check CRC and re-read if not match
         crc = axiomaCRC(r[:-3])
         if r[-3:][:2] != crc: # CRC do not match, reset and re-read
-            print(f"Bad CRC {r[-3:][:2]} != {crc}")
+            self.Log(0, f"Bad CRC {bytes.fromhex(cmd[:-6]).decode('utf-8')}\t{r}")
             time.sleep(1.0)
             self.reopenSerial()
             time.sleep(1.0)
-            return self.readSerial(cmd, retryCount - 1)
+            return self.readSerialR(cmd, retryCount - 1)
 
         if r[:-3] == b'(NAK' : # if NAK received unexpectedly, try again just once to not recurse
             time.sleep(0.8)
-            return self.readSerial(cmd, retryCount - 1)
+            return self.readSerialR(cmd, retryCount - 1)
         
         return r[:-3].decode('utf-8', errors='ignore')
 
     def setSerial(self, cmd: str): # send command to change values within inverter
-        return self.readSerial(cmd, cmdRetryCount) == '(ACK'
+        return self.readSerial(cmd) == '(ACK' #, cmdRetryCount) == '(ACK'
 
     def batCurrent(self, charge: float, discharge: float): # merge battery current into one variable instead of two
         return discharge - charge
     
-    def __init__(self, isDebug: bool, device_path: str):
+    def __init__(self, logDetail: int, device_path: str):
         self.iInternalUsePower = 35
-        super().__init__(isDebug, device_path, 2400)
+        super().__init__(logDetail, device_path, 2400)
         
         if not self.readQPI() in compatibleProtocols:
             raise TypeError("Incompatible inverter protocol")
@@ -123,14 +137,14 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
             self.iPGrid = self.iSGrid = 2 if self.iGridVoltage > 100 else 0
         
     def readQPI(self): # Device Protocol validation
-        r = self.readSerial(cmdQPI, cmdRetryCount) # "QPI")
+        r = self.readSerial(cmdQPI) #, cmdRetryCount) # "QPI")
         return r
     
     def readQPIRI(self): # Device Rating Information inquiry
         icEnergyUses = { 0: "Uti", 1: "SUB", 2: "SBU" }
-        icChargerSourcePriorities = { 1: "Sol", 2: "SNU", 3: "OSO" }
+        icChargerSourcePriorities = { 1: "CSO", 2: "SNU", 3: "OSO" }
 
-        r = self.readSerial(cmdQPIRI, cmdRetryCount) # "QPIRI")
+        r = self.readSerial(cmdQPIRI) #, cmdRetryCount) # "QPIRI")
         v = extract_values(r)        
         """
         # BBB.B Grid rating voltage B is an integer ranging from 0 to 9. The units is V.
@@ -150,7 +164,8 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
         if len(v) > 12:
             self.ccBatteryFloatVoltage = float(v[11])           # LL.L Battery float voltage L is an Integer ranging from 0 to 9. The units is V.
         # O O Battery type 0: AGM 1: Flooded 2: User 3: Pylon 5: Weco 6: Soltaro 8: Lib 9: Lic
-        # P PP Max AC charging current P is an Integer ranging from 0 to 9 The units is A. If the max AC charging current is greater than 99A, then return to PPP
+        if len(v) > 14:
+            self.icMaxUtiChargeCurrent = int(v[13])         # P PP Max AC charging current P is an Integer ranging from 0 to 9 The units is A. If the max AC charging current is greater than 99A, then return to PPP
         # Q QQ0 Max charging current Q is an Integer ranging from 0 to 9. The units is A.
         # O O Input voltage range 0: Appliance 1: UPS
         
@@ -159,7 +174,6 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
         if len(v) > 18:
             self.icChargerSourcePriority = icChargerSourcePriorities[int(v[17])] # Q Q Charger source priority 1: Solar first 2: Solar + Utility 3: Only solar charging permitted
         """
-        # Q Q Charger source priority 1: Solar first 2: Solar + Utility 3: Only solar charging permitted
         # R R Parallel max num R is an Integer ranging from 0 to 9. 
         # S SS Machine type 00: Grid tie; 01: Off Grid; 10: Hybrid.
         # T T Topology 0: transformerless 1: transformer
@@ -181,7 +195,7 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
         
         pvWorkStates = { '000': "Off", '100': "?c", '110': "Sc", '101': "Gc", '111': "SGc" }
     
-        r = self.readSerial(cmdQPIGS, cmdRetryCount) # "QPIGS")
+        r = self.readSerial(cmdQPIGS) #, cmdRetryCount) # "QPIGS")
         v = extract_values(r)        
         if len(v) > 1:
             self.iGridVoltage = float(v[0]) # BBB.B Grid voltage B is an Integer number 0 to 9. The units is V
@@ -250,7 +264,7 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
         return v
 
     def readQMOD(self): # Device Mode inquiry
-        r = self.readSerial(cmdQMOD, cmdRetryCount) # "QMOD")
+        r = self.readSerial(cmdQMOD) #, cmdRetryCount) # "QMOD")
         if len(r) > 1:
             iWorkStates = { 'P': "Power on", 'S': "Standby", 'L': "Line", 'B': "Battery", 'F': "Fault", 'D': "Shutdown" }
             s = r[1]
@@ -263,7 +277,7 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
 
     def readQPIWS(self): # Device Warning Status inquiry (100000000000000000000000000000000000
         bitOK = "0"
-        r = self.readSerial(cmdQPIWS, cmdRetryCount)[1:]
+        r = self.readSerial(cmdQPIWS)[1:] #, cmdRetryCount)[1:]
 
         messages = [
             ( 0, "pvWarning", "PV loss"),
@@ -327,7 +341,7 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
 
     def readQ1(self): # undocumented temperature data
         
-        r = self.readSerial(cmdQ1, cmdRetryCount) # "QPIGS")
+        r = self.readSerial(cmdQ1) #, cmdRetryCount) # "QPIGS")
         v = extract_values(r)        
         if len(v) > 4:
             self.tRadiatorTemperature = int(v[4])
@@ -344,9 +358,9 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
       iAccumulatedDischargerPower = (soc[47] * 1000) + (soc[48] / 10.0) # 25247: ["Accumulated discharger power high", 1000, "kWh"],
       iAccumulatedSelfusePower = (soc[55] * 1000) + (soc[56] / 10.0 )    # 25255: ["Accumulated self_use power high", 1000, "kWh"], # 25256: ["Accumulated self_use power low", 0.1, "kWh"],
     """  
-    def setOutputSource(self, mode: str, cmd: str): # change inverter output source mode
+    def setCommand(self, cmd: str): # change inverter output source mode
         r = self.setSerial(cmd)
-        print(f"{mode} {cmd} set {'OK' if r else 'Fail'}")
+        self.Log(3, f"{cmd} set {'OK' if r else 'Fail'}")
         return r
     """
     POP<NN><cr>: Setting device output source priority
@@ -358,36 +372,54 @@ class Axioma(UPSserial, UPShybrid): # object to communicate with and manage Axio
         if self.icEnergyUse == "SBU":
             return True
         else:
-            return super().setSBU() and self.setOutputSource("SBU", cmdSBU)
+            return super().setSBU() and self.setCommand(cmdSBU)
 
     def setSUB(self): # Solar Utility Battery POP01 504f503031d2690d
         if self.icEnergyUse == "SUB":
             return True
         else:
-            return super().setSUB() and self.setOutputSource("SUB", cmdSUB)
+            return super().setSUB() and self.setCommand(cmdSUB)
 
     def setUtility(self): # Utility first POP00 504f503030c2480d
         if self.icEnergyUse == "Uti":
             return True
         else:
-            return super().setUtility() and self.setOutputSource("Utility", cmdUtility)
+            return super().setUtility() and self.setCommand(cmdUtility)
 
     def setCSO(self):
-        if self.icChargerSourcePriority == "Sol":
+        if self.icChargerSourcePriority == "CSO":
             return True
         else:
-            return super().setCSO() and self.setOutputSource("Sol", cmdCSO)
+            return super().setCSO() and self.setCommand(cmdCSO)
     def setSNU(self):
         if self.icChargerSourcePriority == "SNU":
             return True
         else:
-            return super().setSNU() and self.setOutputSource("SNU", cmdSNU)   
+            return super().setSNU() and self.setCommand(cmdSNU)   
 
     def setOSO(self):
         if self.icChargerSourcePriority == "OSO":
             return True 
         else:
-            return super().setOSO() and self.setOutputSource("OSO", cmdOSO)
+            return super().setOSO() and self.setCommand(cmdOSO)
+
+    def setFloat(self, voltage: float):
+        if self.ccBatteryFloatVoltage != voltage:
+            return super().setFloat(voltage) and self.setCommand(cmdFloatVoltage(voltage))
+        else:
+            return True
+
+    def setGridChargingCurrent(self, current: int):
+        if self.icMaxUtiChargeCurrent != current:
+            return super().setGridChargingCurrent(current) and self.setCommand(cmdUtiChargeCurrent(current))
+        else:
+            return True
+
+    def setGridCharging(self, mode: str, current: int):
+        if self.icMaxUtiChargeCurrent != current:
+            return super().setGridCharging(mode, current) and self.setCommand(cmdGridChargingModes[mode]) and self.setCommand(cmdUtiChargeCurrent(current))
+        else:
+            return True
     
 # unit test section
 def utRead(cmd: str): # ask for inverter response from console
@@ -400,12 +432,12 @@ def utRead(cmd: str): # ask for inverter response from console
 # Example usage
 if __name__ == "__main__": # testing and debugging
     utMessages = {
-        "515049beac0d":    b'(PI30\x9a\x0b\r',
-        "5150494753b7a90d":        b'(222.1 50.0 217.0 50.0 0173 0082 006 398 26.10 000 100 0032 01.4 054.9 00.00 00000 00010110 00 01 00081 110 0 01 0000\x10\xd7\r',
-        "5150495249f8540d":        b'(220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.0 21.5 28.2 27.0 0 40 040 1 2 2 1 01 0 0 27.0 0 1\xc3"\r',
-        "514d4f4449c10d":  b'(B\xe7\xc9\r',
-        "5150495753b4da0d":        b'(000000000000000000000000000000000000<\x8e\r',
-        "51311bfc0d":      b'(01 00 00 000 032 026 027 035 00 00 000 0030 0000 13\xbb\xe0\r'
+        "QPI":    b'(PI30\x9a\x0b\r',
+        "QPIGS":        b'(222.1 50.0 217.0 50.0 0173 0082 006 398 26.10 000 100 0032 01.4 054.9 00.00 00000 00010110 00 01 00081 110 0 01 0000\x10\xd7\r',
+        "QPIRI":        b'(220.0 13.6 220.0 50.0 13.6 3000 3000 24.0 25.0 21.5 28.2 27.0 0 40 040 1 2 2 1 01 0 0 27.0 0 1\xc3"\r',
+        "QMOD":  b'(B\xe7\xc9\r',
+        "QPIWS":        b'(000000000000000000000000000000000000<\x8e\r',
+        "Q1":      b'(01 00 00 000 032 026 027 035 00 00 000 0030 0000 13\xbb\xe0\r'
     }
     while True:
         i: UPShybrid = Axioma(True, "SIMULATOR")

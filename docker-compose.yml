@@ -13,17 +13,22 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: root
       DB_NAME: ups
-      IS_DEBUG: "False"
+      LOG_DETAIL: "2"
       USB_DEVICE: "/dev/ttyUSB0"
       INVERTER_MODEL: "Axioma"
       SOLAR_VOLTAGE_ON: 140 # approx. 90% of field idle voltage
       SOLAR_VOLTAGE_OFF: 100 # approx. inverter min MPPT voltage
+      PRECARIOUS_CHARGING_ENABLED: "False" # use with caution, enable at your own risk
+      GRID_CHARGING_ENABLED: "False"
+      GRID_CHARGING_FLOAT: 26.6
+      GRID_CHARGING_BULK: 27.9
+      GRID_CHARGING_ESTIMATE: "pvEstimate"
       ACM_DEVICE: "/dev/ttyACM0"
       BMS_MODEL: "MUST"
       GRID_TIED: ""
-      SOLCAST_ESTIMATE: "(pvEstimate10+pvEstimate+pvEstimate)/3"
+      SOLCAST_ESTIMATE: "(pvEstimate+pvEstimate)/2"
       MAX_POWER_LIMIT: 5120
-      TARGET_POWER: 4850 # 4550 27.5 4880 27.9
+      TARGET_POWER: 4750 # 4760 resting at Float voltage 26.6, 4550 27.5, 4880 27.9
       LOW_POWER: 1500
       MIN_POWER: 1024
     depends_on:

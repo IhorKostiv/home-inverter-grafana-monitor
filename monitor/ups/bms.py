@@ -4,8 +4,7 @@ import minimalmodbus
 from datetime import datetime
 
 class bms(object):
-    def __init__(self, isDebug: bool):
-        self.isDebug: bool = isDebug
+        self.logDetail: int = logDetail
 
         self.bCurrent: float = 0.0
         self.bVoltage: float = 0.0
@@ -70,14 +69,14 @@ class bms(object):
         ]
 
 class bmsModbus(bms): # base class for modbus communication (USB)
-    def __init__(self, isDebug: bool, device_path: str, device_id: int, baud_rate: int):
-        super().__init__(isDebug)
+    def __init__(self, logDetail: int, device_path: str, device_id: int, baud_rate: int):
+        super().__init__(logDetail)
 
         if device_path != "SIMULATOR":
             self.scc = minimalmodbus.Instrument(device_path, device_id)
             self.scc.serial.baudrate = baud_rate
             self.scc.serial.timeout = 0.5
-            self.scc.debug = isDebug
+            self.scc.debug = logDetail >= 3
     def __del__(self):
         if hasattr(self, 'scc'):
             self.scc.serial.close()
@@ -121,15 +120,14 @@ def bitmaskNegative(value): # used to extract battery power and current values
         return value
 
 class MUST(bmsModbus): #  object to communicate with and manage MUST battery
-    def __init__(self, isDebug: bool, device_path: str):
-        super().__init__(isDebug, device_path, 1, 9600)
+    def __init__(self, logDetail: int, device_path: str):
+        super().__init__(logDetail, device_path, 1, 9600)
 
         self.readData()
-    def readRegister(self, register: int, length: int, debugMessage: str):
+    def readRegister(self, register: int, length: int, message: str):
         if hasattr(self, 'scc'): # check if we are live in production or unit testing
             r = super().readRegister(register, length)
-            #if self.isDebug:
-            print(f"{datetime.now().strftime('%Y-%m-%d %H:%M')} {debugMessage}: {r}")
+            self.Log(2, f"{message}: {r}")
         else:
             if register in utMessages:
                 r = utMessages[register]
@@ -174,12 +172,12 @@ class MUST(bmsModbus): #  object to communicate with and manage MUST battery
             32768: "unknown protection 15"
             }
         bFaults = {
-            1: "1: charging MOSFET fault",
-            2: "1: discharging MOSFET fault",
-            4: "1: temperature sensor fault",
+            1: "charging MOSFET fault",
+            2: "discharging MOSFET fault",
+            4: "temperature sensor fault",
             8: "unknown fault 3",
-            16: "1: battery cell fault",
-            32: "1: front end sampling communication fault",
+            16: "battery cell fault",
+            32: "front end sampling communication fault",
             64: "unknown fault 6",
             128: "unknown fault 7"
             }
@@ -222,11 +220,11 @@ class MUST(bmsModbus): #  object to communicate with and manage MUST battery
         self.bDesignCapacity = int(b[6] / 100) # 0006 Design capacity 2byte R/UINT16 10mAH  
         self.bCycles = b[7]             # 0007 Battery cycle counts 2byte R/UINT16 Cyc.  
                                         # 0008 - - - - Reserved 
-        self.bWarning = bitmaskText(False, b[9], bWarnings)         # 0009 Warning flag 2byte R/UINT16 Hex See description-1 
-        self.bProtection = bitmaskText(False, b[10], bProtections)  # 0010 Protection flag 2byte R/UINT16 Hex See description-2 
-        self.bFaults = bitmaskText(False, b[11], bFaults)           # 0011 Status/Fault flag 2byte R/UINT16 Hex See description-3 
+        self.bWarning = bitmaskText(False, b[9], bWarnings)         # 0009 Warning flag 2byte R/UINT16
+        self.bProtection = bitmaskText(False, b[10], bProtections)  # 0010 Protection flag 2byte R/UINT16
+        self.bFaults = bitmaskText(False, b[11], bFaults)           # 0011 Status/Fault flag 2byte R/UINT16 
         self.bStatus = bitmaskText(False, b[11], bStatuses, False)         
-        self.bBalance = bitmaskText(False, b[12], bBalances, False) # 0012 Balance status 2byte R/UINT16 Hex  
+        self.bBalance = bitmaskText(False, b[12], bBalances, False) # 0012 Balance status 2byte R/UINT16
                                         # 0013-0014 - - - - Reserved 
         self.bVoltages = []
         for i in range(15, 30):         # 0015-0030 Cell voltage 32byte R/UINT16 mV, Voltage of 16 cells, 2 byte for each cell 
