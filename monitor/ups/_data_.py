@@ -46,7 +46,7 @@ class DataStore(object):
         self.SolarVoltageOn = float(os.environ.get("SOLAR_VOLTAGE_ON", "0"))
         self.SolarVoltageOff = float(os.environ.get("SOLAR_VOLTAGE_OFF", "0"))
         self.PrecariousChargingEnabled = bool(os.environ.get("PRECARIOUS_CHARGING_ENABLED", "False"))
-        self.GridChargingEnabled = bool(os.environ.get("GRID_CHARGING_ENABLED", "False"))
+        self.GridChargingEnabled = (os.environ.get("GRID_CHARGING_ENABLED", txtGCNever))
         self.GridChargingFloat = float(os.environ.get("GRID_CHARGING_FLOAT", "0")) # 26.6
         self.GridChargingBulk = float(os.environ.get("GRID_CHARGING_BULK", "0")) # 27.9 makes 100% sharply, 27.8 up to 91% charge
         self.GridChargingEstimate = os.environ.get("GRID_CHARGING_ESTIMATE", "")
@@ -108,13 +108,13 @@ class DataStore(object):
                 if field == "PrecariousChargingEnabled":               # charging settings
                     self.PrecariousChargingEnabled = bool(value)
                 elif field == "GridChargingEnabled":
-                    self.GridChargingEnabled = bool(value)
+                    self.GridChargingEnabled = str(value)
                 elif field == "GridChargingFloat":
                     self.GridChargingFloat = float(value)
                 elif field == "GridChargingBulk":
                     self.GridChargingBulk = float(value)
                 elif field == "bmsNode":                                 # bms settings
-                    self.bmsNode = value
+                    self.bmsNode = str(value)
                 elif field == "MaxPowerLimit":
                     self.MaxPowerLimit = int(value)
                 elif field == "TargetPower":
@@ -177,7 +177,7 @@ class DataStore(object):
             ]
             self.write(json)
 
-    def saveSettingsBMS(self, bmsModel: str, bmsNode: str, precariousChargingEnabled: bool, gridChargingEnabled: bool, gridChargingFloat: float, gridChargingBulk: float, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int):
+    def saveSettingsBMS(self, bmsModel: str, bmsNode: str, precariousChargingEnabled: bool, gridChargingEnabled: str, gridChargingFloat: float, gridChargingBulk: float, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int):
         if bmsModel == "":
             raise Exception("BMS model is not specified")
         if bmsModel != self.bmsModel or precariousChargingEnabled != self.PrecariousChargingEnabled or gridChargingEnabled != self.GridChargingEnabled or gridChargingFloat != self.GridChargingFloat or gridChargingBulk != self.GridChargingBulk or bmsNode != self.bmsNode or maxPowerLimit != self.MaxPowerLimit or targetPower != self.TargetPower or lowPower != self.LowPower or minPower != self.MinPower:
@@ -232,8 +232,8 @@ if __name__ == "__main__":
             # saveSettingsInverter(self, inverterModel: str, inverterNode: str, solarVoltageOn: float, solarVoltageOff: float)
             ds.saveSettingsInverter(sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]))
         elif sys.argv[1] == "MUST" and len(sys.argv) == 11:
-            # saveSettingsBMS(self, bmsModel: str, bmsNode: str, precariousChargingEnabled: bool, gridChargingEnabled: bool, gridChargingFloat: float, gridChargingBulk: float, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int) 
-            ds.saveSettingsBMS(sys.argv[1], sys.argv[2], bool(sys.argv[3]), bool(sys.argv[4]), float(sys.argv[5]), float(sys.argv[6]), int(sys.argv[7]), int(sys.argv[8]), int(sys.argv[9]), int(sys.argv[10]))
+            # saveSettingsBMS(self, bmsModel: str, bmsNode: str, precariousChargingEnabled: bool, gridChargingEnabled: str, gridChargingFloat: float, gridChargingBulk: float, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int) 
+            ds.saveSettingsBMS(sys.argv[1], sys.argv[2], bool(sys.argv[3]), sys.argv[4], float(sys.argv[5]), float(sys.argv[6]), int(sys.argv[7]), int(sys.argv[8]), int(sys.argv[9]), int(sys.argv[10]))
         elif sys.argv[1] == "solcast" and len(sys.argv) >= 5:
             # saveSettingsSolarForecast(self, solarForecast: str, gridTied: list, estimate: str, gridChargingEstimate: str, solcastApiKey: str = "", solcastResourceID: str = "")
             ds.saveSettingsSolarForecast(sys.argv[1], sys.argv[2].split(","), sys.argv[3], sys.argv[4], sys.argv[5] if len(sys.argv) > 5 else "", sys.argv[6] if len(sys.argv) > 6 else "")
@@ -253,10 +253,10 @@ if __name__ == "__main__":
             print("\npython3 _data_.py LogDetail InverterModel BMSModel SolarForecast")
             print(f"python3 _data_.py {ds.LogDetail} {ds.InverterModel} {ds.bmsModel} {ds.solarForecast}")
     else:
-        ds.saveSettingsInverter("Axioma", "/dev/ttyUSB0", 140, 100)
-        ds.saveSettingsBMS("MUST", "/dev/ttyACM0", True, False, 26.6, 27.9, 5120, 4900, 1500, 1024)
-        ds.saveSettingsSolarForecast("solcast", [''], "(pvEstimate+pvEstimate10)/2", "pvEstimate")
-        ds.saveSettingsGeneral(logRead, "Axioma", "MUST", "solcast")
+        ds.saveSettingsInverter(inverterModel="Axioma", inverterNode="/dev/ttyUSB0", solarVoltageOn=140, solarVoltageOff=100)
+        ds.saveSettingsBMS(bmsModel="MUST", bmsNode="/dev/ttyACM0", precariousChargingEnabled=True, gridChargingEnabled=txtGCAlways, gridChargingFloat=26.6, gridChargingBulk=27.9, maxPowerLimit=5120, targetPower=4900, lowPower=1500, minPower=1024)
+        ds.saveSettingsSolarForecast(solarForecast="solcast", gridTied=[''], estimate="(pvEstimate+pvEstimate10)/2", gridChargingEstimate="pvEstimate")
+        ds.saveSettingsGeneral(logDetail=logRead, inverterModel="Axioma", bmsModel="MUST", solarForecast="solcast")
     '''
     ds.saveSettingsInverter("GreenCell", "/dev/ttyUSB0", 70, 50)
     ds.saveSettingsBMS("MUST", "/dev/ttyACM0", False, True, 26.6, 27.9, 5120, 4900, 1500, 1024)

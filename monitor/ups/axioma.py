@@ -371,58 +371,31 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
     Set output source priority, 00 for UtilitySolarBat, 01 for SolarUtilityBat, 02 for SolarBatUtility
     """
     def setSBU(self): # Solar Battery Utility POP02 504f503032e20a0d -> 0x504f503032e20b0d
-        if self.icEnergyUse == txtSBU:
-            return True
-        else:
-            return super().setSBU() and self.setCommand(cmdSBU)
+        return super().setSBU() and self.setCommand(cmdSBU)
 
     def setSUB(self): # Solar Utility Battery POP01 504f503031d2690d
-        if self.icEnergyUse == txtSUB:
-            return True
-        else:
-            return super().setSUB() and self.setCommand(cmdSUB)
+        return super().setSUB() and self.setCommand(cmdSUB)
 
     def setUtility(self): # Utility first POP00 504f503030c2480d
-        if self.icEnergyUse == txtUTI:
-            return True
-        else:
-            return super().setUtility() and self.setCommand(cmdUtility)
+        return super().setUtility() and self.setCommand(cmdUtility)
 
     def setCSO(self):
-        if self.icChargerSourcePriority == txtCSO:
-            return True
-        else:
-            return super().setCSO() and self.setCommand(cmdCSO)
+        return super().setCSO() and self.setCommand(cmdCSO)
     def setSNU(self):
-        if self.icChargerSourcePriority == txtSNU:
-            return True
-        else:
-            return super().setSNU() and self.setCommand(cmdSNU)   
+        return super().setSNU() and self.setCommand(cmdSNU)   
 
     def setOSO(self):
-        if self.icChargerSourcePriority == txtOSO:
-            return True 
-        else:
-            return super().setOSO() and self.setCommand(cmdOSO)
+        return super().setOSO() and self.setCommand(cmdOSO)
 
     def setFloat(self, voltage: float):
-        if self.ccBatteryFloatVoltage != voltage:
-            return super().setFloat(voltage) and self.setCommand(cmdFloatVoltage(voltage))
-        else:
-            return True
+        return super().setFloat(voltage) and self.setCommand(cmdFloatVoltage(voltage))
 
     def setGridChargingCurrent(self, current: int):
-        if self.icMaxUtiChargeCurrent != current:
-            return super().setGridChargingCurrent(current) and self.setCommand(cmdUtiChargeCurrent(current))
-        else:
-            return True
+        return super().setGridChargingCurrent(current) and self.setCommand(cmdUtiChargeCurrent(current))
 
     def setGridCharging(self, mode: str, current: int):
-        if self.icMaxUtiChargeCurrent != current or self.icChargerSourcePriority != mode:
-            return super().setGridCharging(mode, current) and self.setCommand(cmdGridChargingModes[mode]) and self.setCommand(cmdUtiChargeCurrent(current))
-        else:
-            return True
-    
+        return super().setGridCharging(mode, current) and self.setCommand(cmdGridChargingModes[mode]) and self.setCommand(cmdUtiChargeCurrent(current))
+
 # unit test section
 def utRead(cmd: str): # ask for inverter response from console
     r = input(f"Enter message for {bytes.fromhex(cmd[:-6]).decode('utf-8')}: ").encode('utf-8')

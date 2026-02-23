@@ -20,3 +20,7 @@ txtOSO = "OSO" # Only Solar charges battery
 # Solar use priorities
 txtLBU = "LBU" # power Load first
 txtBLU = "BLU" # charge Battery first
+
+# Grid charging options
+txtGCAlways = "Always" # Grid Charging Always Enabled
+txtGCNever = "Never" # Grid Charging Disabled

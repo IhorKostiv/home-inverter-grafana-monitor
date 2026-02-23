@@ -308,42 +308,25 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
         return i
   
     def setSBU(self): # Solar Battery Utility
-        if self.icEnergyUse != txtSBU:
-            return super().setSBU() and self.writeRegister(20109, 1)  # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
-        else:
-            return True
+        return super().setSBU() and self.writeRegister(20109, 1)  # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
 
     def setSUB(self): # todo: Solar Utility Battery
         raise NotImplementedError("SUB is not available for this inverter") # there shall be compatiblity check since likely 48v inverter may have this function
-        return super().setSUB()
 
     def setUtility(self): # Utility first
-        if self.icEnergyUse != txtUTI:
-            return super().setUtility() and self.writeRegister(20109, 3) # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
-        else:
-            return True
+        return super().setUtility() and self.writeRegister(20109, 3) # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
 
     def setSNU(self):
-        if self.icChargerSourcePriority != txtSNU:
-            return super().setSNU() and self.writeRegister(20143, 2) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
-        else:
-            return True
+        return super().setSNU() and self.writeRegister(20143, 2) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
+    
     def setCSO(self):
-        if self.icChargerSourcePriority != txtCSO:
-            return super().setCSO() and self.writeRegister(20143, 0) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
-        else:
-            return True
+        return super().setCSO() and self.writeRegister(20143, 0) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
+
     def setOSO(self):
-        if self.icChargerSourcePriority != txtOSO:
-            return super().setOSO() and self.writeRegister(20143, 3) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
-        else:
-            return True
+        return super().setOSO() and self.writeRegister(20143, 3) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
 
     def setFloat(self, voltage):
-        if self.ccBatteryFloatVoltage != voltage:
-            return super().setFloat(voltage) and self.writeRegister(10103, int(voltage * 10))  # 10103	RW	Battery float voltage	0.1V
-        else:
-            return True
+        return super().setFloat(voltage) and self.writeRegister(10103, int(voltage * 10))  # 10103	RW	Battery float voltage	0.1V
 
 # unit test section
 def utRead(register: int): # ask for inverter response from console

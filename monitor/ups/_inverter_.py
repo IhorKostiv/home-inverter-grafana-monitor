@@ -109,28 +109,46 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
         ]
 
     def setSBU(self):
-        self.Log(logWrite, "set SBU")
-        return True
+        if self.icEnergyUse == txtSBU:
+            self.Log(logWrite, "set SBU")
+            return True
+        else:
+            return False
 
     def setSUB(self):
-        self.Log(logWrite, "set SUB")
-        return True
+        if self.icEnergyUse == txtSUB:
+            self.Log(logWrite, "set SUB")
+            return True
+        else:
+            return False
 
     def setUtility(self):
-        self.Log(logWrite, "set UTI")
-        return True
+        if self.icEnergyUse == txtUTI:
+            self.Log(logWrite, "set UTI")
+            return True
+        else:
+            return False
 
     def setCSO(self):
-        self.Log(logWrite, "set CSO")
-        return True
+        if self.icChargerSourcePriority == txtCSO:
+            self.Log(logWrite, "set CSO")
+            return True
+        else:
+            return False
 
     def setSNU(self):
-        self.Log(logWrite, "set SNU")
-        return True
+        if self.icChargerSourcePriority == txtSNU:
+            self.Log(logWrite, "set SNU")
+            return True
+        else:
+            return False
 
     def setOSO(self):
-        self.Log(logWrite, "set OSO")
-        return True
+        if self.icChargerSourcePriority == txtOSO:
+            self.Log(logWrite, "set OSO")
+            return True
+        else:
+            return False
 
     def moreSolar(self):
         self.Log(logWarning, self.BestEnergyMsg)
@@ -144,16 +162,25 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
             return self.setOSO()
         
     def setFloat(self, voltage: float):
-        self.Log(logWrite, f"set FLoat {voltage}V")
-        return True
+        if self.ccBatteryFloatVoltage != voltage:
+            self. self.Log(logWrite, f"set FLoat {voltage}V")
+            return True
+        else:
+            return False
 
     def setGridChargingCurrent(self, current: int):
-        self.Log(logWrite, f"set Grid Charging {current}A")
-        return True
+        if self.icMaxUtiChargeCurrent != current:
+            self.Log(logWrite, f"set Grid Charging {current}A")
+            return True
+        else:
+            return False
 
-    def setGridCharging(self, mode: str, curent: int):
-        self.Log(logWrite, f"set Grid Charging {mode} {curent}A")
-        return True
+    def setGridCharging(self, mode: str, current: int):
+        if self.icMaxUtiChargeCurrent != current or self.icChargerSourcePriority != mode:
+            self.Log(logWrite, f"set Grid Charging {mode} {current}A")
+            return True
+        else:
+            return False
 
     # todo: Solar Use Aim LBU - BLU depending on battery SOC and future estimate
     # todo: Charger source priority OSO - SNU - CSO depending on battery SOC and tomorrow estimate
