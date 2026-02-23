@@ -1,9 +1,7 @@
 import serial
-#import binascii
 import crcmod
 import platform
 import sys
-import os
 import time
 from datetime import datetime
 

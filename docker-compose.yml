@@ -16,8 +16,11 @@ services:
       LOG_DETAIL: "2"
       USB_DEVICE: "/dev/ttyUSB0"
       INVERTER_MODEL: "Axioma"
+#      INVERTER_MODEL: "GreenCell"
       SOLAR_VOLTAGE_ON: 140 # approx. 90% of field idle voltage
       SOLAR_VOLTAGE_OFF: 100 # approx. inverter min MPPT voltage
+#      SOLAR_VOLTAGE_ON: 70 #70 # approx. 90% of field idle voltage
+#      SOLAR_VOLTAGE_OFF: 50 #50 #55 #50 # 57 # inverter min MPPT voltage
       PRECARIOUS_CHARGING_ENABLED: "False" # use with caution, enable at your own risk
       GRID_CHARGING_ENABLED: "False"
       GRID_CHARGING_FLOAT: 26.6
@@ -28,7 +31,7 @@ services:
       GRID_TIED: ""
       SOLCAST_ESTIMATE: "(pvEstimate+pvEstimate)/2"
       MAX_POWER_LIMIT: 5120
-      TARGET_POWER: 4750 # 4760 resting at Float voltage 26.6, 4550 27.5, 4880 27.9
+      TARGET_POWER: 4700 # 4760 resting at Float voltage 26.6, 4550 27.5, 4880 27.9
       LOW_POWER: 1500
       MIN_POWER: 1024
     depends_on:

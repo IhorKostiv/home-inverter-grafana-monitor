@@ -1,27 +1,18 @@
-from datetime import datetime
 import time
 if __name__ == "__main__": #   import redirection based on execution option
-    from __init__ import UPSmodbus, UPSoffgrid, addText
+    from _modbus_ import deviceModbus
+    from _inverter_ import inverterOffGrid
+    from _constants_ import *
 else:
-    from . import UPSmodbus, UPSoffgrid, addText
+    from ups._modbus_ import deviceModbus
+    from ups._inverter_ import inverterOffGrid
+    from ups._constants_ import *
 
-def bitmaskNegative(value): # used to extract battery power and current values
-    if value > 32768:
-        return value - 65536
-    else:
-        return value
-
-def bitmaskText(newLine, Bitmask, Texts): # used to convert error or warning bitmasks to text
-        t = ""
-        for b in Texts:
-            if b & Bitmask == b:
-                t = addText(t, Texts[b])
-        return ", " + t if newLine and t != "" else t
-
-class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage GreenCell inverter
+class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with and manage GreenCell inverter
     
     def __init__(self, logDetail: int, device_path: str):
         super().__init__(logDetail, device_path, 4, 19200)
+        self.uKey = "GreenCell"
 
         self.readChargerControl()
         self.readInverterControl()
@@ -52,9 +43,9 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
         return cc
         
     def readInverterControl(self): # read inverter control message values
-        icEnergyUses = { 0: "Nil", 1: "SBU", 2: "SUB", 3: "UTI", 4: "SOL"}
-        icChargerSourcePriorities = { 0: "CSO", 2: "SNU", 3: "OSO" }
-        icSolarUseAims = { 0: "LBU", 1: "BLU" }
+        icEnergyUses = { 0: txtNil, 1: txtSBU, 2: txtSUB, 3: txtUTI, 4: txtSOL}
+        icChargerSourcePriorities = { 0: txtCSO, 2: txtSNU, 3: txtOSO }
+        icSolarUseAims = { 0: txtLBU, 1: txtBLU }
 
         ic = self.readRegister(20100, 45, "iC")
                                                # 20101	RW	Inverter offgrid work enable	0：OFF 1：ON  
@@ -79,40 +70,40 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
 
     def readPV(self): # read PV message values
         pvErrors = {
-            1: "Hardware protection",
-            2: "Over current",
-            4: "Current sensor error",
-            8: "Over temperature",
-            16: "PV voltage is too high",
-            32: "PV voltage is too low",
-            64: "Battery voltage is too high",
-            128: "Battery voltage is too Low",
-            256: "Current is uncontrollable",
-            512: "Parameter error",
-            1024: "Unknown Error 10",
-            2048: "Unknown Error 11",
-            4096: "Unknown Error 12",
-            8192: "Unknown Error 13",
-            16384: "Unknown Error 14",
-            32768: "Unknown Error 15"
+           0x0001: "Hardware protection",
+            0x0002: "Over current",
+            0x0004: "Current sensor error",
+            0x0008: "Over temperature",
+            0x0010: "PV voltage is too high",
+            0x0020: "PV voltage is too low",
+            0x0040: "Battery voltage is too high",
+            0x0080: "Battery voltage is too Low",
+            0x0100: "Current is uncontrollable",
+            0x0200: "Parameter error",
+            0x0400: "Unknown Error 10",
+            0x0800: "Unknown Error 11",
+            0x1000: "Unknown Error 12",
+            0x2000: "Unknown Error 13",
+            0x4000: "Unknown Error 14",
+            0x8000: "Unknown Error 15"
         }
         pvWarnings = {
-            1: "Fan Error",
-            2: "Unknown Warning 1",
-            4: "Unknown Warning 2",
-            8: "Unknown Warning 3",
-            16: "Unknown Warning 4",
-            32: "Unknown Warning 5",
-            64: "Unknown Warning 6",
-            128: "Unknown Warning 7",
-            256: "Unknown Warning 8",
-            512: "Unknown Warning 9",
-            1024: "Unknown Warning 10",
-            2048: "Unknown Warning 11",
-            4096: "Unknown Warning 12",
-            8192: "Unknown Warning 13",
-            16384: "Unknown Warning 14",
-            32768: "Unknown Warning 15"
+            0x0001: "Fan Error",
+            0x0002: "Unknown Warning 1",
+            0x0004: "Unknown Warning 2",
+            0x0008: "Unknown Warning 3",
+            0x0010: "Unknown Warning 4",
+            0x0020: "Unknown Warning 5",
+            0x0040: "Unknown Warning 6",
+            0x0080: "Unknown Warning 7",
+            0x0100: "Unknown Warning 8",
+            0x0200: "Unknown Warning 9",
+            0x0400: "Unknown Warning 10",
+            0x0800: "Unknown Warning 11",
+            0x1000: "Unknown Warning 12",
+            0x2000: "Unknown Warning 13",
+            0x4000: "Unknown Warning 14",
+            0x8000: "Unknown Warning 15"
         }
         pvWorkStates = {
             0: "Initialization",    # "Initialization mode", 
@@ -142,8 +133,8 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
         self.pvChargerCurrent = pv[7] / 10.0	                    # 15207
         self.pvChargerPower = pv[8]	                                # 15208
         self.pvRadiatorTemperature = pv[9]                          # 15209
-        self.pvError = bitmaskText(False, pv[13], pvErrors)         # 15213
-        self.pvWarning = bitmaskText(False, pv[14], pvWarnings)     # 15214
+        self.pvError = self.bitmaskText(False, pv[13], pvErrors)         # 15213
+        self.pvWarning = self.bitmaskText(False, pv[14], pvWarnings)     # 15214
         self.pvAccumulatedPower = (pv[17] * 1000) + (pv[18] / 10.0) # 15217 mWh, 15218 .1 KWh
         return pv
   
@@ -204,40 +195,40 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
         }
 
         iWarning1s = {
-            1: "Fan is locked when inverter is on",
-            2: "Fan2 is locked when inverter is on",
-            4: "Battery is over-charged",
-            8: "Low battery",
-            16: "Overload",
-            32: "Output power derating",
-            64: "Solar charger stops due to low battery",
-            128: "Solar charger stops due to high PV voltage",
-            256: "Solar charger stops due to over load",
-            512: "Solar charger over temperature",
-            1024: "PV charger communication error",
-            2048: "Unknown Warning 3-11",
-            4096: "Unknown Warning 3-12",
-            8192: "Unknown Warning 2-13",
-            16384: "Unknown Warning 2-14",
-            32768: "Unknown Warning 3-15"
+            0x0001: "Fan is locked when inverter is on",
+            0x0002: "Fan2 is locked when inverter is on",
+            0x0004: "Battery is over-charged",
+            0x0008: "Low battery",
+            0x0010: "Overload",
+            0x0020: "Output power derating",
+            0x0040: "Solar charger stops due to low battery",
+            0x0080: "Solar charger stops due to high PV voltage",
+            0x0100: "Solar charger stops due to over load",
+            0x0200: "Solar charger over temperature",
+            0x0400: "PV charger communication error",
+            0x0800: "Unknown Warning 3-11",
+            0x1000: "Unknown Warning 3-12",
+            0x2000: "Unknown Warning 2-13",
+            0x4000: "Unknown Warning 2-14",
+            0x8000: "Unknown Warning 3-15"
         }
         iWarning2s = {
-            1: "Unknown Warning 2-0",
-            2: "Unknown Warning 2-1",
-            4: "Unknown Warning 2-2",
-            8: "Unknown Warning 2-3",
-            16: "Unknown Warning 2-4",
-            32: "Unknown Warning 2-5",
-            64: "Unknown Warning 2-6",
-            128: "Unknown Warning 2-7",
-            256: "Unknown Warning 2-8",
-            512: "Unknown Warning 2-9",
-            1024: "Unknown Warning 2-10",
-            2048: "Unknown Warning 2-11",
-            4096: "Unknown Warning 2-12",
-            8192: "Unknown Warning 2-13",
-            16384: "Unknown Warning 2-14",
-            32768: "Unknown Warning 2-15"
+            0x0001: "Unknown Warning 2-0",
+            0x0002: "Unknown Warning 2-1",
+            0x0004: "Unknown Warning 2-2",
+            0x0008: "Unknown Warning 2-3",
+            0x0010: "Unknown Warning 2-4",
+            0x0020: "Unknown Warning 2-5",
+            0x0040: "Unknown Warning 2-6",
+            0x0080: "Unknown Warning 2-7",
+            0x0100: "Unknown Warning 2-8",
+            0x0200: "Unknown Warning 2-9",
+            0x0400: "Unknown Warning 2-10",
+            0x0800: "Unknown Warning 2-11",
+            0x1000: "Unknown Warning 2-12",
+            0x2000: "Unknown Warning 2-13",
+            0x4000: "Unknown Warning 2-14",
+            0x8000: "Unknown Warning 2-15"
         }
 
         iWorkStates = {
@@ -267,13 +258,13 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
                                             # 25210: ["Inverter current", 0.1, "A"],
                                             # 25211: ["Grid current", 0.1, "A"],
                                             # 25212: ["Load current", 0.1, "A"],
-        self.iPInverter = bitmaskNegative(i[13]) # 25213: ["Inverter power(P)", 1, "W"],
-        self.iPGrid = bitmaskNegative(i[14]) + iInternalUsePower # 25214: ["Grid power(P)", 1, "W"],
-        self.iPLoad = bitmaskNegative(i[15])  # 25215: ["Load power(P)", 1, "W"],
+        self.iPInverter = self.bitmaskNegative(i[13]) # 25213: ["Inverter power(P)", 1, "W"],
+        self.iPGrid = self.bitmaskNegative(i[14]) + iInternalUsePower # 25214: ["Grid power(P)", 1, "W"],
+        self.iPLoad = self.bitmaskNegative(i[15])  # 25215: ["Load power(P)", 1, "W"],
         self.iLoadPercent = i[16]           # 25216: ["Load percent", 1, "%"],
-        self.iSInverter = bitmaskNegative(i[17]) # 25217: ["Inverter complex power(S)", 1, "VA"],
-        self.iSGrid = bitmaskNegative(i[18]) + iInternalUsePower # 25218: ["Grid complex power(S)", 1, "VA"],
-        self.iSLoad = bitmaskNegative(i[19]) # 25219: ["Load complex power(S)", 1, "VA"],
+        self.iSInverter = self.bitmaskNegative(i[17]) # 25217: ["Inverter complex power(S)", 1, "VA"],
+        self.iSGrid = self.bitmaskNegative(i[18]) + iInternalUsePower # 25218: ["Grid complex power(S)", 1, "VA"],
+        self.iSLoad = self.bitmaskNegative(i[19]) # 25219: ["Load complex power(S)", 1, "VA"],
                                             # 25221: ["Inverter reactive power(Q)", 1, "var"],
                                             # 25222: ["Grid reactive power(Q)", 1, "var"],
                                             # 25223: ["Load reactive power(Q)", 1, "var"],
@@ -304,20 +295,20 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
                                             # 25258: ["Accumulated PV_sell power low", 0.1, "kWh"],
                                             # 25259: ["Accumulated grid_charger power high", 1, "kWh"],
                                             # 25260: ["Accumulated grid_charger power low", 0.1, "kWh"],
-        self.iError = bitmaskText(False, i[61], iError1s)               # 25261	Error message 1
-        self.iError += bitmaskText(self.iError != "", i[62], iError2s)  # 25262	Error message 2
-        self.iError += bitmaskText(self.iError != "", i[63], iError3s)  # 25263	Error message 3
-        self.iWarning = bitmaskText(False, i[65], iWarning1s)           # 25265	Warning message 1
-        self.iWarning += bitmaskText(self.iWarning != "", i[66], iWarning2s) # 25266	Warning message 2
+        self.iError = self.bitmaskText(False, i[61], iError1s)               # 25261	Error message 1
+        self.iError += self.bitmaskText(self.iError != "", i[62], iError2s)  # 25262	Error message 2
+        self.iError += self.bitmaskText(self.iError != "", i[63], iError3s)  # 25263	Error message 3
+        self.iWarning = self.bitmaskText(False, i[65], iWarning1s)           # 25265	Warning message 1
+        self.iWarning += self.bitmaskText(self.iWarning != "", i[66], iWarning2s) # 25266	Warning message 2
                                             # 25271: ["Hardware version", 1, ""],
                                             # 25272: ["Software version", 1, ""],
-        self.iBattPower = bitmaskNegative(i[73])    # 25273: ["Battery power", 1, "W"],
-        #self.iBattCurrent = bitmaskNegative(i[74])  # 25274: ["Battery current", 1, "A"],
+        self.iBattPower = self.bitmaskNegative(i[73])    # 25273: ["Battery power", 1, "W"],
+        #self.iBattCurrent = self.bitmaskNegative(i[74])  # 25274: ["Battery current", 1, "A"],
         self.iBattCurrent = self.iBattPower / self.iBatteryVoltage # it gives more accurate values
         return i
   
     def setSBU(self): # Solar Battery Utility
-        if self.icEnergyUse != "SBU":
+        if self.icEnergyUse != txtSBU:
             return super().setSBU() and self.writeRegister(20109, 1)  # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
         else:
             return True
@@ -327,23 +318,23 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
         return super().setSUB()
 
     def setUtility(self): # Utility first
-        if self.icEnergyUse != "UTI":
+        if self.icEnergyUse != txtUTI:
             return super().setUtility() and self.writeRegister(20109, 3) # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
         else:
             return True
 
     def setSNU(self):
-        if self.icChargerSourcePriority != "SNU":
+        if self.icChargerSourcePriority != txtSNU:
             return super().setSNU() and self.writeRegister(20143, 2) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
         else:
             return True
     def setCSO(self):
-        if self.icChargerSourcePriority != "CSO":
+        if self.icChargerSourcePriority != txtCSO:
             return super().setCSO() and self.writeRegister(20143, 0) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
         else:
             return True
     def setOSO(self):
-        if self.icChargerSourcePriority != "OSO":
+        if self.icChargerSourcePriority != txtOSO:
             return super().setOSO() and self.writeRegister(20143, 3) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
         else:
             return True
@@ -354,14 +345,15 @@ class GreenCell(UPSmodbus, UPSoffgrid): #  object to communicate with and manage
         else:
             return True
 
-'''# unit test section
+# unit test section
 def utRead(register: int): # ask for inverter response from console
     r = input(f"Enter message for {register}: ").encode('utf-8')
     return r
-'''
+
 # Example usage
 if __name__ == "__main__": # testing and debugging
     utMessages = {
+        10100: [0, 1, 125, 133],
         20100: [0,1,2200,5000,0,1,1,1,0,
                 1, # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
                 0,0,1,44,44,0,0,130,
@@ -409,6 +401,6 @@ if __name__ == "__main__": # testing and debugging
                 0,0] # 75 values expected
         }
 
-    i: UPSoffgrid = GreenCell(True, "SIMULATOR")
-    print(i.jSON("GreenCell"))
-    i.setBestEnergyUse(50.5, 40)
+    i: inverterOffGrid = GreenCell(logDebug, "SIMULATOR")
+    i.Log(logDebug, i.jSON())
+    i.setBestEnergyPVV(50.5, 40)

@@ -1,22 +1,13 @@
 import datetime
 import pytz
-
-from influxdb import InfluxDBClient
-#from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
 from datetime import datetime, timezone
 import requests
 import json
 import os
 import sys
 
-def getClient() -> InfluxDBClient:
-    DB_HOST = os.environ.get("DB_HOST", "inverter.local")
-    DB_PORT = int(os.environ.get("DB_PORT", "8086"))
-    DB_USERNAME = os.environ.get("DB_USERNAME", "root")
-    DB_PASSWORD = os.environ.get("DB_PASSWORD", "root")
-    DB_NAME = os.environ.get("DB_NAME", "ups")
-    client = InfluxDBClient(DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME)
-    return client
+from ups._data_ import DataStore
+from ups._constants_ import logDebug
 
 def getSolarProductionEstimate(resourceID: str, apiKey: str) -> str:
     url = f"https://api.solcast.com.au/rooftop_sites/{resourceID}/forecasts?format=json"
@@ -31,11 +22,13 @@ def getSolarProductionEstimate(resourceID: str, apiKey: str) -> str:
         print(f"Error: Received status code {response.status_code}")
         print(f"Retry after {response.headers.get('Retry-After', 'N/A')}")
         return f"Error {response.status_code}" # "error: Failed to fetch data"
-def saveSolarProductionEstimateToDB(solarData: str, client: InfluxDBClient, logDetail: int):
+    
+def toJson(solarData: str):
     solarDataJson = json.loads(solarData)
     forecasts = solarDataJson["forecasts"]
+    json_body = []
     for forecast in forecasts:
-        json_body = [{
+        json_body.append({
             "measurement": "solcast",
             "time": forecast["period_end"],
             "fields": {
@@ -44,17 +37,14 @@ def saveSolarProductionEstimateToDB(solarData: str, client: InfluxDBClient, logD
                 "pvEstimate90": int(float(forecast["pv_estimate90"]) * 1000),
                 "pvDuration": forecast["period"]
             }
-        }]
-        if logDetail >= 3:
-            print(datetime.now(), " ", json_body)
-
-        client.write_points(json_body)
+        })
+    return json_body
 
 def dtKyiv(t:datetime):
     return t.astimezone(pytz.timezone('Europe/Kyiv')).strftime('%Y-%m-%d %H:%M')
 
 class Solcast(object):
-    client: InfluxDBClient
+    dataStore: DataStore
     MaxPowerLimit: int
     TargetPower: int
     LowPower: int
@@ -66,8 +56,8 @@ class Solcast(object):
     MinDetected = None
     LoadAverages = {} 
 
-    def __init__(self, client: InfluxDBClient, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int, gridTied: list = {}, logDetail: int = 0):
-        self.client = client
+    def __init__(self, ds: DataStore, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int, gridTied: list = {}, logDetail: int = 0):
+        self.dataStore = ds
         self.MaxPowerLimit = maxPowerLimit
         self.TargetPower = targetPower
         self.LowPower = lowPower
@@ -77,7 +67,7 @@ class Solcast(object):
         self.LoadAverages(gridTied)
     
     def LoadAverages(self, gridTied: list = {}):
-        LoadHistory = self.client.query("SELECT mean(""iPLoad"") FROM ""inverter"" WHERE time >= now() - 3d GROUP BY time(30m) tz('Europe/Kiev')")
+        LoadHistory = self.dataStore.query("SELECT mean(""iPLoad"") FROM ""inverter"" WHERE time >= now() - 3d GROUP BY time(30m) tz('Europe/Kiev')")
         for table in LoadHistory: # compute average load approximation for each 30min slot using last 3 days data
             for record in table:
                 t = datetime.strptime(record['time'], '%Y-%m-%dT%H:%M:%SZ').strftime('%H:%M')
@@ -99,10 +89,10 @@ class Solcast(object):
         self.LowDetected = None
         self.MinDetected = None
 
-        BatteryRemain = list(self.client.query("SELECT last(\"bRemain\") * 25.6 FROM \"bms\"").get_points())[0]['last']
+        BatteryRemain = list(self.dataStore.query("SELECT last(\"bRemain\") * 25.6 FROM \"bms\"").get_points())[0]['last']
         print(f"{calcTime} Remain {BatteryRemain:.0f}W {BatteryRemain/51.2:.0f}% for {Estimate}")
 
-        GenerationEstimates = self.client.query(f"SELECT {Estimate} as Estimate FROM \"solcast\" WHERE time >= '{calcTime}'-30m")
+        GenerationEstimates = self.dataStore.query(f"SELECT {Estimate} as Estimate FROM \"solcast\" WHERE time >= '{calcTime}'-30m")
 
         for table in GenerationEstimates:
             for record in table:
@@ -144,78 +134,26 @@ class Solcast(object):
                         print(f"!!!\a {dtKyiv(d)} load ?? gen {record['Estimate']:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
                     #print(f"{d.astimezone(ZoneInfo('Europe/Kyiv')).strftime('%Y-%m-%d %H:%M')} load ? gen {record['pvEstimate']:.0f}W cre {cre:.0f} {nre:.0f}W")
 
-
-''' Old code for local estimation, not used now
-def pvEstimate(currentTime: datetime, solarData) -> int:
-
-    p1 = p2 = -2
-    t1 = t2 = currentTime
-    sd = solarData["forecasts"]
-    for i, t in enumerate(sd):
-        p = t["pv_estimate"]
-        tt = parser.parse(t["period_end"])
-        #print(f"power {p} @ {tt} {tz}")
-        if currentTime > tt:
-            p1 = p
-            t1 = tt
-        else:
-            if currentTime <= tt:
-                p2 = p
-                t2 = tt
-                break
-
-#        print(f"index {i} time {t} estimate {p}")
-
-    d1 = currentTime - t1
- #   d2 = t2 - current_time
-    d = t2 - t1
-
-    if p1 > 0:
-        avg = p1 + ((p2 - p1) * d1.total_seconds() / d.total_seconds()) # linear approximation
-    else:
-        avg = p2
-
-    print(f"estimate {avg} @ {currentTime} between {p1} @ {t1} and {p2} @ {t2}")
-    return int(avg)
-def next30min():
-    now = datetime.now(timezone.utc)
-    # Calculate how many minutes to add to reach the next 30-minute mark
-    minutes_to_add = (30 - now.minute % 30) % 30
-    if minutes_to_add == 0 and now.second == 0 and now.microsecond == 0:
-        rounded = now
-    else:
-        rounded = now.replace(second=0, microsecond=0) + timedelta(minutes=minutes_to_add)
-    return rounded.strftime('%Y-%m-%dT%H:%M:%S.0000000Z')
-def prev30min():
-    now = datetime.now(timezone.utc)
-    # Calculate how many minutes past the last 30-minute mark
-    minutes_to_subtract = now.minute % 30
-    rounded = now.replace(second=0, microsecond=0) - timedelta(minutes=minutes_to_subtract)
-    return rounded.strftime('%Y-%m-%dT%H:%M:%S.0000000Z')
-'''
-
 # Example usage
 if __name__ == "__main__":
     # refer to https://toolkit.solcast.com.au/ for details
-    if len(sys.argv) > 2: # retrieve solcast data and save to DB for further use
-        apiKey = sys.argv[1] # os.environ.get("apiKey", "")         # API Key
-        resourceID = sys.argv[2] # os.environ.get("resourceID", "") # resource ID
-        logDetail = sys.argv[3] # os.environ.get("IS_DEBUG", "False") == "True"
-
-        solcastResponse = getSolarProductionEstimate(resourceID, apiKey)
+    if len(sys.argv) == 1: # retrieve solcast data and save to DB for further use
+        ds = DataStore() # "inverter.local", 8086, "root", "root", "ups")
+        solcastResponse = getSolarProductionEstimate(ds.solcastResourceID, ds.solcastApiKey)
         print(datetime.now(), " ", solcastResponse)
 
-        if solcastResponse != "":            
-            client = getClient()
-
-            saveSolarProductionEstimateToDB(solcastResponse, client, logDetail)
+        if solcastResponse != "":
+            json = toJson(solcastResponse)
+            if ds.logDetail >= 3:
+                print(datetime.now(), " ", json)
+            ds.write(json)
         else:
             print(datetime.now(), "Error reading forecast")
     else: # calculate which targets are met
-        client = getClient()
+        ds = DataStore("inverter.local", 8086, "root", "root", "ups")
 
-        sc = Solcast(client, 5120, 4600, 1500, 1024, os.environ.get("IS_DEBUG", "True") == "True")
-        gridTied = os.environ.get("GRID_TIED", "").split(",") 
+        sc = Solcast(ds, ds.MaxPowerLimit, ds.TargetPower, ds.LowPower, ds.MinPower, ds.LogDetail >= logDebug)
+        gridTied = ds.GridTied # os.environ.get("GRID_TIED", "").split(",") 
         #gridTied = os.environ.get("GRID_TIED", "20:00,20:30,21:00,21:30,22:00,22:30,23:00,23:30,00:00,00:30,01:00,01:30,02:00,02:30,03:00,03:30").split(",")
         if len(sys.argv) > 1:
             Estimate = sys.argv[1]

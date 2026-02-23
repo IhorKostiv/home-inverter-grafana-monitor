@@ -1,12 +1,10 @@
-
-from influxdb import InfluxDBClient
-from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
-
-import os
 from datetime import datetime, timezone
-from ups import UPSmgr, greenCell, axioma #, must_ep3000, must_pv1800, must_ph18_5248
-import json
-from ups import bms
+from ups._bms_ import bms
+from ups._constants_ import *
+from ups._data_ import DataStore
+from ups._inverter_ import inverterMgr
+from ups import greenCell, axioma #, must_ep3000, must_pv1800, must_ph18_5248
+from ups import bmsMust
 from solcast import Solcast
 
 SUPPORTED_INVERTERS = {
@@ -18,129 +16,96 @@ SUPPORTED_INVERTERS = {
 }
 
 SUPPORTED_BMS = {
-    "MUST": bms.MUST
+    "MUST": bmsMust.bmsMUST
     }
 
-DB_HOST = os.environ.get("DB_HOST", "inverter")
-DB_PORT = int(os.environ.get("DB_PORT", "8086"))
-DB_USERNAME = os.environ.get("DB_USERNAME", "root")
-DB_PASSWORD = os.environ.get("DB_PASSWORD", "root")
-DB_NAME = os.environ.get("DB_NAME", "ups")
+ds = DataStore() # initialize datastore to read settings and connect to database
 
-logDetail = int(os.environ.get("LOG_DETAIL", "0")) # 0 errors only, 1 +set commands, 2 +data, 3 +debug
-
-USB_DEVICE = os.environ.get("USB_DEVICE", "SIMULATOR")
-INVERTER_MODEL = os.environ.get("INVERTER_MODEL", "Axioma")
-solarVoltageOn = float(os.environ.get("SOLAR_VOLTAGE_ON", "0"))
-solarVoltageOff = float(os.environ.get("SOLAR_VOLTAGE_OFF", "0"))
-PrecariousChargingEnabled = os.environ.get("PRECARIOUS_CHARGING_ENABLED", "False") == "True"
-GridChargingEnabled = os.environ.get("GRID_CHARGING_ENABLED", "False") == "True"
-GridChargingFloat = float(os.environ.get("GRID_CHARGING_FLOAT", "26.6"))
-GridChargingBulk = float(os.environ.get("GRID_CHARGING_BULK", "27.8"))
-GridChargingEstimate = os.environ.get("GRID_CHARGING_ESTIMATE", "")
-
-ACM_DEVICE = os.environ.get("ACM_DEVICE", "SIMULATOR")
-BMS_MODEL = os.environ.get("BMS_MODEL", "MUST")
-
-gridTied = os.environ.get("GRID_TIED", "").split(",")
-Estimate = os.environ.get("SOLCAST_ESTIMATE", '')
-MaxPowerLimit = int(os.environ.get("MAX_POWER_LIMIT", "5120"))  # full battery capacity
-TargetPower = int(os.environ.get("TARGET_POWER", "4900"))       # 95% approx
-LowPower = int(os.environ.get("LOW_POWER", "1500"))             # 30% approx
-MinPower = int(os.environ.get("MIN_POWER", "1024"))             # 20% approx
-
-if USB_DEVICE != "SIMULATOR" or ACM_DEVICE != "SIMULATOR":
-    client = InfluxDBClient(DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME)
-
-bmsSOC = -1
-if ACM_DEVICE != "SIMULATOR":
-    b: bms.bms = SUPPORTED_BMS[BMS_MODEL](logDetail, ACM_DEVICE)
-
-    json_body = b.jSON(BMS_MODEL)
-    if logDetail >= 3:
-        print(datetime.now(), " ", json_body)
-    client.write_points(json_body)
-
+if ds.bmsModel in SUPPORTED_BMS: # initialize BMS if configured, read data and write to database
+    b: bms = SUPPORTED_BMS[ds.bmsModel](ds.LogDetail, ds.bmsNode)
+    json_body = b.jSON()
+    b.Log(logDebug, json_body)
+    ds.write(json_body)
     bmsSOC = b.bSOC
+elif ds.bmsModel != "": # if BMS model is not empty but unsupported, print error and exit
+    print(f"Error: Unknown BMS model: {ds.bmsModel}")
+    exit(1)
+else: # no BMS configured, set SOC to -1 to indicate unknown state
+    bmsSOC = -1
 
-if INVERTER_MODEL not in SUPPORTED_INVERTERS:
-    print("Error: Unknown inverter model: {0}".format(INVERTER_MODEL))
+if ds.InverterModel not in SUPPORTED_INVERTERS:
+    print(f"Error: Unknown inverter model: {ds.InverterModel}")
     exit(1)
 
-inverter: UPSmgr = SUPPORTED_INVERTERS[INVERTER_MODEL](logDetail, USB_DEVICE)
+inverter: inverterMgr = SUPPORTED_INVERTERS[ds.InverterModel](ds.LogDetail, ds.InverterNode)
 
-if Estimate != '':
-    sc = Solcast(client, MaxPowerLimit, int((TargetPower + MaxPowerLimit) / 2) if inverter.icEnergyUse.upper() in {"UTI", "SUB"} else TargetPower, LowPower, MinPower, gridTied, logDetail)
-    sc.Calculate(datetime.now(timezone.utc), Estimate, 80)
+if ds.Estimate != '':
+    if inverter.icEnergyUse.upper() in {txtUTI, txtSUB}:
+        tp = int((ds.TargetPower + ds.MaxPowerLimit) / 2)
+        lp = ds.LowPower
+    else:
+        tp = ds.TargetPower
+        lp = int((ds.LowPower + ds.MinPower) / 2) # if b.bSOC < 50 else ds.MinPower
+    sc = Solcast(ds, ds.MaxPowerLimit, tp, lp, ds.MinPower, ds.GridTied, ds.LogDetail)
+    sc.Calculate(datetime.now(timezone.utc), ds.Estimate, 80)
     be = inverter.setBestEnergySOC(sc.TargetDetected, sc.LowDetected, sc.MinDetected)
-    #if logDetail >= 3:
-    print(f"{datetime.now()} Best energy result {be}")
-elif solarVoltageOn > 1 or solarVoltageOff > 1:
-    inverter.setBestEnergyUse(solarVoltageOn, solarVoltageOff)
+    inverter.Log(logDebug, f"{datetime.now()} Best energy result {be}")
+elif ds.SolarVoltageOn > 1 or ds.SolarVoltageOff > 1:
+    inverter.setBestEnergyPVV(ds.SolarVoltageOn, ds.SolarVoltageOff)
 
 # todo: charge from grid if midnight (0..5am) and battery depleted
  
-json_body = inverter.jSON(INVERTER_MODEL)
-if logDetail >= 3:
-    print(datetime.now(), " ", json_body)
-if USB_DEVICE != "SIMULATOR":
-    client.write_points(json_body)
+json_body = inverter.jSON()
+inverter.Log(logDebug, json_body)
+if ds.InverterNode != "SIMULATOR":
+    ds.write(json_body)
 
-if USB_DEVICE != "SIMULATOR":
-    if ACM_DEVICE != "SIMULATOR" and INVERTER_MODEL == "Axioma": # workaround for Axioma inverter inability to properly manage battery charging voltage
-        currentPower = b.bRemain  * 25.6
-        if Estimate != '' and GridChargingEnabled and GridChargingEstimate != "":
-            sc.Calculate(datetime.now(timezone.utc), GridChargingEstimate, 80)
+if ds.InverterNode != "SIMULATOR":
+    if ds.bmsNode != "SIMULATOR" and ds.InverterModel == "Axioma": # workaround for Axioma inverter inability to properly manage battery charging voltage
+        currentPower = b.CurrentPower
+        if ds.Estimate != '' and ds.GridChargingEnabled and ds.GridChargingEstimate != "":
+            sc.Calculate(datetime.now(timezone.utc), ds.GridChargingEstimate, 80)
             if sc.LowDetected is None or (sc.TargetDetected is not None and sc.TargetDetected < sc.LowDetected): # we can live on solar (optimistic or realistic)
-                if inverter.icChargerSourcePriority.upper() != "OSO" or inverter.icMaxUtiChargeCurrent != 2:
-                    inverter.setGridCharging("OSO", 2) # OSO, 2A
+                if inverter.icChargerSourcePriority.upper() != txtOSO or inverter.icMaxUtiChargeCurrent != 2:
+                    inverter.setGridCharging(txtOSO, 2) # OSO, 2A
             else:
-                '''if b.bBalance != '': overall no need to slow down, battery itself does it pretty good
-                    maxUtiChargeCurent = 2
-                elif currentPower > TargetPower:
-                    maxUtiChargeCurent = 10
-                else:'''
                 maxUtiChargeCurent = 20
-                print(f"B {b.bBalance} CP {currentPower:.1f} TP {TargetPower} UCC {maxUtiChargeCurent}")
+                inverter.Log(logDebug, f"B {b.bBalance} CP {currentPower:.1f} TP {ds.TargetPower} UCC {maxUtiChargeCurent}")
                 if sc.MinDetected is not None and sc.TargetDetected is None:
-                    if inverter.icChargerSourcePriority.upper() != "SNU" or inverter.icMaxUtiChargeCurrent != maxUtiChargeCurent:
-                        inverter.setGridCharging("SNU", maxUtiChargeCurent) # SNU, 20A
+                    if inverter.icChargerSourcePriority.upper() != txtSNU or inverter.icMaxUtiChargeCurrent != maxUtiChargeCurent:
+                        inverter.setGridCharging(txtSNU, maxUtiChargeCurent) # SNU, 20A
                 else:
-                    if inverter.icChargerSourcePriority.upper() != "CSO" or inverter.icMaxUtiChargeCurrent != maxUtiChargeCurent:
-                        inverter.setGridCharging("CSO", maxUtiChargeCurent) # though would be good to calculate current based on electricity availability schedule
-            tp = TargetPower if sc.MinDetected else TargetPower - MaxPowerLimit + TargetPower
+                    if inverter.icChargerSourcePriority.upper() != txtCSO or inverter.icMaxUtiChargeCurrent != maxUtiChargeCurent:
+                        inverter.setGridCharging(txtCSO, maxUtiChargeCurent) # though would be good to calculate current based on electricity availability schedule
+            tp = ds.TargetPower if sc.MinDetected else ds.TargetPower - ds.MaxPowerLimit + ds.TargetPower
         else:
-            tp = TargetPower 
-        if PrecariousChargingEnabled:
-            notBalancing = True # overbalancing hurts b.bBalance == "" # todo: implement timeout for balancing
-            if currentPower < tp and (inverter.pvChargerPower > 0 or inverter.icChargerSourcePriority.upper() != "OSO") and inverter.ccBatteryFloatVoltage < GridChargingBulk:
-                if logDetail >= 3:
-                    print(f"Charging start {currentPower:.1f}<{TargetPower}W {inverter.pvChargerPower:.1f}>0W {inverter.icChargerSourcePriority.upper()}")
-                inverter.setFloat(GridChargingBulk) # 27.9 makes 100% sharply, 27.8 up to 91% charge
+            tp = ds.TargetPower 
+        if ds.PrecariousChargingEnabled:
+            equalized = True # overbalancing hurts b.bBalance == "" # todo: implement timeout for balancing
+            if currentPower < tp and (inverter.pvChargerPower > 0 or inverter.icChargerSourcePriority.upper() != txtOSO) and inverter.ccBatteryFloatVoltage < ds.GridChargingBulk:
+                inverter.Log(logDebug, f"Charging start {currentPower:.1f}<{tp}W {inverter.pvChargerPower:.1f}>0W {inverter.icChargerSourcePriority.upper()}")
+                inverter.setFloat(ds.GridChargingBulk) # 27.9 makes 100% sharply, 27.8 up to 91% charge
                 # use SNU for 27.8 and then decrease current to 2 or 10A until reach target
-            elif currentPower > TargetPower and b.bCurrent <= 0 and notBalancing and inverter.ccBatteryFloatVoltage > GridChargingFloat: #bms current is reverse; wait until balanced
-                if logDetail >= 3:
-                    print(f"Charging complete {currentPower:.1f}>{TargetPower}W {b.bCurrent:.1f}A")
-                inverter.setFloat(GridChargingFloat)
-            elif currentPower >= MaxPowerLimit and notBalancing and inverter.ccBatteryFloatVoltage > GridChargingFloat:
-                if logDetail >= 3:
-                    print(f"Charging limit {currentPower:.1f}>={MaxPowerLimit}W")
-                inverter.setFloat(GridChargingFloat)
-            elif inverter.pvChargerPower <= 0 and inverter.icChargerSourcePriority.upper() == "OSO" and inverter.ccBatteryFloatVoltage > GridChargingFloat:
-                if logDetail >= 3:
-                    print(f"Charging stop {inverter.pvChargerPower:.1f}<=0W {inverter.icChargerSourcePriority.upper()}")
-                inverter.setFloat(GridChargingFloat)
+            elif currentPower > tp and b.bCurrent <= 0 and equalized and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat: #bms current is reverse; wait until balanced
+                inverter.Log(logDebug, f"Charging complete {currentPower:.1f}>{tp}W {b.bCurrent:.1f}A")
+                inverter.setFloat(ds.GridChargingFloat)
+            elif currentPower >= ds.MaxPowerLimit and equalized and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat:
+                inverter.Log(logDebug, f"Charging limit {currentPower:.1f}>={ds.MaxPowerLimit}W")
+                inverter.setFloat(ds.GridChargingFloat)
+            elif inverter.pvChargerPower <= 0 and inverter.icChargerSourcePriority.upper() == txtOSO and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat:
+                inverter.Log(logDebug, f"Charging stop {inverter.pvChargerPower:.1f}<=0W {inverter.icChargerSourcePriority.upper()}")
+                inverter.setFloat(ds.GridChargingFloat)
 
-    elif INVERTER_MODEL == "GreenCell" and GridChargingEnabled: # workaround for GreenCell inverter inability to properly charge battery from grid
-        if inverter.iBatteryVoltage < GridChargingFloat and inverter.iBattPower <= 0 and inverter.pvVoltage < 14 and inverter.icChargerSourcePriority.upper() == "OSO":
+    elif ds.InverterModel == "GreenCell" and ds.GridChargingEnabled: # workaround for GreenCell inverter inability to properly charge battery from grid
+        if inverter.iBatteryVoltage < ds.GridChargingFloat and inverter.iBattPower <= 0 and inverter.pvVoltage < 14 and inverter.icChargerSourcePriority.upper() == txtOSO:
             inverter.setCSO() # todo: not to trigger it on discharging - measue when battery is calm
-        elif PrecariousChargingEnabled and inverter.iBatteryVoltage < 13.3 and inverter.pvVoltage < 14 and inverter.icChargerSourcePriority.upper() != "OSO":
-            inverter.setFloat(GridChargingBulk) # better set SNU/CSO
-        elif inverter.iBatteryVoltage >= GridChargingBulk and inverter.iRadiatorTemperature < inverter.rpiTemperature:
-            if PrecariousChargingEnabled and inverter.ccBatteryFloatVoltage > GridChargingFloat:
-                inverter.setFloat(GridChargingFloat)
+        elif ds.PrecariousChargingEnabled and inverter.iBatteryVoltage < 13.3 and inverter.pvVoltage < 14 and inverter.icChargerSourcePriority.upper() != txtOSO:
+            inverter.setFloat(ds.GridChargingBulk) # better set SNU/CSO
+        elif inverter.iBatteryVoltage >= ds.GridChargingBulk and inverter.iRadiatorTemperature < inverter.rpiTemperature:
+            if ds.PrecariousChargingEnabled and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat:
+                inverter.setFloat(ds.GridChargingFloat)
             inverter.setOSO()
-        elif PrecariousChargingEnabled and inverter.pvVoltage >= 14 and inverter.icChargerSourcePriority.upper() != "SNU":
-            inverter.setFloat(GridChargingFloat)
-        elif PrecariousChargingEnabled and inverter.iGridVoltage < 100 and inverter.ccBatteryFloatVoltage > GridChargingFloat:
-            inverter.setFloat(GridChargingFloat)
+        elif ds.PrecariousChargingEnabled and inverter.pvVoltage >= 14 and inverter.icChargerSourcePriority.upper() != txtSNU:
+            inverter.setFloat(ds.GridChargingFloat)
+        elif ds.PrecariousChargingEnabled and inverter.iGridVoltage < 100 and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat:
+            inverter.setFloat(ds.GridChargingFloat)
