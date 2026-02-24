@@ -1,3 +1,4 @@
+import platform
 import time
 import minimalmodbus
 if __name__ == "_modbus_":
@@ -8,12 +9,13 @@ else:
 class deviceModbus(device): # base class for modbus communication (USB)
     def __init__(self, logDetail: int, device_path: str, device_id: int, baud_rate: int, **kwargs):
         super().__init__(logDetail = logDetail, **kwargs)
-
-        if device_path != "SIMULATOR":
+        if platform.system() == "Linux": # switch it off when running on non-linux system for debug and test purposes
             self.scc = minimalmodbus.Instrument(device_path, device_id)
             self.scc.serial.baudrate = baud_rate
             self.scc.serial.timeout = 0.5
             self.scc.debug = logDetail >= 3
+        else:
+            print(f"Debugging at {platform.system()}")
 
     def __del__(self):
         if hasattr(self, 'scc'):

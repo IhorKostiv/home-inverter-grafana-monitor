@@ -15,6 +15,9 @@ class DataStore(object):
         self.readSettings()
 
     def _getClient_(self, DB_HOST=None, DB_PORT=None, DB_USERNAME=None, DB_PASSWORD=None, DB_NAME=None) -> InfluxDBClient:
+        # when unit is directly called, paramenetrs are hardcoded ans command line is used to set values in DB
+        # from Docker container environmebt variables are used
+        # when monitor is called then connection parameters are in command string
         if DB_HOST is not None and DB_PORT is not None and DB_USERNAME is not None and DB_PASSWORD is not None and DB_NAME is not None:
             pass
         elif len(sys.argv) >= 6:
@@ -40,27 +43,29 @@ class DataStore(object):
     
     def _readDefaults_(self):
         self.LogDetail = int(os.environ.get("LOG_DETAIL", "0")) # 0 errors only, 1 +set commands, 2 +data, 3 +debug
-
-        self.InverterNode = os.environ.get("USB_DEVICE", "SIMULATOR")
         self.InverterModel = os.environ.get("INVERTER_MODEL", "") # "GreenCell", "Axioma"
+        self.bmsModel = os.environ.get("BMS_MODEL", "") # "MUST"
+        self.solarForecast = os.environ.get("SOLAR_FORECAST", "") # "solcast"
+        # Inverter settings
+        self.InverterNode = os.environ.get("USB_DEVICE", "SIMULATOR")
         self.SolarVoltageOn = float(os.environ.get("SOLAR_VOLTAGE_ON", "0"))
         self.SolarVoltageOff = float(os.environ.get("SOLAR_VOLTAGE_OFF", "0"))
-        self.PrecariousChargingEnabled = bool(os.environ.get("PRECARIOUS_CHARGING_ENABLED", "False"))
+        self.MaxUtiChargeCurent = int(os.environ.get("MAX_UTI_CHARGE_CURRENT", "0"))
+        self.MinUtiChargeCurent = int(os.environ.get("MIN_UTI_CHARGE_CURRENT", "0"))
+        self.PrecariousChargingEnabled = bool(os.environ.get("PRECARIOUS_CHARGING_ENABLED", "False") == "True")
         self.GridChargingEnabled = (os.environ.get("GRID_CHARGING_ENABLED", txtGCNever))
         self.GridChargingFloat = float(os.environ.get("GRID_CHARGING_FLOAT", "0")) # 26.6
         self.GridChargingBulk = float(os.environ.get("GRID_CHARGING_BULK", "0")) # 27.9 makes 100% sharply, 27.8 up to 91% charge
-        self.GridChargingEstimate = os.environ.get("GRID_CHARGING_ESTIMATE", "")
-
+        # BMS settings
         self.bmsNode = os.environ.get("ACM_DEVICE", "SIMULATOR")
-        self.bmsModel = os.environ.get("BMS_MODEL", "") # "MUST"
-
-        self.solarForecast = os.environ.get("SOLAR_FORECAST", "") # "solcast"
-        self.GridTied = os.environ.get("GRID_TIED", "").split(",")
-        self.Estimate = os.environ.get("SOLCAST_ESTIMATE", '')
         self.MaxPowerLimit = int(os.environ.get("MAX_POWER_LIMIT", "0"))  # full battery capacity (5120)
         self.TargetPower = int(os.environ.get("TARGET_POWER", "0"))       # 95% approx (4900)
         self.LowPower = int(os.environ.get("LOW_POWER", "0"))             # 30% approx (1500)
         self.MinPower = int(os.environ.get("MIN_POWER", "0"))             # 20% approx (1024)
+        # Solar forecast settings
+        self.GridTied = os.environ.get("GRID_TIED", "").split(",")
+        self.Estimate = os.environ.get("SOLCAST_ESTIMATE", '')
+        self.GridChargingEstimate = os.environ.get("GRID_CHARGING_ESTIMATE", "")
         self.solcastApiKey = ""
         self.solcastResourceID = ""
 
@@ -76,70 +81,51 @@ class DataStore(object):
     def readGeneral(self):
         s = self.query(f"SELECT last(LogDetail) as LogDetail, last(InverterModel) as InverterModel, last(bmsModel) as bmsModel, last(solarForecast) as solarForecast FROM {constMeasurement} where uKey='General' ORDER BY time DESC LIMIT 1")
         for point in s.get_points():    # general settings and keys for rest of settings
-            for field, value in point.items():
-                if field == "LogDetail":     # log detail level: 0 errors only, 1 +set commands, 2 +data, 3 +debug
-                    self.LogDetail = int(value)
-                elif field == "InverterModel":
-                    self.InverterModel = value
-                elif field == "bmsModel":
-                    self.bmsModel = value
-                elif field == "solarForecast":
-                    self.solarForecast = value
+            self.LogDetail = int(point["LogDetail"]) # log detail level: 0 errors only, 1 +set commands, 2 +data, 3 +debug
+            self.InverterModel = point["InverterModel"]
+            self.bmsModel = point["bmsModel"]
+            self.solarForecast = point["solarForecast"]
+            break
             
     def readInverter(self, inverterModel: str):
         if inverterModel == "":
             raise Exception("Inverter model is not specified")
-        s = self.query(f"SELECT last(InverterNode) as InverterNode, last(SolarVoltageOn) as SolarVoltageOn, last(SolarVoltageOff) as SolarVoltageOff FROM {constMeasurement} where uKey='{inverterModel}' ORDER BY time DESC LIMIT 1")
+        s = self.query(f"SELECT last(InverterNode) as InverterNode, last(SolarVoltageOn) as SolarVoltageOn, last(SolarVoltageOff) as SolarVoltageOff, last(PrecariousChargingEnabled) as PrecariousChargingEnabled, last(GridChargingEnabled) as GridChargingEnabled, last(GridChargingFloat) as GridChargingFloat, last(GridChargingBulk) as GridChargingBulk, last(MaxUtiChargeCurent) as MaxUtiChargeCurent, last(MinUtiChargeCurent) as MinUtiChargeCurent FROM {constMeasurement} where uKey='{inverterModel}' ORDER BY time DESC LIMIT 1")
         for point in s.get_points():   # inverter settings
-            for field, value in point.items():
-                if field == "InverterNode":
-                    self.InverterNode = value
-                elif field == "SolarVoltageOn":
-                    self.SolarVoltageOn = float(value)
-                elif field == "SolarVoltageOff":
-                    self.SolarVoltageOff = float(value)
+            self.InverterNode = point["InverterNode"]
+            self.SolarVoltageOn = float(point["SolarVoltageOn"])
+            self.SolarVoltageOff = float(point["SolarVoltageOff"])
+            self.MaxUtiChargeCurent = int(point["MaxUtiChargeCurent"]) #if "MaxUtiChargeCurent" in point and point["MaxUtiChargeCurent"] is not None else self.MaxUtiChargeCurent
+            self.MinUtiChargeCurent = int(point["MinUtiChargeCurent"]) #if "MinUtiChargeCurent" in point and point["MinUtiChargeCurent"] is not None else self.MinUtiChargeCurent
+            self.PrecariousChargingEnabled = bool(point["PrecariousChargingEnabled"]) #if "PrecariousChargingEnabled" in point and point["PrecariousChargingEnabled"] is not None else self.PrecariousChargingEnabled
+            self.GridChargingEnabled = str(point["GridChargingEnabled"]) #if "GridChargingEnabled" in point and point["GridChargingEnabled"] is not None else self.GridChargingEnabled
+            self.GridChargingFloat = float(point["GridChargingFloat"]) #if "GridChargingFloat" in point and point["GridChargingFloat"] is not None else self.GridChargingFloat
+            self.GridChargingBulk = float(point["GridChargingBulk"]) #if "GridChargingBulk" in point and point["GridChargingBulk"] is not None else self.GridChargingBulk
+            break
             
     def readBMS(self, bmsModel: str):
         if bmsModel == "":
             raise Exception("BMS model is not specified")
-        s = self.query(f"SELECT last(PrecariousChargingEnabled) as PrecariousChargingEnabled, last(GridChargingEnabled) as GridChargingEnabled, last(GridChargingFloat) as GridChargingFloat, last(GridChargingBulk) as GridChargingBulk, last(bmsNode) as bmsNode, last(MaxPowerLimit) as MaxPowerLimit, last(TargetPower) as TargetPower, last(LowPower) as LowPower, last(MinPower) as MinPower FROM {constMeasurement} where uKey='{bmsModel}' ORDER BY time DESC LIMIT 1")
+        s = self.query(f"SELECT last(bmsNode) as bmsNode, last(MaxPowerLimit) as MaxPowerLimit, last(TargetPower) as TargetPower, last(LowPower) as LowPower, last(MinPower) as MinPower FROM {constMeasurement} where uKey='{bmsModel}' ORDER BY time DESC LIMIT 1")
         for point in s.get_points():    # battery and charging settings
-            for field, value in point.items():
-                if field == "PrecariousChargingEnabled":               # charging settings
-                    self.PrecariousChargingEnabled = bool(value)
-                elif field == "GridChargingEnabled":
-                    self.GridChargingEnabled = str(value)
-                elif field == "GridChargingFloat":
-                    self.GridChargingFloat = float(value)
-                elif field == "GridChargingBulk":
-                    self.GridChargingBulk = float(value)
-                elif field == "bmsNode":                                 # bms settings
-                    self.bmsNode = str(value)
-                elif field == "MaxPowerLimit":
-                    self.MaxPowerLimit = int(value)
-                elif field == "TargetPower":
-                    self.TargetPower = int(value)
-                elif field == "LowPower":
-                    self.LowPower = int(value)
-                elif field == "MinPower":
-                    self.MinPower = int(value)
+            self.bmsNode = str(point["bmsNode"])
+            self.MaxPowerLimit = int(point["MaxPowerLimit"])
+            self.TargetPower = int(point["TargetPower"])
+            self.LowPower = int(point["LowPower"])
+            self.MinPower = int(point["MinPower"])
+            break
 
     def readSolarForecast(self, solarForecast: str):
         if solarForecast == "":
-            raise Exception("Solar forecast model is not specified")
+            raise Exception("Solar forecast source is not specified")
         s = self.query(f"SELECT last(GridTied) as GridTied, last(Estimate) as Estimate, last(GridChargingEstimate) as GridChargingEstimate, last(apiKey) as apiKey, last(resourceID) as resourceID FROM {constMeasurement} where uKey='{solarForecast}' ORDER BY time DESC LIMIT 1")    
         for point in s.get_points():    # solar production settings
-            for field, value in point.items():
-                if field == "GridTied":
-                    self.GridTied = value.split(",")
-                elif field == "Estimate":
-                    self.Estimate = value
-                elif field == "GridChargingEstimate":
-                    self.GridChargingEstimate = value
-                elif field == "apiKey":
-                    self.solcastApiKey = value
-                elif field == "resourceID":
-                    self.solcastResourceID = value
+            self.GridTied = point["GridTied"].split(",")
+            self.Estimate = point["Estimate"]
+            self.GridChargingEstimate = point["GridChargingEstimate"]
+            self.solcastApiKey = point["apiKey"]
+            self.solcastResourceID = point["resourceID"]
+            break
 
     def query(self, query: str):
         return self.client.query(query)     
@@ -161,10 +147,10 @@ class DataStore(object):
             ]
             self.write(json)
 
-    def saveSettingsInverter(self, inverterModel: str, inverterNode: str, solarVoltageOn: float, solarVoltageOff: float):
+    def saveSettingsInverter(self, inverterModel: str, inverterNode: str, solarVoltageOn: float, solarVoltageOff: float, MaxUtiChargeCurent: int, MinUtiChargeCurent: int, precariousChargingEnabled: bool, gridChargingEnabled: str, gridChargingFloat: float, gridChargingBulk: float, ):
         if inverterModel == "":
             raise Exception("Inverter model is not specified")
-        if inverterModel != self.InverterModel or inverterNode != self.InverterNode or solarVoltageOn != self.SolarVoltageOn or solarVoltageOff != self.SolarVoltageOff:
+        if inverterModel != self.InverterModel or inverterNode != self.InverterNode or solarVoltageOn != self.SolarVoltageOn or solarVoltageOff != self.SolarVoltageOff  or MaxUtiChargeCurent != self.MaxUtiChargeCurent or MinUtiChargeCurent != self.MinUtiChargeCurent or precariousChargingEnabled != self.PrecariousChargingEnabled or gridChargingEnabled != self.GridChargingEnabled or gridChargingFloat != self.GridChargingFloat or gridChargingBulk != self.GridChargingBulk:
             json = [
                 {
                     "measurement": constMeasurement,
@@ -172,24 +158,26 @@ class DataStore(object):
                     "fields": {
                         "InverterNode": inverterNode,
                         "SolarVoltageOn": solarVoltageOn,
-                        "SolarVoltageOff": solarVoltageOff}
+                        "SolarVoltageOff": solarVoltageOff,
+                        "MaxUtiChargeCurent": MaxUtiChargeCurent,
+                        "MinUtiChargeCurent": MinUtiChargeCurent,
+                        "PrecariousChargingEnabled": precariousChargingEnabled,
+                        "GridChargingEnabled": gridChargingEnabled,
+                        "GridChargingFloat": gridChargingFloat,
+                        "GridChargingBulk": gridChargingBulk}
                 }
             ]
             self.write(json)
 
-    def saveSettingsBMS(self, bmsModel: str, bmsNode: str, precariousChargingEnabled: bool, gridChargingEnabled: str, gridChargingFloat: float, gridChargingBulk: float, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int):
+    def saveSettingsBMS(self, bmsModel: str, bmsNode: str, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int):
         if bmsModel == "":
             raise Exception("BMS model is not specified")
-        if bmsModel != self.bmsModel or precariousChargingEnabled != self.PrecariousChargingEnabled or gridChargingEnabled != self.GridChargingEnabled or gridChargingFloat != self.GridChargingFloat or gridChargingBulk != self.GridChargingBulk or bmsNode != self.bmsNode or maxPowerLimit != self.MaxPowerLimit or targetPower != self.TargetPower or lowPower != self.LowPower or minPower != self.MinPower:
+        if bmsModel != self.bmsModel or bmsNode != self.bmsNode or maxPowerLimit != self.MaxPowerLimit or targetPower != self.TargetPower or lowPower != self.LowPower or minPower != self.MinPower:
             json = [
                 {
                     "measurement": constMeasurement,
                     "tags": { "uKey": bmsModel },
                     "fields": {
-                        "PrecariousChargingEnabled": precariousChargingEnabled,
-                        "GridChargingEnabled": gridChargingEnabled,
-                        "GridChargingFloat": gridChargingFloat,
-                        "GridChargingBulk": gridChargingBulk,
                         "bmsNode": bmsNode,
                         "MaxPowerLimit": maxPowerLimit,
                         "TargetPower": targetPower,
@@ -229,11 +217,11 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 2:
         if sys.argv[1] in {"Axioma", "GreenCell"} and len(sys.argv) == 5:
-            # saveSettingsInverter(self, inverterModel: str, inverterNode: str, solarVoltageOn: float, solarVoltageOff: float)
-            ds.saveSettingsInverter(sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]))
+            # saveSettingsInverter(self, inverterModel: str, inverterNode: str, solarVoltageOn: float, solarVoltageOff: float, precariousChargingEnabled: bool, gridChargingEnabled: str, gridChargingFloat: float, gridChargingBulk: float)
+            ds.saveSettingsInverter(sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), bool(sys.argv[5]), sys.argv[6], float(sys.argv[7]), float(sys.argv[8]))
         elif sys.argv[1] == "MUST" and len(sys.argv) == 11:
-            # saveSettingsBMS(self, bmsModel: str, bmsNode: str, precariousChargingEnabled: bool, gridChargingEnabled: str, gridChargingFloat: float, gridChargingBulk: float, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int) 
-            ds.saveSettingsBMS(sys.argv[1], sys.argv[2], bool(sys.argv[3]), sys.argv[4], float(sys.argv[5]), float(sys.argv[6]), int(sys.argv[7]), int(sys.argv[8]), int(sys.argv[9]), int(sys.argv[10]))
+            # saveSettingsBMS(self, bmsModel: str, bmsNode: str, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int) 
+            ds.saveSettingsBMS(sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5]), int(sys.argv[6]))
         elif sys.argv[1] == "solcast" and len(sys.argv) >= 5:
             # saveSettingsSolarForecast(self, solarForecast: str, gridTied: list, estimate: str, gridChargingEstimate: str, solcastApiKey: str = "", solcastResourceID: str = "")
             ds.saveSettingsSolarForecast(sys.argv[1], sys.argv[2].split(","), sys.argv[3], sys.argv[4], sys.argv[5] if len(sys.argv) > 5 else "", sys.argv[6] if len(sys.argv) > 6 else "")
@@ -243,18 +231,19 @@ if __name__ == "__main__":
         else:
             print(f"Unknown settings type {sys.argv[1]}")
             print("Possible scenarios:")
-            print("python3 _data_.py InverterModel InverterNode SolarVoltageOn SolarVoltageOff")
-            print(f"python3 _data_.py {ds.InverterModel} {ds.InverterNode} {ds.SolarVoltageOn} {ds.SolarVoltageOff}")
-            print("\npython3 _data_.py BMSModel BMSNode PrecariousChargingEnabled GridChargingEnabled GridChargingFloat GridChargingBulk MaxPowerLimit TargetPower LowPower MinPower")
-            print(f"python3 _data_.py {ds.bmsModel} {ds.bmsNode} {ds.PrecariousChargingEnabled} {ds.GridChargingEnabled} {ds.GridChargingFloat} {ds.GridChargingBulk} {ds.MaxPowerLimit} {ds.TargetPower} {ds.LowPower} {ds.MinPower}")
+            print("python3 _data_.py InverterModel InverterNode SolarVoltageOn SolarVoltageOff MaxUtiChargeCurent MinUtiChargeCurent PrecariousChargingEnabled GridChargingEnabled GridChargingFloat GridChargingBulk")
+            print(f"python3 _data_.py {ds.InverterModel} {ds.InverterNode} {ds.SolarVoltageOn} {ds.SolarVoltageOff} {ds.MaxUtiChargeCurent} {ds.MinUtiChargeCurent} {ds.PrecariousChargingEnabled} {ds.GridChargingEnabled} {ds.GridChargingFloat} {ds.GridChargingBulk}")
+            print("\npython3 _data_.py BMSModel BMSNode MaxPowerLimit TargetPower LowPower MinPower")
+            print(f"python3 _data_.py {ds.bmsModel} {ds.bmsNode} {ds.MaxPowerLimit} {ds.TargetPower} {ds.LowPower} {ds.MinPower}")
             print("\npython3 _data_.py solcast GridTied Estimate GridChargingEstimate SolcastApiKey SolcastResourceID")
             # todo: solcast can have multiple fields, so that Resource IDs shall be a list
             print(f"python3 _data_.py {ds.solarForecast} {','.join(ds.GridTied)} {ds.Estimate} {ds.GridChargingEstimate} {ds.solcastApiKey} {ds.solcastResourceID}")
             print("\npython3 _data_.py LogDetail InverterModel BMSModel SolarForecast")
             print(f"python3 _data_.py {ds.LogDetail} {ds.InverterModel} {ds.bmsModel} {ds.solarForecast}")
     else:
-        ds.saveSettingsInverter(inverterModel="Axioma", inverterNode="/dev/ttyUSB0", solarVoltageOn=140, solarVoltageOff=100)
-        ds.saveSettingsBMS(bmsModel="MUST", bmsNode="/dev/ttyACM0", precariousChargingEnabled=True, gridChargingEnabled=txtGCAlways, gridChargingFloat=26.6, gridChargingBulk=27.9, maxPowerLimit=5120, targetPower=4900, lowPower=1500, minPower=1024)
+        ds.saveSettingsInverter(inverterModel="Axioma", inverterNode="/dev/ttyUSB0", solarVoltageOn=140, solarVoltageOff=100, MaxUtiChargeCurent=20, MinUtiChargeCurent=2, precariousChargingEnabled=True, gridChargingEnabled=txtGCAlways, gridChargingFloat=26.6, gridChargingBulk=27.9)
+        #ds.saveSettingsInverter(inverterModel="GreenCell", inverterNode="/dev/ttyUSB0", solarVoltageOn=70, solarVoltageOff=50, MaxUtiChargeCurent=30, MinUtiChargeCurent=20, precariousChargingEnabled=False, gridChargingEnabled=txtGCNever, gridChargingFloat=26.6, gridChargingBulk=27.9)
+        ds.saveSettingsBMS(bmsModel="MUST", bmsNode="/dev/ttyACM0", maxPowerLimit=5120, targetPower=4950, lowPower=1500, minPower=1024)
         ds.saveSettingsSolarForecast(solarForecast="solcast", gridTied=[''], estimate="(pvEstimate+pvEstimate10)/2", gridChargingEstimate="pvEstimate")
         ds.saveSettingsGeneral(logDetail=logRead, inverterModel="Axioma", bmsModel="MUST", solarForecast="solcast")
     '''

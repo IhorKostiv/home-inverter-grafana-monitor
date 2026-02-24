@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import platform
 from ups._bms_ import bms
 from ups._constants_ import *
 from ups._data_ import DataStore
@@ -18,7 +19,8 @@ SUPPORTED_INVERTERS = {
 SUPPORTED_BMS = {
     "MUST": bmsMust.bmsMUST
     }
-
+# Usage: python3 monitor.py <DB_HOST> <DB_PORT> <DB_USERNAME> <DB_PASSWORD> <DB_NAME>
+# Example: python3 monitor.py inverter.local 8086 root root ups
 ds = DataStore() # initialize datastore to read settings and connect to database
 
 if ds.bmsModel in SUPPORTED_BMS: # initialize BMS if configured, read data and write to database
@@ -26,12 +28,12 @@ if ds.bmsModel in SUPPORTED_BMS: # initialize BMS if configured, read data and w
     json_body = b.jSON()
     b.Log(logDebug, json_body)
     ds.write(json_body)
-    bmsSOC = b.bSOC
+    currentPower = b.CurrentPower
 elif ds.bmsModel != "": # if BMS model is not empty but unsupported, print error and exit
     print(f"Error: Unknown BMS model: {ds.bmsModel}")
     exit(1)
 else: # no BMS configured, set SOC to -1 to indicate unknown state
-    bmsSOC = -1
+    currentPower = -1
 
 if ds.InverterModel not in SUPPORTED_INVERTERS:
     print(f"Error: Unknown inverter model: {ds.InverterModel}")
@@ -57,34 +59,29 @@ elif ds.SolarVoltageOn > 1 or ds.SolarVoltageOff > 1:
  
 json_body = inverter.jSON()
 inverter.Log(logDebug, json_body)
-if ds.InverterNode != "SIMULATOR":
+if platform.system() == "Linux": # switch it off when running on non-linux system for debug and test purposes
     ds.write(json_body)
 
-if ds.InverterNode != "SIMULATOR":
     gridChargingEnabled = ds.GridChargingEnabled == txtGCAlways # todo: add option to parse time range i.e. 23:00-07:00 etc
-    if ds.bmsNode != "SIMULATOR" and ds.InverterModel == "Axioma": # workaround for Axioma inverter inability to properly manage battery charging voltage
-        currentPower = b.CurrentPower
+    if ds.bmsModel != "" and ds.InverterModel == "Axioma": # workaround for Axioma inverter inability to properly manage LiFePo4 battery charging voltage
         if gridChargingEnabled:
             if ds.Estimate != '' or ds.GridChargingEstimate != '':
                 gridChargingEstimate = ds.GridChargingEstimate if ds.GridChargingEstimate != "" else ds.Estimate
                 sc.Calculate(datetime.now(timezone.utc), gridChargingEstimate, 80)
                 if sc.LowDetected is None or (sc.TargetDetected is not None and sc.TargetDetected < sc.LowDetected): # we can live on solar (optimistic or realistic)
-                    if inverter.icChargerSourcePriority != txtOSO or inverter.icMaxUtiChargeCurrent != 2:
-                        inverter.setGridCharging(txtOSO, 2) # OSO, 2A
+                    inverter.setGridCharging(txtOSO, ds.MinUtiChargeCurent) # OSO, 2A
                 else:
-                    maxUtiChargeCurent = 20
+                    maxUtiChargeCurent = ds.MaxUtiChargeCurent
                     inverter.Log(logDebug, f"B {b.bBalance} CP {currentPower:.1f} TP {ds.TargetPower} UCC {maxUtiChargeCurent}")
                     if sc.MinDetected is not None and sc.TargetDetected is None:
-                        if inverter.icChargerSourcePriority != txtSNU or inverter.icMaxUtiChargeCurrent != maxUtiChargeCurent:
-                            inverter.setGridCharging(txtSNU, maxUtiChargeCurent) # SNU, 20A
+                        inverter.setGridCharging(txtSNU, maxUtiChargeCurent) # SNU, 20A
                     else:
-                        if inverter.icChargerSourcePriority != txtCSO or inverter.icMaxUtiChargeCurrent != maxUtiChargeCurent:
-                            inverter.setGridCharging(txtCSO, maxUtiChargeCurent) # though would be good to calculate current based on electricity availability schedule
+                        inverter.setGridCharging(txtCSO, maxUtiChargeCurent) # though would be good to calculate current based on electricity availability schedule
                 tp = ds.TargetPower if sc.MinDetected else ds.TargetPower - ds.MaxPowerLimit + ds.TargetPower
             else:
                 tp = ds.TargetPower
         else:
-            inverter.setGridCharging(txtOSO, 2)
+            inverter.setGridCharging(txtOSO, ds.MinUtiChargeCurent)
 
         if ds.PrecariousChargingEnabled:
             equalized = True # overbalancing hurts b.bBalance == "" # todo: implement timeout for balancing

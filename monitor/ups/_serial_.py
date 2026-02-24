@@ -1,3 +1,4 @@
+import platform
 import time
 import serial
 if __name__ == "_serial_":
@@ -8,10 +9,11 @@ else:
 class deviceSerial(device): # base class for serial communication (RS232)
     def __init__(self, logDetail: int, device_path: str, baud_rate: int, **kwargs):
         super().__init__(logDetail = logDetail, **kwargs)
-
-        if device_path != "SIMULATOR":
+        if platform.system() == "Linux": # switch it off when running on non-linux system for debug and test purposes
             self.scc = serial.Serial(device_path, baud_rate, timeout=1)
-
+        else:
+            print(f"Debugging at {platform.system()}")
+    
     def __del__(self):
         if hasattr(self, 'scc'):
             self.scc.close()
