@@ -150,7 +150,6 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
 
         r = self.readSerial(cmdQPIRI) #, cmdRetryCount) # "QPIRI")
         v = extract_values(r)        
-        """
         # BBB.B Grid rating voltage B is an integer ranging from 0 to 9. The units is V.
         # C CC.C Grid rating current C is an Integer ranging from 0 to 9. The units is A. 
         # D DDD.D AC output rating voltage D is an Integer ranging from 0 to 9. The units is V.
@@ -159,40 +158,27 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
         # H HHHH AC output rating apparent power H is an Integer ranging from 0 to 9. The unit is VA.
         # I IIII AC output rating active power I is an Integer ranging from 0 to 9. The unit is W.
         # J JJ.J Battery rating voltage J is an Integer ranging from 0 to 9. The units is V.
-        """
-        if len(v) > 9:
-            self.icBatteryStopDischarging = float(v[8])        # K KK.K Battery re-charge voltage K is an Integer ranging from 0 to 9. The units is V.
-        
+        self.icBatteryStopDischarging = float(v[8])     # K KK.K Battery re-charge voltage K is an Integer ranging from 0 to 9. The units is V.
         # l JJ.J Battery under voltage J is an Integer ranging from 0 to 9. The units is V.
         # M KK.K Battery bulk voltage K is an Integer ranging from 0 to 9. The units is V
-        if len(v) > 12:
-            self.ccBatteryFloatVoltage = float(v[11])           # LL.L Battery float voltage L is an Integer ranging from 0 to 9. The units is V.
+        self.ccBatteryFloatVoltage = float(v[11])       # LL.L Battery float voltage L is an Integer ranging from 0 to 9. The units is V.
         # O O Battery type 0: AGM 1: Flooded 2: User 3: Pylon 5: Weco 6: Soltaro 8: Lib 9: Lic
-        if len(v) > 14:
-            self.icMaxUtiChargeCurrent = int(v[13])         # P PP Max AC charging current P is an Integer ranging from 0 to 9 The units is A. If the max AC charging current is greater than 99A, then return to PPP
+        self.icMaxUtiChargeCurrent = int(v[13])         # P PP Max AC charging current P is an Integer ranging from 0 to 9 The units is A. If the max AC charging current is greater than 99A, then return to PPP
         # Q QQ0 Max charging current Q is an Integer ranging from 0 to 9. The units is A.
         # O O Input voltage range 0: Appliance 1: UPS
-        
-        if len(v) > 17:
-            self.icEnergyUse = icEnergyUses[int(v[16])]        # P P Output source priority 0: UtilitySolarBat 1: SolarUtilityBat 2: SolarBatUtility
-        if len(v) > 18:
-            self.icChargerSourcePriority = icChargerSourcePriorities[int(v[17])] # Q Q Charger source priority 1: Solar first 2: Solar + Utility 3: Only solar charging permitted
-        """
+        self.icEnergyUse = icEnergyUses[int(v[16])]     # P P Output source priority 0: UtilitySolarBat 1: SolarUtilityBat 2: SolarBatUtility
+        self.icChargerSourcePriority = icChargerSourcePriorities[int(v[17])] # Q Q Charger source priority 1: Solar first 2: Solar + Utility 3: Only solar charging permitted
         # R R Parallel max num R is an Integer ranging from 0 to 9. 
         # S SS Machine type 00: Grid tie; 01: Off Grid; 10: Hybrid.
         # T T Topology 0: transformerless 1: transformer
         # U U Output mode 00: single machine output 01: parallel output 02: Phase 1 of 3 Phase output 03: Phase 2 of 3 Phase output 04: Phase 3 of 3 Phase output 05: Phase 1 of 2 Phase output 06: Phase 2 of 2 Phase output (120°) 07: Phase 2 of 2 Phase output (180°)
-        """
-        if len(v) > 23:
-            self.icBatteryStopCharging = float(v[22])          # V VV.V Battery re-discharge voltage V is an Integer ranging from 0 to 9. The unit is V.
-        """
+        self.icBatteryStopCharging = float(v[22])       # V VV.V Battery re-discharge voltage V is an Integer ranging from 0 to 9. The unit is V.
         # W W PV OK condition for parallel 0: As long as one unit of inverters has connect PV, parallel system willconsider PV OK; 1: Only All of inverters have connect PV, parallel system will consider PV OK
         # X X PV power balance 0: PV input max current will be the max charged current; 1: PV input max power will be the sum of the max charged power and loads power.
         # Y YYY Max. charging time at C.V stage (only 48V model)
         # Y is an Integer ranging from 0 to 9. The unit is minute.
         # Z Z Operation Logic (only 48V model) 0: Automatically 1: On-line mode 2: ECO mode
         # A1 CCC Max discharging current (only 48V model) C is an integer ranging from 0 to 9. The units is A.
-        """
         return v
 
     def readQPIGS(self): # Device general status parameters inquiry
@@ -200,68 +186,57 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
     
         r = self.readSerial(cmdQPIGS) #, cmdRetryCount) # "QPIGS")
         v = extract_values(r)        
-        if len(v) > 1:
-            self.iGridVoltage = float(v[0]) # BBB.B Grid voltage B is an Integer number 0 to 9. The units is V
-                                            # CC.C Grid frequency C s an Integer number 0 to 9. The units is Hz.
-        if len(v) > 2:
-            self.iVoltage = float(v[2])     # DDD.D AC output voltage D is an Integer number 0 to 9. The units is V.
-                                            # EE.E AC output frequency E is an Integer number from 0 to 9. The units is Hz.
-        if len(v) > 4:
-            self.iSLoad = int(v[4])         # FFFF AC output apparent power F is an Integer number from 0 to 9. The units is VA
-        if len(v) > 5:
-            self.iPLoad = int(v[5])         # GGGG AC output active power G is an Integer ranging from 0 to 9. The units is W
-        if len(v) > 6:
-            self.iLoadPercent = int(v[6])   # HHH Output load percent DEVICE: HHH is Maximum of W% or VA%. VA% is a percent of apparent power. W% is a percent of active power. The units is %.
-                                            # III BUS voltage I is an Integer ranging from 0 to 9. The units is V.
-        if len(v) > 8:
-            self.iBatteryVoltage = float(v[8]) # JJ.JJ Battery voltage J is an Integer ranging from 0 to 9. The units is V.
-        if len(v) > 15:
-            self.iBattCurrent = self.batCurrent(float(v[9]), float(v[15]))  # KKK Battery charging current K is an Integer ranging from 0 to 9. The units is A.
-                                            # OOO Battery capacity X is an Integer ranging from 0 to 9. The units is %.
-            self.pvRadiatorTemperature = self.iRadiatorTemperature = int(v[11]) # TTTT Inverter heat sink temperature T is an integer ranging from 0 to 9. The units is ℃（NTC A/D value for Axpert 1~3K）
-            self.pvChargerCurrent = float(v[12])    # EE.E PV1 Input current E is an Integer ranging from 0 to 9. The units is A.
-            self.pvVoltage = float(v[13])           # UUU.U PV1 Input voltage U is an Integer ranging from 0 to 9. The units is V.
-            self.pvBatteryVoltage = float(v[14])    # WW.WW Battery voltage from SCCW is an Integer ranging from 0 to 9. The units is V.
-            # self.iBattCurrent = int(v[15])        # PPPPP Battery discharge current P is an Integer ranging from 0 to 9. The units is A.
-                                            # b7b6b5b4b3b2b1b0  Device status b7: add SBU priority version, 1: yes,0: no
+        self.iGridVoltage = float(v[0]) # BBB.B Grid voltage B is an Integer number 0 to 9. The units is V
+                                        # CC.C Grid frequency C s an Integer number 0 to 9. The units is Hz.
+        self.iVoltage = float(v[2])     # DDD.D AC output voltage D is an Integer number 0 to 9. The units is V.
+                                        # EE.E AC output frequency E is an Integer number from 0 to 9. The units is Hz.
+        self.iSLoad = int(v[4])         # FFFF AC output apparent power F is an Integer number from 0 to 9. The units is VA
+        self.iPLoad = int(v[5])         # GGGG AC output active power G is an Integer ranging from 0 to 9. The units is W
+        self.iLoadPercent = int(v[6])   # HHH Output load percent DEVICE: HHH is Maximum of W% or VA%. VA% is a percent of apparent power. W% is a percent of active power. The units is %.
+                                        # III BUS voltage I is an Integer ranging from 0 to 9. The units is V.
+        self.iBatteryVoltage = float(v[8]) # JJ.JJ Battery voltage J is an Integer ranging from 0 to 9. The units is V.
+        self.iBattCurrent = self.batCurrent(float(v[9]), float(v[15]))  # KKK Battery charging current K is an Integer ranging from 0 to 9. The units is A.
+                                        # OOO Battery capacity X is an Integer ranging from 0 to 9. The units is %.
+        self.pvRadiatorTemperature = self.iRadiatorTemperature = int(v[11]) # TTTT Inverter heat sink temperature T is an integer ranging from 0 to 9. The units is ℃（NTC A/D value for Axpert 1~3K）
+        self.pvChargerCurrent = float(v[12])    # EE.E PV1 Input current E is an Integer ranging from 0 to 9. The units is A.
+        self.pvVoltage = float(v[13])           # UUU.U PV1 Input voltage U is an Integer ranging from 0 to 9. The units is V.
+        self.pvBatteryVoltage = float(v[14])    # WW.WW Battery voltage from SCCW is an Integer ranging from 0 to 9. The units is V.
+        # self.iBattCurrent = int(v[15])        # PPPPP Battery discharge current P is an Integer ranging from 0 to 9. The units is A.
+                                        # b7b6b5b4b3b2b1b0  Device status 
+                                            # b7: add SBU priority version, 1: yes,0: no
                                             # b6: configuration status: 1: Change 0: unchanged
                                             # b5: SCC firmware version 1: Updated 0: unchanged
                                             # b4: Load status: 0: Load off 1:Load on
                                             # b3: battery voltage to steady while charging
-        if len(v) > 16:
-            self.pvWorkState = pvWorkStates[v[16][-3:]] # b2: Charging status
-                                                        # b1: Charging status(SCC charging on/off)
-                                                        # b0: Charging status(AC charging on/off)
-                                                        # b2b1b0: 000: Do nothing 110: Charging on with SCC charge on 101: Charging on with AC charge on 111: Charging on with SCC and AC charge on
-                                            # QQ Battery voltage offset for fans on Q is an Integer ranging from 0 to 9. The unit is 10mV.
-                                            # VV EEPROM version V is an Integer ranging from 0 to 9. 
-        if len(v) > 19:
-            self.pvChargerPower = int(v[19])     # MMMMM PV1 Charging power M is an Integer ranging from 0 to 9. The unit is watt.
-        if len(v) > 20:
-            if v[20][0] == '1':                             # b10b9b8 Device status 
-                self.pvWorkState = self.pvWorkState + "F"   # b10: flag for charging to floating mode 
-            match v[20][1]:                                 # b9: Switch On 
-                case '1':
-                    self.pvWorkState = self.pvWorkState + "+"   
-                case '0':
-                    self.pvWorkState = self.pvWorkState + "-"
+        self.pvWorkState = pvWorkStates[v[16][-3:]] # b2b1b0: 000: Do nothing 110: Charging on with SCC charge on 101: Charging on with AC charge on 111: Charging on with SCC and AC charge on
+                                            # b2: Charging status
+                                            # b1: Charging status(SCC charging on/off)
+                                            # b0: Charging status(AC charging on/off)
+                                        # QQ Battery voltage offset for fans on Q is an Integer ranging from 0 to 9. The unit is 10mV.
+                                        # VV EEPROM version V is an Integer ranging from 0 to 9. 
+        self.pvChargerPower = int(v[19])# MMMMM PV1 Charging power M is an Integer ranging from 0 to 9. The unit is watt.
+        if v[20][0] == '1':             # b10b9b8 Device status 
+            self.pvWorkState += "F"         # b10: flag for charging to floating mode 
+        if v[20][1] == '1':                 # b9: Switch On 
+                self.pvWorkState += "+"   
+        elif v[20][1] == '0':
+                self.pvWorkState += "-"
+        else:   self.pvWorkState += "?"
                                             # b8: flag for dustproof installed(1-dustproof installed,0-no dustproof, only available for Axpert V series)
-                                            # Y Solar feed to grid status (reserved feature) 0: normal 1: solar feed to grid
-                                            # ZZ Set country customized regulation (reserved feature) 00: India 01: Germany 02: South America
-                                            # AAAA Solar feed to grid power (reserved feature) A is an Integer ranging from 0 to 9. The units is W. 
-                                            # Device general status parameters inquiry
+                                        # Y Solar feed to grid status (reserved feature) 0: normal 1: solar feed to grid
+                                        # ZZ Set country customized regulation (reserved feature) 00: India 01: Germany 02: South America
+                                        # AAAA Solar feed to grid power (reserved feature) A is an Integer ranging from 0 to 9. The units is W. 
+                                        # Device general status parameters inquiry
         self.iBattPower = int(self.iBattCurrent * self.iBatteryVoltage)
         self.iPInverter = int((self.pvChargerPower + self.iBattPower) * (.93 if self.pvChargerPower + self.iBattPower > 0 else 1)) # approx efficiency
-        if len(v) > 23:
-            self.pvReturnGrid = int(v[23])
+        self.pvReturnGrid = int(v[23])
         # todo: there shall be more sophisticated formula accounting VA and VAr
         self.iPGrid = int(self.iPLoad - self.iPInverter + self.iInternalUsePower - self.pvReturnGrid) # include self consumption approximate and exclude return to grid power
-        if self.iPGrid < 0: # it shall not return to grid
-            self.iPGrid = 2
+        self.iPGrid = 2
         if self.iPInverter < 0: # it happens when battery is charged from grid
             self.iPInverter = 0 
-        if self.iPLoad != 0:
-            self.iSGrid = int(self.iSLoad * self.iPGrid / self.iPLoad) # hopefully it is proportional
+        if self.iPLoad != 0: # hopefully it is proportional
+            self.iSGrid = int(self.iSLoad * self.iPGrid / self.iPLoad) 
         else:
             self.iSGrid = self.iPGrid
         return v
@@ -269,9 +244,8 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
     def readQMOD(self): # Device Mode inquiry
         iWorkStates = { 'P': "Power on", 'S': "Standby", 'L': "Line", 'B': "Battery", 'F': "Fault", 'D': "Shutdown" }
         r = self.readSerial(cmdQMOD) #, cmdRetryCount) # "QMOD")
-        if len(r) > 1:
-            s = r[1]
-            self.iWorkState = iWorkStates[s] if s in iWorkStates else s
+        s = r[1]
+        self.iWorkState = iWorkStates[s] if s in iWorkStates else s
         # QMOD<cr>: Device Mode inquiry
         # Computer: QMOD<CRC><cr>
         # Device: (M<CRC><cr>
@@ -345,14 +319,10 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
     def readQ1(self): # undocumented temperature data
         r = self.readSerial(cmdQ1) #, cmdRetryCount) # "QPIGS")
         v = extract_values(r)        
-        if len(v) > 4:
-            self.tRadiatorTemperature = int(v[4])
-        if len(v) > 5:
-            self.bRadiatorTemperature = int(v[5])
-        if len(v) > 6:
-            self.iRadiatorTemperature = int(v[6])
-        if len(v) > 7:
-            self.pvRadiatorTemperature = int(v[7])
+        self.tRadiatorTemperature = int(v[4])
+        self.bRadiatorTemperature = int(v[5])
+        self.iRadiatorTemperature = int(v[6])
+        self.pvRadiatorTemperature = int(v[7])
 
     """
       iSInverter = soc[17]                            # 25217: ["Inverter complex power(S)", 1, "VA"],
@@ -421,13 +391,12 @@ if __name__ == "__main__": # testing and debugging
      
         for cmd in utMessages:
             s = utRead(cmd)
-            match s.lower():
-                case b'':
-                    pass
-                case b'exit':
-                    exit()
-                case _:
-                    utMessages[cmd] = s
+            if s.lower() == b'':
+                pass
+            elif s.lower() == b'exit':
+                exit()
+            else:
+                utMessages[cmd] = s
 
     """
     # QBEQI (0 060 030 040 030 29.20 000 120 0 0000
