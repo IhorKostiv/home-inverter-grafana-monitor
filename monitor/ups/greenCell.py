@@ -321,7 +321,6 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
     
     def setCSO(self):
         return super().setCSO() and self.writeRegister(20143, 0) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
-
     def setOSO(self):
         return super().setOSO() and self.writeRegister(20143, 3) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
 
