@@ -215,7 +215,7 @@ if __name__ == "__main__":
     #print(f"bmsNode {ds.bmsNode} bmsModel {ds.bmsModel} MaxPowerLimit {ds.MaxPowerLimit} TargetPower {ds.TargetPower} LowPower {ds.LowPower} MinPower {ds.MinPower}")
     #print(f"GridTied {ds.GridTied} Estimate {ds.Estimate} GridChargingEstimate {ds.GridChargingEstimate} solcastApiKey {ds.solcastApiKey} solcastResourceID {ds.solcastResourceID}")
 
-    if len(sys.argv) > 2:
+    if len(sys.argv) > 1:
         if sys.argv[1] in {"Axioma", "GreenCell"} and len(sys.argv) == 5:
             # saveSettingsInverter(self, inverterModel: str, inverterNode: str, solarVoltageOn: float, solarVoltageOff: float, precariousChargingEnabled: bool, gridChargingEnabled: str, gridChargingFloat: float, gridChargingBulk: float)
             ds.saveSettingsInverter(sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), bool(sys.argv[5]), sys.argv[6], float(sys.argv[7]), float(sys.argv[8]))
@@ -225,7 +225,7 @@ if __name__ == "__main__":
         elif sys.argv[1] == "solcast" and len(sys.argv) >= 5:
             # saveSettingsSolarForecast(self, solarForecast: str, gridTied: list, estimate: str, gridChargingEstimate: str, solcastApiKey: str = "", solcastResourceID: str = "")
             ds.saveSettingsSolarForecast(sys.argv[1], sys.argv[2].split(","), sys.argv[3], sys.argv[4], sys.argv[5] if len(sys.argv) > 5 else "", sys.argv[6] if len(sys.argv) > 6 else "")
-        elif int(sys.argv[1]) in {0, 1, 2, 3} and len(sys.argv) == 5:
+        elif sys.argv[1] in {"0", "1", "2", "3"} and len(sys.argv) == 5:
             # saveSettingsGeneral(self, logDetail: int, inverterModel: str, bmsModel: str, solarForecast: str)
             ds.saveSettingsGeneral(int(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4])
         else:
@@ -237,7 +237,7 @@ if __name__ == "__main__":
             print(f"python3 _data_.py {ds.bmsModel} {ds.bmsNode} {ds.MaxPowerLimit} {ds.TargetPower} {ds.LowPower} {ds.MinPower}")
             print("\npython3 _data_.py solcast GridTied Estimate GridChargingEstimate SolcastApiKey SolcastResourceID")
             # todo: solcast can have multiple fields, so that Resource IDs shall be a list
-            print(f"python3 _data_.py {ds.solarForecast} {','.join(ds.GridTied)} {ds.Estimate} {ds.GridChargingEstimate} {ds.solcastApiKey} {ds.solcastResourceID}")
+            print(f'python3 _data_.py {ds.solarForecast} "{",".join(ds.GridTied)}" "{ds.Estimate}" "{ds.GridChargingEstimate}" {ds.solcastApiKey} {ds.solcastResourceID}')
             print("\npython3 _data_.py LogDetail InverterModel BMSModel SolarForecast")
             print(f"python3 _data_.py {ds.LogDetail} {ds.InverterModel} {ds.bmsModel} {ds.solarForecast}")
     else:
