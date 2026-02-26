@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 import platform
 from ups._bms_ import bms
 from ups._constants_ import *
@@ -62,9 +63,8 @@ inverter.Log(logDebug, json_body)
 if platform.system() == "Linux": # switch it off when running on non-linux system for debug and test purposes
     ds.write(json_body)
 
-    gridChargingEnabled = ds.GridChargingEnabled == txtGCAlways # todo: add option to parse time range i.e. 23:00-07:00 etc
     if ds.bmsModel != "" and ds.InverterModel == "Axioma": # workaround for Axioma inverter inability to properly manage LiFePo4 battery charging voltage
-        if gridChargingEnabled:
+        if ds.GridChargingEnabled in [txtGCAlways, txtGCEmergency] or ("-" in ds.GridChargingEnabled and timeInRange(ds.GridChargingEnabled)):
             if ds.Estimate != '' or ds.GridChargingEstimate != '':
                 gridChargingEstimate = ds.GridChargingEstimate if ds.GridChargingEstimate != "" else ds.Estimate
                 sc.Calculate(datetime.now(timezone.utc), gridChargingEstimate, 80)
@@ -80,6 +80,9 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
                 tp = ds.TargetPower if sc.MinDetected else ds.TargetPower - ds.MaxPowerLimit + ds.TargetPower
             else:
                 tp = ds.TargetPower
+                inverter.setGridCharging(txtSNU if ds.GridChargingEnabled in [txtGCAlways] else txtCSO, ds.MaxUtiChargeCurent)
+        elif ds.GridChargingEnabled == txtGCNoSolar:
+            inverter.setGridCharging(txtCSO, ds.MaxUtiChargeCurent)
         else:
             inverter.setGridCharging(txtOSO, ds.MinUtiChargeCurent)
 
@@ -100,7 +103,7 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
                 inverter.setFloat(ds.GridChargingFloat)
 
     elif ds.InverterModel == "GreenCell": # workaround for GreenCell inverter inability to properly charge battery from grid
-        if gridChargingEnabled:
+        if ds.GridChargingEnabled in [txtGCAlways, txtGCEmergency] or ("-" in ds.GridChargingEnabled and timeInRange(ds.GridChargingEnabled)):
             #if inverter.iBatteryVoltage <= 13.0 and inverter.iBattPower <= 0: # honestly SNU is not working for this inverter
             #    inverter.setSNU()
             if inverter.iBatteryVoltage < ds.GridChargingFloat and inverter.iBattPower <= 0 and inverter.pvVoltage < 14 and inverter.icChargerSourcePriority == txtOSO:
@@ -115,5 +118,7 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
                 inverter.setFloat(ds.GridChargingFloat)
             elif ds.PrecariousChargingEnabled and inverter.iGridVoltage < 100 and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat:
                 inverter.setFloat(ds.GridChargingFloat)
+        elif ds.GridChargingEnabled == txtGCNoSolar:
+            inverter.setCSO()
         else:
             inverter.setOSO()

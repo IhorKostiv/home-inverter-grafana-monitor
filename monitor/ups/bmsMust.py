@@ -93,7 +93,7 @@ class bmsMUST(bms, deviceModbus): #  object to communicate with and manage MUST 
             }
 
         b = self.readRegister(0, 37, "b")
-        self.bCurrent = self.bitmaskNegative(b[0]) / 100      # 0000 Current 2byte R/INT16 10mA Positive: charging Negative: discharging 
+        self.bCurrent = self.signedInt(b[0]) / 100      # 0000 Current 2byte R/INT16 10mA Positive: charging Negative: discharging 
         self.bVoltage = b[1] / 100      # 0001 Voltage of pack 2byte R/UINT16 10mV  
         self.bSOC = b[2]                # 0002 SOC 2byte R/UINT8 % 0~100% 
         self.bSOH = b[3]                # 0003 SOH 2byte R/UINT8 % 0~100% 
@@ -115,9 +115,9 @@ class bmsMUST(bms, deviceModbus): #  object to communicate with and manage MUST 
         self.bTemperatures = []
         for i in range(31, 34):         # 0031-0034 Cell temperature 8byte R/INT16 0.1℃, 4 cell temperature, 2 byte for each cell 
             if b[i] != 65535:
-                self.bTemperatures += [self.bitmaskNegative(b[i])/10]
-        self.bMOSFETtemperature = self.bitmaskNegative(b[35])/10      # 0035 MOSFET temperature 2byte R/INT16 0.1℃ Or invalid 
-        self.bEnvironmentTemperature = self.bitmaskNegative(b[36])/10 # 0036 Environment temperature 2byte R/INT16 0.1℃ Or invalid
+                self.bTemperatures += [self.signedInt(b[i])/10]
+        self.bMOSFETtemperature = self.signedInt(b[35])/10      # 0035 MOSFET temperature 2byte R/INT16 0.1℃ Or invalid 
+        self.bEnvironmentTemperature = self.signedInt(b[36])/10 # 0036 Environment temperature 2byte R/INT16 0.1℃ Or invalid
         return b
 
     def readRegister(self, register: int, length: int, message: str):

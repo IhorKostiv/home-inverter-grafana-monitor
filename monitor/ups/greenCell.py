@@ -258,13 +258,13 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
                                             # 25210: ["Inverter current", 0.1, "A"],
                                             # 25211: ["Grid current", 0.1, "A"],
                                             # 25212: ["Load current", 0.1, "A"],
-        self.iPInverter = self.bitmaskNegative(i[13]) # 25213: ["Inverter power(P)", 1, "W"],
-        self.iPGrid = self.bitmaskNegative(i[14]) + iInternalUsePower # 25214: ["Grid power(P)", 1, "W"],
-        self.iPLoad = self.bitmaskNegative(i[15])  # 25215: ["Load power(P)", 1, "W"],
+        self.iPInverter = self.signedInt(i[13]) # 25213: ["Inverter power(P)", 1, "W"],
+        self.iPGrid = self.signedInt(i[14]) + iInternalUsePower # 25214: ["Grid power(P)", 1, "W"],
+        self.iPLoad = self.signedInt(i[15])  # 25215: ["Load power(P)", 1, "W"],
         self.iLoadPercent = i[16]           # 25216: ["Load percent", 1, "%"],
-        self.iSInverter = self.bitmaskNegative(i[17]) # 25217: ["Inverter complex power(S)", 1, "VA"],
-        self.iSGrid = self.bitmaskNegative(i[18]) + iInternalUsePower # 25218: ["Grid complex power(S)", 1, "VA"],
-        self.iSLoad = self.bitmaskNegative(i[19]) # 25219: ["Load complex power(S)", 1, "VA"],
+        self.iSInverter = self.signedInt(i[17]) # 25217: ["Inverter complex power(S)", 1, "VA"],
+        self.iSGrid = self.signedInt(i[18]) + iInternalUsePower # 25218: ["Grid complex power(S)", 1, "VA"],
+        self.iSLoad = self.signedInt(i[19]) # 25219: ["Load complex power(S)", 1, "VA"],
                                             # 25221: ["Inverter reactive power(Q)", 1, "var"],
                                             # 25222: ["Grid reactive power(Q)", 1, "var"],
                                             # 25223: ["Load reactive power(Q)", 1, "var"],
@@ -302,7 +302,7 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
         self.iWarning += self.bitmaskText(self.iWarning != "", i[66], iWarning2s) # 25266	Warning message 2
                                             # 25271: ["Hardware version", 1, ""],
                                             # 25272: ["Software version", 1, ""],
-        self.iBattPower = self.bitmaskNegative(i[73])    # 25273: ["Battery power", 1, "W"],
+        self.iBattPower = self.signedInt(i[73])    # 25273: ["Battery power", 1, "W"],
         #self.iBattCurrent = self.bitmaskNegative(i[74])  # 25274: ["Battery current", 1, "A"],
         self.iBattCurrent = self.iBattPower / self.iBatteryVoltage # it gives more accurate values
         return i

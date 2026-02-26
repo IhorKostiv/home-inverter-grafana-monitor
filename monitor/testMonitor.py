@@ -1,6 +1,6 @@
 import sys
 from ups._inverter_ import inverterMgr
-from ups._constants_ import *
+from ups._constants_ import logDebug
 from ups import greenCell, axioma #, must_ep3000, must_pv1800, must_ph18_5248
 
 SUPPORTED_INVERTERS = {
@@ -21,4 +21,4 @@ if len(sys.argv) >= 3:
 else:
     print("Usage: testMonitor.py <InverterModel> <InverterNode>")
     print("Example: python3 testMonitor.py GreenCell /dev/ttyUSB0")
-    print("      or pythin3 testMonitor.py Axioma /dev/ttyACM0")
+    print("      or python3 testMonitor.py Axioma /dev/ttyACM0")

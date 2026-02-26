@@ -216,12 +216,12 @@ if __name__ == "__main__":
     #print(f"GridTied {ds.GridTied} Estimate {ds.Estimate} GridChargingEstimate {ds.GridChargingEstimate} solcastApiKey {ds.solcastApiKey} solcastResourceID {ds.solcastResourceID}")
 
     if len(sys.argv) > 1:
-        if sys.argv[1] in {"Axioma", "GreenCell"} and len(sys.argv) == 5:
+        if sys.argv[1] in {"Axioma", "GreenCell"} and len(sys.argv) == 11:
             # saveSettingsInverter(self, inverterModel: str, inverterNode: str, solarVoltageOn: float, solarVoltageOff: float, precariousChargingEnabled: bool, gridChargingEnabled: str, gridChargingFloat: float, gridChargingBulk: float)
-            ds.saveSettingsInverter(sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), bool(sys.argv[5]), sys.argv[6], float(sys.argv[7]), float(sys.argv[8]))
-        elif sys.argv[1] == "MUST" and len(sys.argv) == 11:
+            ds.saveSettingsInverter(sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5]), int(sys.argv[6]), bool(sys.argv[7]), sys.argv[8], float(sys.argv[9]), float(sys.argv[10]))
+        elif sys.argv[1] == "MUST" and len(sys.argv) == 6:
             # saveSettingsBMS(self, bmsModel: str, bmsNode: str, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int) 
-            ds.saveSettingsBMS(sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5]), int(sys.argv[6]))
+            ds.saveSettingsBMS(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5]))
         elif sys.argv[1] == "solcast" and len(sys.argv) >= 5:
             # saveSettingsSolarForecast(self, solarForecast: str, gridTied: list, estimate: str, gridChargingEstimate: str, solcastApiKey: str = "", solcastResourceID: str = "")
             ds.saveSettingsSolarForecast(sys.argv[1], sys.argv[2].split(","), sys.argv[3], sys.argv[4], sys.argv[5] if len(sys.argv) > 5 else "", sys.argv[6] if len(sys.argv) > 6 else "")

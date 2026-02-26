@@ -1,9 +1,7 @@
-import datetime
-import pytz
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 import requests
 import json
-import os
 import sys
 
 from ups._data_ import DataStore
@@ -24,10 +22,8 @@ def getSolarProductionEstimate(resourceID: str, apiKey: str) -> str:
         return f"Error {response.status_code}" # "error: Failed to fetch data"
     
 def toJson(solarData: str):
-    solarDataJson = json.loads(solarData)
-    forecasts = solarDataJson["forecasts"]
     json_body = []
-    for forecast in forecasts:
+    for forecast in json.loads(solarData)["forecasts"]:
         json_body.append({
             "measurement": "solcast",
             "time": forecast["period_end"],
@@ -40,8 +36,8 @@ def toJson(solarData: str):
         })
     return json_body
 
-def dtKyiv(t:datetime):
-    return t.astimezone(pytz.timezone('Europe/Kyiv')).strftime('%Y-%m-%d %H:%M')
+def dtKyiv(t: datetime):
+    return t.astimezone(ZoneInfo("Europe/Kyiv")).strftime('%Y-%m-%d %H:%M')
 
 class Solcast(object):
     dataStore: DataStore

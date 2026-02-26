@@ -1,7 +1,6 @@
 
 from influxdb import InfluxDBClient
 from influxdb.client import ResultSet
-from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
 
 import os
 import datetime
