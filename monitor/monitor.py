@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from zoneinfo import ZoneInfo
 import platform
 from ups._bms_ import bms
 from ups._constants_ import *
@@ -42,7 +41,7 @@ if ds.InverterModel not in SUPPORTED_INVERTERS:
 
 inverter: inverterMgr = SUPPORTED_INVERTERS[ds.InverterModel](ds.LogDetail, ds.InverterNode)
 
-if ds.Estimate != '':
+if ds.Estimate != '' and ds.bmsModel != '':
     if inverter.icEnergyUse.upper() in {txtUTI, txtSUB}:
         tp = int((ds.TargetPower + ds.MaxPowerLimit) / 2)
         lp = ds.LowPower

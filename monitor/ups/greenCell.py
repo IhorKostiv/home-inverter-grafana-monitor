@@ -38,7 +38,7 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
         return r
 
     def readChargerControl(self):
-        cc = self.readRegister(10100, 3, "cC")
+        cc = self.readRegister(10100, 4, "cC")
         self.ccBatteryFloatVoltage = cc[3] / 10.0  # 10103	RW	Battery float voltage	0.1V
         return cc
         

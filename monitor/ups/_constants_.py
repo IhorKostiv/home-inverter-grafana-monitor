@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 # log levels: 0-Error, 1-Write, 2-Read, 3-Debug

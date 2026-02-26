@@ -85,7 +85,7 @@ class Solcast(object):
         self.LowDetected = None
         self.MinDetected = None
 
-        BatteryRemain = list(self.dataStore.query("SELECT last(\"bRemain\") * 25.6 FROM \"bms\"").get_points())[0]['last']
+        BatteryRemain = self.dataStore.query("SELECT last(\"bRemain\") * 25.6 FROM \"bms\"").get_points()[0]['last']
         print(f"{calcTime} Remain {BatteryRemain:.0f}W {BatteryRemain/51.2:.0f}% for {Estimate}")
 
         GenerationEstimates = self.dataStore.query(f"SELECT {Estimate} as Estimate FROM \"solcast\" WHERE time >= '{calcTime}'-30m")
