@@ -97,7 +97,7 @@ class DataStore(object):
             self.SolarVoltageOff = float(point["SolarVoltageOff"])
             self.MaxUtiChargeCurent = int(point["MaxUtiChargeCurent"]) #if "MaxUtiChargeCurent" in point and point["MaxUtiChargeCurent"] is not None else self.MaxUtiChargeCurent
             self.MinUtiChargeCurent = int(point["MinUtiChargeCurent"]) #if "MinUtiChargeCurent" in point and point["MinUtiChargeCurent"] is not None else self.MinUtiChargeCurent
-            self.PrecariousChargingEnabled = bool(point["PrecariousChargingEnabled"]) #if "PrecariousChargingEnabled" in point and point["PrecariousChargingEnabled"] is not None else self.PrecariousChargingEnabled
+            self.PrecariousChargingEnabled = bool(point["PrecariousChargingEnabled"] == "True") #if "PrecariousChargingEnabled" in point and point["PrecariousChargingEnabled"] is not None else self.PrecariousChargingEnabled
             self.GridChargingEnabled = str(point["GridChargingEnabled"]) #if "GridChargingEnabled" in point and point["GridChargingEnabled"] is not None else self.GridChargingEnabled
             self.GridChargingFloat = float(point["GridChargingFloat"]) #if "GridChargingFloat" in point and point["GridChargingFloat"] is not None else self.GridChargingFloat
             self.GridChargingBulk = float(point["GridChargingBulk"]) #if "GridChargingBulk" in point and point["GridChargingBulk"] is not None else self.GridChargingBulk
@@ -208,7 +208,7 @@ class DataStore(object):
             self.write(json)
 
 if __name__ == "__main__":
-    ds: DataStore = DataStore("inverter.local", 8086, "root", "root", "ups")
+    ds: DataStore = DataStore("sandbox.local", 8086, "root", "root", "ups")
     #print(f"LogDetail {ds.LogDetail}")
     #print(f"InverterNode {ds.InverterNode} Model {ds.InverterModel} SolarVoltageOn {ds.SolarVoltageOn} SolarVoltageOff {ds.SolarVoltageOff}")
     #print(f"PrecariousChargingEnabled {ds.PrecariousChargingEnabled} GridChargingEnabled {ds.GridChargingEnabled} GridChargingFloat {ds.GridChargingFloat} GridChargingBulk {ds.GridChargingBulk}")
@@ -218,8 +218,8 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         if sys.argv[1] in {"Axioma", "GreenCell"} and len(sys.argv) == 11:
             # saveSettingsInverter(self, inverterModel: str, inverterNode: str, solarVoltageOn: float, solarVoltageOff: float, precariousChargingEnabled: bool, gridChargingEnabled: str, gridChargingFloat: float, gridChargingBulk: float)
-            ds.saveSettingsInverter(sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5]), int(sys.argv[6]), bool(sys.argv[7]), sys.argv[8], float(sys.argv[9]), float(sys.argv[10]))
-        elif sys.argv[1] == "MUST" and len(sys.argv) == 6:
+            ds.saveSettingsInverter(sys.argv[1], sys.argv[2], float(sys.argv[3]), float(sys.argv[4]), int(sys.argv[5]), int(sys.argv[6]), bool(sys.argv[7] == "True"), sys.argv[8], float(sys.argv[9]), float(sys.argv[10]))
+        elif sys.argv[1] == "MUST" and len(sys.argv) == 7:
             # saveSettingsBMS(self, bmsModel: str, bmsNode: str, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int) 
             ds.saveSettingsBMS(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5]))
         elif sys.argv[1] == "solcast" and len(sys.argv) >= 5:
