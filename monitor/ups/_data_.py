@@ -237,7 +237,7 @@ if __name__ == "__main__":
             print(f"python3 _data_.py {ds.bmsModel} {ds.bmsNode} {ds.MaxPowerLimit} {ds.TargetPower} {ds.LowPower} {ds.MinPower}")
             print("\npython3 _data_.py solcast GridTied Estimate GridChargingEstimate SolcastApiKey SolcastResourceID")
             # todo: solcast can have multiple fields, so that Resource IDs shall be a list
-            print(f'python3 _data_.py {ds.solarForecast} "{','.join(ds.GridTied)}" "{ds.Estimate}" "{ds.GridChargingEstimate}" {ds.solcastApiKey} {ds.solcastResourceID}')
+            print(f'python3 _data_.py {ds.solarForecast} "{",".join(ds.GridTied)}" "{ds.Estimate}" "{ds.GridChargingEstimate}" {ds.solcastApiKey} {ds.solcastResourceID}')
             print("\npython3 _data_.py LogDetail InverterModel BMSModel SolarForecast")
             print(f'python3 _data_.py {ds.LogDetail} {ds.InverterModel} "{ds.bmsModel}" {ds.solarForecast}')
     else:
