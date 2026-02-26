@@ -237,9 +237,9 @@ if __name__ == "__main__":
             print(f"python3 _data_.py {ds.bmsModel} {ds.bmsNode} {ds.MaxPowerLimit} {ds.TargetPower} {ds.LowPower} {ds.MinPower}")
             print("\npython3 _data_.py solcast GridTied Estimate GridChargingEstimate SolcastApiKey SolcastResourceID")
             # todo: solcast can have multiple fields, so that Resource IDs shall be a list
-            print(f'python3 _data_.py {ds.solarForecast} "{",".join(ds.GridTied)}" "{ds.Estimate}" "{ds.GridChargingEstimate}" {ds.solcastApiKey} {ds.solcastResourceID}')
+            print(f'python3 _data_.py {ds.solarForecast} "{','.join(ds.GridTied)}" "{ds.Estimate}" "{ds.GridChargingEstimate}" {ds.solcastApiKey} {ds.solcastResourceID}')
             print("\npython3 _data_.py LogDetail InverterModel BMSModel SolarForecast")
-            print(f"python3 _data_.py {ds.LogDetail} {ds.InverterModel} {ds.bmsModel} {ds.solarForecast}")
+            print(f'python3 _data_.py {ds.LogDetail} {ds.InverterModel} "{ds.bmsModel}" {ds.solarForecast}')
     else:
         ds.saveSettingsInverter(inverterModel="Axioma", inverterNode="/dev/ttyUSB0", solarVoltageOn=140, solarVoltageOff=100, MaxUtiChargeCurent=20, MinUtiChargeCurent=2, precariousChargingEnabled=True, gridChargingEnabled=txtGCAlways, gridChargingFloat=26.6, gridChargingBulk=27.9)
         #ds.saveSettingsInverter(inverterModel="GreenCell", inverterNode="/dev/ttyUSB0", solarVoltageOn=70, solarVoltageOff=50, MaxUtiChargeCurent=30, MinUtiChargeCurent=20, precariousChargingEnabled=False, gridChargingEnabled=txtGCNever, gridChargingFloat=26.6, gridChargingBulk=27.9)
