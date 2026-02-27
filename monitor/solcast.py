@@ -60,9 +60,9 @@ class Solcast(object):
         self.MinPower = minPower 
         self.logDetail = logDetail
 
-        self.LoadAverages(gridTied)
+        self.loadAverages(gridTied)
     
-    def LoadAverages(self, gridTied: list = {}):
+    def loadAverages(self, gridTied: list = {}):
         LoadHistory = self.dataStore.query("SELECT mean(""iPLoad"") FROM ""inverter"" WHERE time >= now() - 3d GROUP BY time(30m) tz('Europe/Kiev')")
         for table in LoadHistory: # compute average load approximation for each 30min slot using last 3 days data
             for record in table:
@@ -85,7 +85,7 @@ class Solcast(object):
         self.LowDetected = None
         self.MinDetected = None
 
-        BatteryRemain = self.dataStore.query("SELECT last(\"bRemain\") * 25.6 FROM \"bms\"").get_points()[0]['last']
+        BatteryRemain = list(self.dataStore.query("SELECT last(\"bRemain\") * 25.6 FROM \"bms\"").get_points())[0]['last']
         print(f"{calcTime} Remain {BatteryRemain:.0f}W {BatteryRemain/51.2:.0f}% for {Estimate}")
 
         GenerationEstimates = self.dataStore.query(f"SELECT {Estimate} as Estimate FROM \"solcast\" WHERE time >= '{calcTime}'-30m")
@@ -147,9 +147,8 @@ if __name__ == "__main__":
             print(datetime.now(), "Error reading forecast")
     else: # calculate which targets are met
         ds = DataStore("inverter.local", 8086, "root", "root", "ups")
-
-        sc = Solcast(ds, ds.MaxPowerLimit, ds.TargetPower, ds.LowPower, ds.MinPower, ds.LogDetail >= logDebug)
         gridTied = ds.GridTied # os.environ.get("GRID_TIED", "").split(",") 
+        sc = Solcast(ds, ds.MaxPowerLimit, ds.TargetPower, ds.LowPower, ds.MinPower, gridTied, ds.LogDetail)
         #gridTied = os.environ.get("GRID_TIED", "20:00,20:30,21:00,21:30,22:00,22:30,23:00,23:30,00:00,00:30,01:00,01:30,02:00,02:30,03:00,03:30").split(",")
         if len(sys.argv) > 1:
             Estimate = sys.argv[1]
@@ -161,7 +160,7 @@ if __name__ == "__main__":
             #Estimate = '(pvEstimate + pvEstimate10)/2'
             Estimate = 'pvEstimate' # seems reliable enough to use it as is
 
-        sc.Calculate(datetime.now(timezone.utc), Estimate, gridTied)
+        sc.Calculate(datetime.now(timezone.utc), Estimate, 80)
 
         if sc.TargetDetected is not None and (sc.LowDetected is None or sc.TargetDetected < sc.LowDetected):
             print(f"Target level shall be reached first at {dtKyiv(sc.TargetDetected)} for {Estimate}, Low at {sc.LowDetected}")
