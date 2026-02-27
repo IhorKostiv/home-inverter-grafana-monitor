@@ -151,11 +151,11 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
             return False
 
     def moreSolar(self):
-        self.Log(logWrite, self.BestEnergyMsg)
+        self.Log(logDebug, self.BestEnergyMsg)
         return self.setOSO()
 
     def saveBattery(self, intenseCharge: bool = False):
-        self.Log(logWrite, f"Save Battery {self.BestEnergyMsg} {intenseCharge}")
+        self.Log(logDebug, f"Save Battery {self.BestEnergyMsg} {intenseCharge}")
         if intenseCharge:
             return self.setSNU()
         else:
@@ -245,13 +245,13 @@ class inverterOffGrid(inverterMgr): # base class for off grid type invertors
 
 class inverterHybrid(inverterMgr): # base class for hybrid type invertors
     def moreSolar(self):
-        self.Log(logWrite, f"More Solar {self.iBatteryVoltage} ~ avg({self.icBatteryStopCharging} {self.icBatteryStopDischarging}) V")
+        self.Log(logDebug, f"More Solar {self.iBatteryVoltage} ~ avg({self.icBatteryStopCharging} {self.icBatteryStopDischarging}) V")
         if self.iBatteryVoltage > (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2:
             return super().moreSolar() and self.setSBU()
         else:
             return super().moreSolar() and self.setSUB()
     def saveBattery(self, intenseCharge: bool = False):
-        self.Log(logWrite, f"Save Battery {self.iBatteryVoltage} ~ avg({self.icBatteryStopCharging} {self.icBatteryStopDischarging}) V")
+        self.Log(logDebug, f"Save Battery {self.iBatteryVoltage} ~ avg({self.icBatteryStopCharging} {self.icBatteryStopDischarging}) V")
         if self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2:
             return super().saveBattery(intenseCharge) and self.setUtility()
         else:
