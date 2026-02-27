@@ -190,16 +190,18 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
             self.Log(logDebug, f"Target level shall be reached first at {self.dtKyiv(TargetDetected)}, Low at {LowDetected}")
             if self.icEnergyUse.upper() in {txtUTI, txtSUB}:
                 self.BestEnergyMsg = f"T {self.dtKyiv(TargetDetected)}"
-                return 1 if self.moreSolar() else 0
+                return 1 if self.setSBU else 0
         elif LowDetected is not None:
             self.Log(logDebug, f"Low level could be reached first on {self.dtKyiv(LowDetected)}, Target on {TargetDetected}")
             if self.icEnergyUse.upper() in {txtSBU, txtSUB}:
                 self.BestEnergyMsg = f"L {self.dtKyiv(LowDetected)}"
                 if self.pvChargerPower < self.iPLoad:
-                    return -1 if self.saveBattery(MinDetected is not None) else 0
-            if MinDetected is not None:
-                self.BestEnergyMsg = self.addText(self.BestEnergyMsg, f"M {self.dtKyiv(MinDetected)})")
-                self.Log(logWarning, f"!!! Battery would be depleted below minimum on {self.dtKyiv(MinDetected)}")
+                    if MinDetected is not None:
+                        self.BestEnergyMsg = self.addText(self.BestEnergyMsg, f"M {self.dtKyiv(MinDetected)})")
+                        self.Log(logWarning, f"!!! Battery would be depleted below minimum on {self.dtKyiv(MinDetected)}")
+                        return -1 if self.setUtility() else 0
+                    else:
+                        return -1 if self.setSUB() else 0            
         return None
 
     def setBestEnergyPVV(self, solarVoltageOn: float, solarVoltageOff: float):
