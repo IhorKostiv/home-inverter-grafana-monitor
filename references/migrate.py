@@ -11,29 +11,35 @@ class Transfer:
     
     def openDestination(self, dstHost: str, dstPort: int, dstUser: str, dstPassword: str, dstDB: str):
         self.dst = InfluxDBClient(dstHost, dstPort, dstUser, dstPassword, dstDB)
+        self.dst.drop_database(dstDB)
+        self.dst.create_database(dstDB)
 
-    def copyInverterData(self, srcTableName: str, dstTableName: str):
-        print(datetime.now(), " Querying all data from InfluxDB A for table Inverter")
-        srcTable = self.src.query(f"select * from {srcTableName} order by time") # where time > '2024-10-16T00:00:00Z' and time < '2024-10-17T00:00:00Z'")
-
-        print(datetime.now(), " Transferring...", end="")
-        # Transfer data line by line, converting field X to int and keeping all other fields untouched
+    def copyInverterData(self, srcTableName: str, dstTableName: str, where: str = ''):
+        print(datetime.now(), " Querying all data for table Inverter")
+        srcTable = self.src.query(f"select * from {srcTableName} {where} order by time") # where time > '2024-10-16T00:00:00Z' and time < '2024-10-17T00:00:00Z'")
+        maxTime = ''
         for table in srcTable:
+            print(datetime.now(), f" Transferring {len(table)} records...", end="")
+            # Transfer data line by line, converting field X to int and keeping all other fields untouched
             newData = []
             for record in table:
 
                 f = { # must have fields
-                    "pvVoltage": float(record["pvVoltage"]),
-                    "pvChargerCurrent": float(record["pvChargerCurrent"]), 
-                    "pvChargerPower": int(record["pvChargerPower"]),
-                    "iBatteryVoltage": float(record["iBatteryVoltage"]),
-                    "iGridVoltage": float(record["iGridVoltage"]),
+                    "pvVoltage": float(0 if record["pvVoltage"] is None else record["pvVoltage"]),
+                    "pvChargerCurrent": float(0 if record["pvChargerCurrent"] is None else record["pvChargerCurrent"]), 
+                    "pvChargerPower": int(0 if record["pvChargerPower"] is None else record["pvChargerPower"]),
+                    "iBatteryVoltage": float(0 if record["iBatteryVoltage"] is None else record["iBatteryVoltage"]),
+                    "iGridVoltage": float(0 if record["iGridVoltage"] is None else record["iGridVoltage"]),
                     "iPGrid": int(0 if record["iPGrid"] is None else -1 if record["iPGrid"] > 65000 else record["iPGrid"]),
                     "iPLoad": int(0 if record["iPLoad"] is None else -1 if record["iPLoad"] > 65000 else record["iPLoad"]),
                     "iPInverter": int(0 if record["iPInverter"] is None else -1 if record["iPInverter"] > 65000 else record["iPInverter"]),
-                    "iBattPower": int(0 if record["iBattPower"] is None else record["iBattPower"]),
-                    "iBattCurrent": float(0.0 if record["iBattPower"] is None else round(float(record["iBattPower"] / record["iBatteryVoltage"]), 1)) # record["iBattCurrent"])
+                    "iBattPower": int(0 if record["iBattPower"] is None else record["iBattPower"])
                 }
+                if record["iBattPower"] is None or record["iBatteryVoltage"] is None:
+                    f["iBattCurrent"] = float(0.0 if record["iBattCurrent"] is None else record["iBattCurrent"])
+                else:
+                    f["iBattCurrent"] = float(round(float(record["iBattPower"] / record["iBatteryVoltage"]), 1)) # record["iBattCurrent"])
+                    
                 optionalValues = [ # optional fields to save space and traffic, name and null value pairs
                     ("icEnergyUse", ''),
                     ("pvWorkState", ''),
@@ -112,24 +118,26 @@ class Transfer:
 
                 if len(newData) >= 1000: # write in batches of 1000 records to avoid memory issues
                     self.dst.write_points(newData)
+                    maxTime = newData[len(newData)-1]['time']
                     newData = []
                     print(".", end="", flush=True)
 
             if len(newData) > 0: # write remaining records
                 self.dst.write_points(newData)
+                maxTime = newData[len(newData)-1]['time']
 
-        print(f" complete! {datetime.now()}", flush=True)
+        print(f" complete! {datetime.now()} last record {maxTime}", flush=True)
+        return maxTime
 
-    def copyBMSData(self, srcTableName: str, dstTableName: str):
-        print(datetime.now(), " Querying all data from InfluxDB A for table BMS")
-        srcTable = self.src.query(f"select * from {srcTableName} order by time") # where time > '2024-10-16T00:00:00Z' and time < '2024-10-17T00:00:00Z'")
-
-        print(datetime.now(), " Transferring...", end="")
-        # Transfer data line by line, converting field X to int and keeping all other fields untouched
+    def copyBMSData(self, srcTableName: str, dstTableName: str, where: str = ''):
+        print(datetime.now(), " Querying all data for table BMS")
+        srcTable = self.src.query(f"select * from {srcTableName} {where} order by time") # where time > '2024-10-16T00:00:00Z' and time < '2024-10-17T00:00:00Z'")
+        maxTime = ''
         for table in srcTable:
+            print(datetime.now(), f" Transferring {len(table)} records...", end="")
+            # Transfer data line by line, converting field X to int and keeping all other fields untouched
             newData = []
             for record in table:
-
                 f = { # must have fields
                     "bCurrent": record["bCurrent"],
                     "bVoltage": record["bVoltage"],
@@ -155,7 +163,7 @@ class Transfer:
                     ("bVoltages7", 0.0),
                     ("bVoltages8", 0.0),
                     ("bTemperatures1", 0.0),
-                    ("bTemperatures", 0.0),
+                    ("bTemperatures2", 0.0),
                     ("bMOSFETtemperature", 0),
                     ("bEnvironmentTemperature", 0)
                 ]
@@ -176,21 +184,24 @@ class Transfer:
 
                 if len(newData) >= 1000: # write in batches of 1000 records to avoid memory issues
                     self.dst.write_points(newData)
+                    maxTime = newData[len(newData)-1]['time']
                     newData = []
                     print(".", end="", flush=True)
 
             if len(newData) > 0: # write remaining records
                 self.dst.write_points(newData)
+                maxTime = newData[len(newData)-1]['time']
 
-        print(f" complete! {datetime.now()}", flush=True)
+        print(f" complete! {datetime.now()} last record {maxTime}", flush=True)
+        return maxTime
 
-    def copyData(self, srcTableName: str, dstTableName: str):
-        print(datetime.now(), f" Querying all data from InfluxDB A for table {srcTableName}")
-        srcTable = self.src.query(f"select * from {srcTableName} order by time") # where time > '2024-10-16T00:00:00Z' and time < '2024-10-17T00:00:00Z'")
-
-        print(datetime.now(), " Transferring...", end="")
-        # Transfer data line by line, converting field X to int and keeping all other fields untouched
+    def copyData(self, srcTableName: str, dstTableName: str, where: str = ''):
+        print(datetime.now(), f" Querying all data for table {srcTableName}")
+        srcTable = self.src.query(f"select * from {srcTableName} {where} order by time") # where time > '2024-10-16T00:00:00Z' and time < '2024-10-17T00:00:00Z'")
+        maxTime = ''
         for table in srcTable:
+            print(datetime.now(), f" Transferring {len(table)} records...", end="")
+            # Transfer data line by line, converting field X to int and keeping all other fields untouched
             newData = []
             for record in table:
                 f = {}
@@ -218,25 +229,43 @@ class Transfer:
 
                 if len(newData) >= 1000: # write in batches of 1000 records to avoid memory issues
                     self.dst.write_points(newData)
+                    maxTime = newData[len(newData)-1]['time']
                     newData = []
                     print(".", end="", flush=True)
 
             if len(newData) > 0: # write remaining records
                 self.dst.write_points(newData)
+                maxTime = newData[len(newData)-1]['time']
 
-        print(f" complete! {datetime.now()}", flush=True)
+        print(f" complete! {datetime.now()} last record {maxTime}", flush=True)
+        return maxTime
 
 #todo: "rpiTemperature" shall be transfered to rPi measurement in next version
 
 if __name__ == "__main__":
+    # todo: possibly add command line paratemer to specify date to start import from
+    tInverter = "inverter"
+    tBMS = "bms"
+    tForecast = "forecast"
+    tSolcast = "solcast"
+    tSettings = "settings"
     t = Transfer()
     t.openSource("inverter.local", "8086", "root", "root", "ups")
     t.openDestination("sandbox.local", "8086", "root", "root", "ups1")
 
-    t.copyInverterData("inverter", "inverter")
-    t.copyBMSData("bms", "bms")
+    invt = t.copyInverterData(tInverter, tInverter)
+    bmst = t.copyBMSData(tBMS, tBMS)
     
-    t.copyData("forecast", "forecast")
-    t.copyData("solcast", "solcast")
-    t.copyData("settings", "settings")
+    fct = t.copyData(tForecast, tForecast)
+    sct = t.copyData(tSolcast, tSolcast)
+    stt = t.copyData(tSettings, tSettings)
 
+    print(datetime.now(), f" Looking for new records...", flush=True)
+    if invt != '':
+        t.copyInverterData(tInverter, tInverter, f"where time > '{invt}'")
+    if bmst != '':
+        t.copyBMSData(tBMS, tBMS, f"where time > '{bmst}'")
+    if sct != '':
+        sct = t.copyData(tSolcast, tSolcast, f"where time > '{sct}'")
+    if stt != '':
+        stt = t.copyData(tSettings, tSettings, f"where time > '{stt}'")

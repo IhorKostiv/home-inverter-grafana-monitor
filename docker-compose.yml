@@ -12,7 +12,7 @@ services:
       DB_PORT: 8086
       DB_USERNAME: root
       DB_PASSWORD: root
-      DB_NAME: ups
+      DB_NAME: ups1
       LOG_DETAIL: "2"
       USB_DEVICE: "/dev/ttyUSB0"
       INVERTER_MODEL: "Axioma"
@@ -50,7 +50,7 @@ services:
       DOCKER_INFLUXDB_INIT_ORG: org
       DOCKER_INFLUXDB_INIT_BUCKET: bucket
       DOCKER_INFLUXDB_INIT_RETENTION: 1095d
-      INFLUXDB_DB: ups
+      INFLUXDB_DB: ups1
     volumes:
       - "metrics:/var/lib/influxdb"
   grafana:
