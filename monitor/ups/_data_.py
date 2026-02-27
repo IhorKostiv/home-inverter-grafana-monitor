@@ -97,7 +97,7 @@ class DataStore(object):
             self.SolarVoltageOff = float(point["SolarVoltageOff"])
             self.MaxUtiChargeCurent = int(point["MaxUtiChargeCurent"]) #if "MaxUtiChargeCurent" in point and point["MaxUtiChargeCurent"] is not None else self.MaxUtiChargeCurent
             self.MinUtiChargeCurent = int(point["MinUtiChargeCurent"]) #if "MinUtiChargeCurent" in point and point["MinUtiChargeCurent"] is not None else self.MinUtiChargeCurent
-            self.PrecariousChargingEnabled = bool(point["PrecariousChargingEnabled"] == "True") #if "PrecariousChargingEnabled" in point and point["PrecariousChargingEnabled"] is not None else self.PrecariousChargingEnabled
+            self.PrecariousChargingEnabled = bool(str(point["PrecariousChargingEnabled"]).lower() == "true") #if "PrecariousChargingEnabled" in point and point["PrecariousChargingEnabled"] is not None else self.PrecariousChargingEnabled
             self.GridChargingEnabled = str(point["GridChargingEnabled"]) #if "GridChargingEnabled" in point and point["GridChargingEnabled"] is not None else self.GridChargingEnabled
             self.GridChargingFloat = float(point["GridChargingFloat"]) #if "GridChargingFloat" in point and point["GridChargingFloat"] is not None else self.GridChargingFloat
             self.GridChargingBulk = float(point["GridChargingBulk"]) #if "GridChargingBulk" in point and point["GridChargingBulk"] is not None else self.GridChargingBulk
@@ -121,10 +121,10 @@ class DataStore(object):
         s = self.query(f"SELECT last(GridTied) as GridTied, last(Estimate) as Estimate, last(GridChargingEstimate) as GridChargingEstimate, last(apiKey) as apiKey, last(resourceID) as resourceID FROM {constMeasurement} where uKey='{solarForecast}' ORDER BY time DESC LIMIT 1")    
         for point in s.get_points():    # solar production settings
             self.GridTied = point["GridTied"].split(",")
-            self.Estimate = point["Estimate"]
-            self.GridChargingEstimate = point["GridChargingEstimate"]
-            self.solcastApiKey = point["apiKey"]
-            self.solcastResourceID = point["resourceID"]
+            self.Estimate = str(point["Estimate"])
+            self.GridChargingEstimate = str(point["GridChargingEstimate"])
+            self.solcastApiKey = str(point["apiKey"])
+            self.solcastResourceID = str(point["resourceID"])
             break
 
     def query(self, query: str):
@@ -147,7 +147,7 @@ class DataStore(object):
             ]
             self.write(json)
 
-    def saveSettingsInverter(self, inverterModel: str, inverterNode: str, solarVoltageOn: float, solarVoltageOff: float, MaxUtiChargeCurent: int, MinUtiChargeCurent: int, precariousChargingEnabled: bool, gridChargingEnabled: str, gridChargingFloat: float, gridChargingBulk: float, ):
+    def saveSettingsInverter(self, inverterModel: str, inverterNode: str, solarVoltageOn: float, solarVoltageOff: float, MaxUtiChargeCurent: int, MinUtiChargeCurent: int, precariousChargingEnabled: bool, gridChargingEnabled: str, gridChargingFloat: float, gridChargingBulk: float):
         if inverterModel == "":
             raise Exception("Inverter model is not specified")
         if inverterModel != self.InverterModel or inverterNode != self.InverterNode or solarVoltageOn != self.SolarVoltageOn or solarVoltageOff != self.SolarVoltageOff  or MaxUtiChargeCurent != self.MaxUtiChargeCurent or MinUtiChargeCurent != self.MinUtiChargeCurent or precariousChargingEnabled != self.PrecariousChargingEnabled or gridChargingEnabled != self.GridChargingEnabled or gridChargingFloat != self.GridChargingFloat or gridChargingBulk != self.GridChargingBulk:
@@ -207,8 +207,15 @@ class DataStore(object):
                 json[0]["fields"]["resourceID"] = solcastResourceID
             self.write(json)
 
+def setDefaultSettings(ds: DataStore):
+    ds.saveSettingsInverter(inverterModel="Axioma", inverterNode="/dev/ttyUSB0", solarVoltageOn=140.0, solarVoltageOff=100.0, MaxUtiChargeCurent=20, MinUtiChargeCurent=2, precariousChargingEnabled=True, gridChargingEnabled=txtGCEmergency, gridChargingFloat=26.6, gridChargingBulk=27.9)
+    #ds.saveSettingsInverter(inverterModel="GreenCell", inverterNode="/dev/ttyUSB0", solarVoltageOn=70, solarVoltageOff=50, MaxUtiChargeCurent=30, MinUtiChargeCurent=20, precariousChargingEnabled=False, gridChargingEnabled=txtGCNever, gridChargingFloat=26.6, gridChargingBulk=27.9)
+    ds.saveSettingsBMS(bmsModel="MUST", bmsNode="/dev/ttyACM0", maxPowerLimit=5120, targetPower=4950, lowPower=1500, minPower=1024)
+    ds.saveSettingsSolarForecast(solarForecast="solcast", gridTied=[''], estimate="(pvEstimate+pvEstimate10)/2", gridChargingEstimate="pvEstimate", solcastApiKey="8MfPHJUhVDp_m1wcgVyPRj1T1yQiYUTn", solcastResourceID="8731-433d-6f80-fd81")
+    ds.saveSettingsGeneral(logDetail=logRead, inverterModel="Axioma", bmsModel="MUST", solarForecast="solcast")
+
 if __name__ == "__main__":
-    ds: DataStore = DataStore("sandbox.local", 8086, "root", "root", "ups")
+    ds: DataStore = DataStore("inverter.local", 8086, "root", "root", "ups")
     #print(f"LogDetail {ds.LogDetail}")
     #print(f"InverterNode {ds.InverterNode} Model {ds.InverterModel} SolarVoltageOn {ds.SolarVoltageOn} SolarVoltageOff {ds.SolarVoltageOff}")
     #print(f"PrecariousChargingEnabled {ds.PrecariousChargingEnabled} GridChargingEnabled {ds.GridChargingEnabled} GridChargingFloat {ds.GridChargingFloat} GridChargingBulk {ds.GridChargingBulk}")
@@ -216,7 +223,11 @@ if __name__ == "__main__":
     #print(f"GridTied {ds.GridTied} Estimate {ds.Estimate} GridChargingEstimate {ds.GridChargingEstimate} solcastApiKey {ds.solcastApiKey} solcastResourceID {ds.solcastResourceID}")
 
     if len(sys.argv) > 1:
-        if sys.argv[1] in {"Axioma", "GreenCell"} and len(sys.argv) == 11:
+        if sys.argv[1] == "CLEAR": # delete settings table to reset values
+            ds.query(f"DROP MEASUREMENT settings")
+            # setDefaultSettings(ds)
+            print("Settings cleared")
+        elif sys.argv[1] in {"Axioma", "GreenCell"} and len(sys.argv) == 11:
             # saveSettingsInverter(self, inverterModel: str, inverterNode: str, solarVoltageOn: float, solarVoltageOff: float, precariousChargingEnabled: bool, gridChargingEnabled: str, gridChargingFloat: float, gridChargingBulk: float)
             ds.saveSettingsInverter(sys.argv[1], sys.argv[2], float(sys.argv[3]), float(sys.argv[4]), int(sys.argv[5]), int(sys.argv[6]), bool(sys.argv[7] == "True"), sys.argv[8], float(sys.argv[9]), float(sys.argv[10]))
         elif sys.argv[1] == "MUST" and len(sys.argv) == 7:
@@ -241,11 +252,7 @@ if __name__ == "__main__":
             print("\npython3 _data_.py LogDetail InverterModel BMSModel SolarForecast")
             print(f'python3 _data_.py {ds.LogDetail} {ds.InverterModel} "{ds.bmsModel}" {ds.solarForecast}')
     else:
-        ds.saveSettingsInverter(inverterModel="Axioma", inverterNode="/dev/ttyUSB0", solarVoltageOn=140, solarVoltageOff=100, MaxUtiChargeCurent=20, MinUtiChargeCurent=2, precariousChargingEnabled=True, gridChargingEnabled=txtGCAlways, gridChargingFloat=26.6, gridChargingBulk=27.9)
-        #ds.saveSettingsInverter(inverterModel="GreenCell", inverterNode="/dev/ttyUSB0", solarVoltageOn=70, solarVoltageOff=50, MaxUtiChargeCurent=30, MinUtiChargeCurent=20, precariousChargingEnabled=False, gridChargingEnabled=txtGCNever, gridChargingFloat=26.6, gridChargingBulk=27.9)
-        ds.saveSettingsBMS(bmsModel="MUST", bmsNode="/dev/ttyACM0", maxPowerLimit=5120, targetPower=4950, lowPower=1500, minPower=1024)
-        ds.saveSettingsSolarForecast(solarForecast="solcast", gridTied=[''], estimate="(pvEstimate+pvEstimate10)/2", gridChargingEstimate="pvEstimate")
-        ds.saveSettingsGeneral(logDetail=logRead, inverterModel="Axioma", bmsModel="MUST", solarForecast="solcast")
+        setDefaultSettings(ds)        
     '''
     ds.saveSettingsInverter("GreenCell", "/dev/ttyUSB0", 70, 50)
     ds.saveSettingsBMS("MUST", "/dev/ttyACM0", False, True, 26.6, 27.9, 5120, 4900, 1500, 1024)
