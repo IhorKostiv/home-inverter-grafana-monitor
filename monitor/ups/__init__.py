@@ -1,9 +1,17 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-class device(object): # base class for everything
+class logger(object):
     def __init__(self, logDetail: int, **kwargs):
         self.logDetail: int = logDetail
+
+    def Log(self, logLevel: int, message: str): # log 0-Error, 1-Write, 2-Read, 3-Debug
+        if self.logDetail >= logLevel:
+            print(f"{logLevel}> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\t{message}")
+
+class device(logger): # base class for everything
+    def __init__(self, logDetail: int, **kwargs):
+        super().__init__(logDetail = logDetail, **kwargs)
         self.measurement = "device"
         self.uKey = "default"
 
@@ -12,7 +20,7 @@ class device(object): # base class for everything
         return t1 + separator + t2 if t1 != "" else t2
     @staticmethod
     def dtKyiv(t:datetime):
-        return t.astimezone(ZoneInfo('Europe/Kyiv')).strftime('%d@%H:%M')
+        return t.astimezone(ZoneInfo('Europe/Kyiv')).strftime('%d-%H:%M')
     @staticmethod
     def signedInt(value): # used to extract battery power and current values
         return (value ^ 0x8000) - 0x8000 # convert unsigned to signed int
@@ -42,10 +50,6 @@ class device(object): # base class for everything
         for key, value in self._getOptionalValues_():
             self._addNotEmpty_(f, key, value)
         return [{"measurement": self.measurement, "tags": { "uKey": self.uKey },"fields": f }]
-
-    def Log(self, logLevel: int, message: str): # log 0-Error, 1-Write, 2-Read, 3-Debug
-        if self.logDetail >= logLevel:
-            print(f"{logLevel}> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\t{message}")
 
 # Example usage
 if __name__ == "__main__":

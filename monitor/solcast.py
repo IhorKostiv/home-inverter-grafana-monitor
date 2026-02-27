@@ -5,7 +5,8 @@ import json
 import sys
 
 from ups._data_ import DataStore
-from ups._constants_ import logDebug
+from ups._constants_ import logDebug, logWarning
+from ups import logger
 
 def getSolarProductionEstimate(resourceID: str, apiKey: str) -> str:
     url = f"https://api.solcast.com.au/rooftop_sites/{resourceID}/forecasts?format=json"
@@ -39,13 +40,12 @@ def toJson(solarData: str):
 def dtKyiv(t: datetime):
     return t.astimezone(ZoneInfo("Europe/Kyiv")).strftime('%Y-%m-%d %H:%M')
 
-class Solcast(object):
+class Solcast(logger):
     dataStore: DataStore
     MaxPowerLimit: int
     TargetPower: int
     LowPower: int
     MinPower: int
-    logDetail: int = 0
 
     TargetDetected = None
     LowDetected = None
@@ -53,13 +53,13 @@ class Solcast(object):
     Overproduction: int = 0
     LoadAverages = {} 
 
-    def __init__(self, ds: DataStore, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int, gridTied: list = {}, logDetail: int = 0):
+    def __init__(self, ds: DataStore, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int, gridTied: list = {}, logDetail: int = 0, **kwargs):
+        super().__init__(logDetail = logDetail, **kwargs)
         self.dataStore = ds
         self.MaxPowerLimit = maxPowerLimit
         self.TargetPower = targetPower
         self.LowPower = lowPower
         self.MinPower = minPower 
-        self.logDetail = logDetail
 
         self.loadAverages(gridTied)
     
@@ -70,8 +70,7 @@ class Solcast(object):
                 t = datetime.strptime(record['time'], '%Y-%m-%dT%H:%M:%SZ').strftime('%H:%M')
                 if t not in gridTied: # ignore grid tied time slots
                     if record['mean'] is None:
-                        if self.logDetail >= 3:
-                            print(f"!!!\a No load data for {record['time']}, skip")
+                        self.Log(logDebug, f"!!!\a No load data for {record['time']}, skip")
                     else:
                         if t in self.LoadAverages:
                             self.LoadAverages[t] = int((self.LoadAverages[t] + int(record['mean'])) /2)
@@ -88,7 +87,7 @@ class Solcast(object):
         self.Overproduction = 0
 
         BatteryRemain = list(self.dataStore.query("SELECT last(\"bRemain\") * 25.6 FROM \"bms\"").get_points())[0]['last']
-        print(f"{calcTime} Remain {BatteryRemain:.0f}W {BatteryRemain/51.2:.0f}% for {Estimate}")
+        self.Log(logDebug, f"{calcTime} Remain {BatteryRemain:.0f}W {BatteryRemain/51.2:.0f}% for {Estimate}")
 
         GenerationEstimates = self.dataStore.query(f"SELECT {Estimate} as Estimate FROM \"solcast\" WHERE time >= '{calcTime}'-30m")
 
@@ -114,23 +113,18 @@ class Solcast(object):
                         #print(f"Battery shall be fully charged at {d} UTC")
                     if self.LowDetected is None and BatteryRemain <= self.LowPower:
                         self.LowDetected = d
-                        if self.logDetail >= 3:
-                            print(f"Low level detected at {dtKyiv(self.LowDetected)} for {Estimate}")
+                        self.Log(logDebug, f"Low level detected at {dtKyiv(self.LowDetected)} for {Estimate}")
                     if self.TargetDetected is None and BatteryRemain >= self.TargetPower and diff > 0:
                         self.TargetDetected = d
-                        if self.logDetail >= 3:
-                            print(f"Target level detected at {dtKyiv(self.TargetDetected)} for {Estimate}")
+                        self.Log(logDebug, f"Target level detected at {dtKyiv(self.TargetDetected)} for {Estimate}")
                     if BatteryRemain <= self.MinPower:
                         self.MinDetected = d
-                        if self.logDetail >= 3:
-                            print(f"!!!\a Battery would be depleted below {self.MinPower}W at {dtKyiv(d)}")
+                        self.Log(logDebug, f"!!!\a Battery would be depleted below {self.MinPower}W at {dtKyiv(d)}")
                         break
-                    if self.logDetail >= 3:
-                        print(f"{dtKyiv(d)} load {le:.0f}W gen {ge:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
+                    self.Log(logDebug, f"{dtKyiv(d)} load {le:.0f}W gen {ge:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
             
                 else:
-                    if self.logDetail >= 3:
-                        print(f"!!!\a {dtKyiv(d)} load ?? gen {record['Estimate']:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
+                    self.Log(logDebug, f"!!!\a {dtKyiv(d)} load ?? gen {record['Estimate']:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
                     #print(f"{d.astimezone(ZoneInfo('Europe/Kyiv')).strftime('%Y-%m-%d %H:%M')} load ? gen {record['pvEstimate']:.0f}W cre {cre:.0f} {nre:.0f}W")
 
 # Example usage
@@ -143,7 +137,7 @@ if __name__ == "__main__":
 
         if solcastResponse != "":
             json = toJson(solcastResponse)
-            if ds.logDetail >= 3:
+            if ds.LogDetail >= logDebug:
                 print(datetime.now(), " ", json)
             ds.write(json)
         else:
