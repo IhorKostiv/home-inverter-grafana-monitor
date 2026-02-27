@@ -148,7 +148,7 @@ if __name__ == "__main__":
     else: # calculate which targets are met
         ds = DataStore("inverter.local", 8086, "root", "root", "ups")
         gridTied = ds.GridTied # os.environ.get("GRID_TIED", "").split(",") 
-        sc = Solcast(ds, ds.MaxPowerLimit, ds.TargetPower, ds.LowPower, ds.MinPower, gridTied, ds.LogDetail)
+        sc = Solcast(ds, ds.MaxPowerLimit, ds.TargetPower, ds.LowPower, ds.MinPower, gridTied, logDebug)
         #gridTied = os.environ.get("GRID_TIED", "20:00,20:30,21:00,21:30,22:00,22:30,23:00,23:30,00:00,00:30,01:00,01:30,02:00,02:30,03:00,03:30").split(",")
         if len(sys.argv) > 1:
             Estimate = sys.argv[1]
