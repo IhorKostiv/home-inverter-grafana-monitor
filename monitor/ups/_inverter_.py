@@ -109,42 +109,42 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
         ]
 
     def setSBU(self):
-        if self.icEnergyUse == txtSBU:
+        if self.icEnergyUse != txtSBU:
             self.Log(logWrite, "set SBU")
             return True
         else:
             return False
 
     def setSUB(self):
-        if self.icEnergyUse == txtSUB:
+        if self.icEnergyUse != txtSUB:
             self.Log(logWrite, "set SUB")
             return True
         else:
             return False
 
     def setUtility(self):
-        if self.icEnergyUse == txtUTI:
+        if self.icEnergyUse != txtUTI:
             self.Log(logWrite, "set UTI")
             return True
         else:
             return False
 
     def setCSO(self):
-        if self.icChargerSourcePriority == txtCSO:
+        if self.icChargerSourcePriority != txtCSO:
             self.Log(logWrite, "set CSO")
             return True
         else:
             return False
 
     def setSNU(self):
-        if self.icChargerSourcePriority == txtSNU:
+        if self.icChargerSourcePriority != txtSNU:
             self.Log(logWrite, "set SNU")
             return True
         else:
             return False
 
     def setOSO(self):
-        if self.icChargerSourcePriority == txtOSO:
+        if self.icChargerSourcePriority != txtOSO:
             self.Log(logWrite, "set OSO")
             return True
         else:
@@ -163,7 +163,7 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
         
     def setFloat(self, voltage: float):
         if self.ccBatteryFloatVoltage != voltage:
-            self. self.Log(logWrite, f"set FLoat {voltage}V")
+            self.Log(logWrite, f"set FLoat {voltage}V")
             return True
         else:
             return False
@@ -177,7 +177,7 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
 
     def setGridCharging(self, mode: str, current: int):
         if self.icMaxUtiChargeCurrent != current or self.icChargerSourcePriority != mode:
-            self.Log(logWrite, f"set Grid Charging {mode} {current}A")
+            self.Log(logWrite, f"set Grid Charging {mode} {current}A (was {self.icChargerSourcePriority} {self.icMaxUtiChargeCurrent}A)")
             return True
         else:
             return False
@@ -240,8 +240,8 @@ class inverterOffGrid(inverterMgr): # base class for off grid type invertors
         #else:
         #    if self.iBatteryVoltage >= self.ccBatteryFloatVoltage: # still may  prevent going to battery by SOC
                 return super().moreSolar() and self.setSBU()
-    def saveBattery(self):
-        return super().saveBattery() and self.setUtility()
+    def saveBattery(self, intenseCharge: bool = False):
+        return super().saveBattery(intenseCharge) and self.setUtility()
 
 class inverterHybrid(inverterMgr): # base class for hybrid type invertors
     def moreSolar(self):
@@ -250,12 +250,12 @@ class inverterHybrid(inverterMgr): # base class for hybrid type invertors
             return super().moreSolar() and self.setSBU()
         else:
             return super().moreSolar() and self.setSUB()
-    def saveBattery(self):
+    def saveBattery(self, intenseCharge: bool = False):
         self.Log(1, f"Save Battery {self.iBatteryVoltage} <= avg({self.icBatteryStopCharging} {self.icBatteryStopDischarging}) V")
         if self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2:
-            return super().saveBattery() and self.setUtility()
+            return super().saveBattery(intenseCharge) and self.setUtility()
         else:
-            return super().saveBattery() and self.setSUB()
+            return super().saveBattery(intenseCharge) and self.setSUB()
 
 if __name__ == "__main__":
     i = inverterMgr(logDebug)

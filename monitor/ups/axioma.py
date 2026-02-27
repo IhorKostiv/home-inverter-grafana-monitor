@@ -364,7 +364,14 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
         return super().setGridChargingCurrent(current) and self.setCommand(cmdUtiChargeCurrent(current))
 
     def setGridCharging(self, mode: str, current: int):
-        return super().setGridCharging(mode, current) and self.setCommand(cmdGridChargingModes[mode]) and self.setCommand(cmdUtiChargeCurrent(current))
+        if super().setGridCharging(mode, current): # technically it would be good to change order based on mode, but OSO expected to push current down so not a big deal
+            if self.icMaxUtiChargeCurrent != current:
+                self.setCommand(cmdUtiChargeCurrent(current))
+            if self.icChargerSourcePriority != mode:
+                self.setCommand(cmdGridChargingModes[mode])
+            return True
+        else:
+            return False
 
 # unit test section
 def utRead(cmd: str): # ask for inverter response from console
