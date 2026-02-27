@@ -50,6 +50,7 @@ class Solcast(object):
     TargetDetected = None
     LowDetected = None
     MinDetected = None
+    Overproduction: int = 0
     LoadAverages = {} 
 
     def __init__(self, ds: DataStore, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int, gridTied: list = {}, logDetail: int = 0):
@@ -84,6 +85,7 @@ class Solcast(object):
         self.TargetDetected = None
         self.LowDetected = None
         self.MinDetected = None
+        self.Overproduction = 0
 
         BatteryRemain = list(self.dataStore.query("SELECT last(\"bRemain\") * 25.6 FROM \"bms\"").get_points())[0]['last']
         print(f"{calcTime} Remain {BatteryRemain:.0f}W {BatteryRemain/51.2:.0f}% for {Estimate}")
@@ -107,6 +109,7 @@ class Solcast(object):
                     #    diff = diff * 0.9
                     BatteryRemain += diff
                     if BatteryRemain > self.MaxPowerLimit:
+                        self.Overproduction += BatteryRemain - self.MaxPowerLimit
                         BatteryRemain = self.MaxPowerLimit
                         #print(f"Battery shall be fully charged at {d} UTC")
                     if self.LowDetected is None and BatteryRemain <= self.LowPower:
@@ -163,7 +166,7 @@ if __name__ == "__main__":
         sc.Calculate(datetime.now(timezone.utc), Estimate, 80)
 
         if sc.TargetDetected is not None and (sc.LowDetected is None or sc.TargetDetected < sc.LowDetected):
-            print(f"Target level shall be reached first at {dtKyiv(sc.TargetDetected)} for {Estimate}, Low at {sc.LowDetected}")
+            print(f"Target level shall be reached first at {dtKyiv(sc.TargetDetected)} for {Estimate}, Low at {sc.LowDetected} with {sc.Overproduction}W extra")
         elif sc.LowDetected is not None:
             print(f"Low level could be reached first at {dtKyiv(sc.LowDetected)}, Target at {sc.TargetDetected} for {Estimate}")
             if sc.MinDetected is not None:

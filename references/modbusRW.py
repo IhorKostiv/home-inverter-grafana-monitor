@@ -3,14 +3,29 @@ import minimalmodbus
 import sys
 from datetime import datetime
 
+commands = {
+        "SBU"  : [20109, 1],
+        #"SUB"  : [],
+        "UTI"  : [20109, 3],
+        "CSO"  : [20143, 0],
+        "SNU"  : [20143, 2],
+        "OSO"  : [20143, 3]
+        #"27.8V": [],
+        #"27.9V": [],
+        #"26.6V": []
+}
 device_port = sys.argv[1]
 device_id = int(sys.argv[2])
 baud_rate = int(sys.argv[3])
-register = int(sys.argv[4])
-if len(sys.argv) > 5:
-    value = int(sys.argv[5])
+if sys.argv[4] in commands:
+    register = commands[sys.argv[4]][0]
+    value = commands[sys.argv[4]][1]
 else:
-    value = -1
+    register = int(sys.argv[4])
+    if len(sys.argv) > 5:
+        value = int(sys.argv[5])
+    else:
+        value = -1
 
 SERPORT = f'/dev/tty{device_port}'
 SERTIMEOUT = 0.5

@@ -89,7 +89,7 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
             inverter.setGridCharging(txtOSO, ds.MinUtiChargeCurent)
 
         if ds.PrecariousChargingEnabled:
-            equalized = True # overbalancing hurts b.bBalance == "" # todo: implement timeout for balancing
+            equalized = b.bBalance == "" # overbalancing hurts # todo: implement timeout for balancing
             if currentPower < tp and (inverter.pvChargerPower > 0 or inverter.icChargerSourcePriority != txtOSO) and inverter.ccBatteryFloatVoltage < ds.GridChargingBulk:
                 inverter.Log(logDebug, f"Charging start {currentPower:.1f}<{tp}W {inverter.pvChargerPower:.1f}>0W {inverter.icChargerSourcePriority}")
                 inverter.setFloat(ds.GridChargingBulk) # 27.9 makes 100% sharply, 27.8 up to 91% charge
@@ -97,7 +97,7 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
             elif currentPower > tp and b.bCurrent <= 0 and equalized and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat: #bms current is reverse; wait until balanced
                 inverter.Log(logDebug, f"Charging complete {currentPower:.1f}>{tp}W {b.bCurrent:.1f}A")
                 inverter.setFloat(ds.GridChargingFloat)
-            elif currentPower >= ds.MaxPowerLimit and equalized and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat:
+            elif currentPower >= ds.MaxPowerLimit and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat: #  and equalized:
                 inverter.Log(logDebug, f"Charging limit {currentPower:.1f}>={ds.MaxPowerLimit}W")
                 inverter.setFloat(ds.GridChargingFloat)
             elif inverter.pvChargerPower <= 0 and inverter.icChargerSourcePriority != txtOSO and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat:
