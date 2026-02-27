@@ -28,7 +28,11 @@ class device(object): # base class for everything
         if hasattr(self, key):
             v = getattr(self, key)
             if v != e:
-                f[key] = v
+                if isinstance(v, list):
+                    for i, vi in enumerate(v, 1):
+                        f[f"{key}{i}"] = vi
+                else:
+                    f[key] = v
     def _getMandatoryFields_(self) -> dict: # override in child classes to return mandatory fields
         return {}
     def _getOptionalValues_(self) -> list: # override in child classes to return optional fields as list of name and empty value pairs

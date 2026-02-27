@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import platform
+import sys
 from ups._bms_ import bms
 from ups._constants_ import *
 from ups._data_ import DataStore
@@ -22,6 +23,8 @@ SUPPORTED_BMS = {
 # Usage: python3 monitor.py <DB_HOST> <DB_PORT> <DB_USERNAME> <DB_PASSWORD> <DB_NAME>
 # Example: python3 monitor.py inverter.local 8086 root root ups
 ds = DataStore() # initialize datastore to read settings and connect to database
+if len(sys.argv) >= 6:
+    ds.LogDetail = 3
 
 if ds.bmsModel in SUPPORTED_BMS: # initialize BMS if configured, read data and write to database
     b: bms = SUPPORTED_BMS[ds.bmsModel](ds.LogDetail, ds.bmsNode)
