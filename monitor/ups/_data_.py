@@ -217,7 +217,7 @@ def setDefaultSettings(ds: DataStore, solcastApiKey: str, solcastResourceID: str
     ds.saveSettingsGeneral(logDetail=logRead, inverterModel="Axioma", bmsModel="MUST", solarForecast="solcast")
 
 if __name__ == "__main__":
-    ds: DataStore = DataStore("inverter.local", 8086, "root", "root", "ups")
+    ds: DataStore = DataStore("inverter.local", 8086, "root", "root", "ups1")
     #print(f"LogDetail {ds.LogDetail}")
     #print(f"InverterNode {ds.InverterNode} Model {ds.InverterModel} SolarVoltageOn {ds.SolarVoltageOn} SolarVoltageOff {ds.SolarVoltageOff}")
     #print(f"PrecariousChargingEnabled {ds.PrecariousChargingEnabled} GridChargingEnabled {ds.GridChargingEnabled} GridChargingFloat {ds.GridChargingFloat} GridChargingBulk {ds.GridChargingBulk}")

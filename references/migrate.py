@@ -1,6 +1,8 @@
 from influxdb import InfluxDBClient
 from datetime import datetime
 
+batchSize = 1000
+
 class Transfer:
     def __init__(self):
         self.src = None
@@ -11,11 +13,11 @@ class Transfer:
     
     def openDestination(self, dstHost: str, dstPort: int, dstUser: str, dstPassword: str, dstDB: str):
         self.dst = InfluxDBClient(dstHost, dstPort, dstUser, dstPassword, dstDB)
-        self.dst.drop_database(dstDB)
+        # self.dst.drop_database(dstDB) # it could be nice to migrate everything at one try but
         self.dst.create_database(dstDB)
 
     def copyInverterData(self, srcTableName: str, dstTableName: str, where: str = ''):
-        print(datetime.now(), " Querying all data for table Inverter")
+        print(datetime.now(), f" Querying all data for table Inverter {where}")
         srcTable = self.src.query(f"select * from {srcTableName} {where} order by time") # where time > '2024-10-16T00:00:00Z' and time < '2024-10-17T00:00:00Z'")
         maxTime = ''
         for table in srcTable:
@@ -116,7 +118,7 @@ class Transfer:
                     }
                 )
 
-                if len(newData) >= 1000: # write in batches of 1000 records to avoid memory issues
+                if len(newData) >= batchSize: # write in batches of 1000 records to avoid memory issues
                     self.dst.write_points(newData)
                     maxTime = newData[len(newData)-1]['time']
                     newData = []
@@ -130,7 +132,7 @@ class Transfer:
         return maxTime
 
     def copyBMSData(self, srcTableName: str, dstTableName: str, where: str = ''):
-        print(datetime.now(), " Querying all data for table BMS")
+        print(datetime.now(), f" Querying all data for table BMS {where}")
         srcTable = self.src.query(f"select * from {srcTableName} {where} order by time") # where time > '2024-10-16T00:00:00Z' and time < '2024-10-17T00:00:00Z'")
         maxTime = ''
         for table in srcTable:
@@ -182,7 +184,7 @@ class Transfer:
                     }
                 )
 
-                if len(newData) >= 1000: # write in batches of 1000 records to avoid memory issues
+                if len(newData) >= batchSize: # write in batches of 1000 records to avoid memory issues
                     self.dst.write_points(newData)
                     maxTime = newData[len(newData)-1]['time']
                     newData = []
@@ -196,7 +198,7 @@ class Transfer:
         return maxTime
 
     def copyData(self, srcTableName: str, dstTableName: str, where: str = ''):
-        print(datetime.now(), f" Querying all data for table {srcTableName}")
+        print(datetime.now(), f" Querying all data for table {srcTableName} {where}")
         srcTable = self.src.query(f"select * from {srcTableName} {where} order by time") # where time > '2024-10-16T00:00:00Z' and time < '2024-10-17T00:00:00Z'")
         maxTime = ''
         for table in srcTable:
@@ -227,7 +229,7 @@ class Transfer:
                     }
                 )
 
-                if len(newData) >= 1000: # write in batches of 1000 records to avoid memory issues
+                if len(newData) >= batchSize: # write in batches of 1000 records to avoid memory issues
                     self.dst.write_points(newData)
                     maxTime = newData[len(newData)-1]['time']
                     newData = []
@@ -242,6 +244,14 @@ class Transfer:
 
 #todo: "rpiTemperature" shall be transfered to rPi measurement in next version
 
+    def getWhere(self, measurement: str):
+        dstTable = self.dst.query(f"select * from {measurement} order by time desc limit 1") # where time > '2024-10-16T00:00:00Z' and time < '2024-10-17T00:00:00Z'")
+        maxTime = ''
+        for table in dstTable:
+            for record in table:
+                maxTime = record["time"]
+        return f"where time >= '{maxTime}'" if maxTime != '' else '' # just in case re-read last record
+
 if __name__ == "__main__":
     # todo: possibly add command line paratemer to specify date to start import from
     tInverter = "inverter"
@@ -251,14 +261,14 @@ if __name__ == "__main__":
     tSettings = "settings"
     t = Transfer()
     t.openSource("inverter.local", "8086", "root", "root", "ups")
-    t.openDestination("sandbox.local", "8086", "root", "root", "ups1")
+    t.openDestination("inverter.local", "8086", "root", "root", "ups1")
 
-    invt = t.copyInverterData(tInverter, tInverter)
-    bmst = t.copyBMSData(tBMS, tBMS)
+    invt = t.copyInverterData(tInverter, tInverter, t.getWhere(tInverter))
+    bmst = t.copyBMSData(tBMS, tBMS, t.getWhere(tBMS))
     
-    fct = t.copyData(tForecast, tForecast)
-    sct = t.copyData(tSolcast, tSolcast)
-    stt = t.copyData(tSettings, tSettings)
+    fct = t.copyData(tForecast, tForecast, t.getWhere(tForecast))
+    sct = t.copyData(tSolcast, tSolcast, t.getWhere(tSolcast))
+    stt = t.copyData(tSettings, tSettings, t.getWhere(tSettings))
 
     print(datetime.now(), f" Looking for new records...", flush=True)
     if invt != '':

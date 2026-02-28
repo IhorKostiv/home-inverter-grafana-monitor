@@ -105,7 +105,7 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
         # check CRC and re-read if not match
         crc = axiomaCRC(r[:-3])
         if r[-3:][:2] != crc: # CRC do not match, reset and re-read
-            self.Log(logError, f"Bad CRC {bytes.fromhex(cmd[:-6]).decode('utf-8')}\t{r}")
+            self.Log(logWarning, f"Bad CRC for {cmd} {bytes.fromhex(cmd[:-6]).decode('utf-8')}\t{r}")
             time.sleep(1.0)
             self.reopenSerial()
             time.sleep(1.0)
