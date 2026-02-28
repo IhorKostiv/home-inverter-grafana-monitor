@@ -5,7 +5,7 @@ import json
 import sys
 
 from ups._data_ import DataStore
-from ups._constants_ import logDebug, logWarning
+from ups._constants_ import logError, logRead, logDebug 
 from ups import logger
 
 def getSolarProductionEstimate(resourceID: str, apiKey: str) -> str:
@@ -133,7 +133,7 @@ class Solcast(logger):
 # Example usage
 if __name__ == "__main__":
     # refer to https://toolkit.solcast.com.au/ for details
-    if len(sys.argv) == 1: # retrieve solcast data and save to DB for further use
+    if len(sys.argv) in [1, 6]: # retrieve solcast data and save to DB for further use
         ds = DataStore() # "inverter.local", 8086, "root", "root", "ups")
         solcastResponse = getSolarProductionEstimate(ds.solcastResourceID, ds.solcastApiKey)
         print(datetime.now(), " ", solcastResponse)
@@ -143,8 +143,10 @@ if __name__ == "__main__":
             if ds.LogDetail >= logDebug:
                 print(datetime.now(), " ", json)
             ds.write(json)
+            if ds.LogDetail >= logRead:
+                print(f"{logRead}> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\tSolcast data updated for {ds.solcastResourceID}")
         else:
-            print(datetime.now(), "Error reading forecast")
+            print(f"{logError}> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\tError reading forecast for {ds.solcastResourceID}")
     else: # calculate which targets are met
         ds = DataStore("inverter.local", 8086, "root", "root", "ups")
         gridTied = ds.GridTied # os.environ.get("GRID_TIED", "").split(",") 
