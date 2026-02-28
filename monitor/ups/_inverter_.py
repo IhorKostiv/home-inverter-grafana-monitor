@@ -31,6 +31,7 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
         self.icBatteryEqualization: float = 0.0
         self.icChargerSourcePriority: str = ""
         self.icMaxUtiChargeCurrent: int = 0
+        self.icMaxChargeCurrent: int = 0
 
         self.pvWorkState: str = ""
         self.pvVoltage: float = 0.0

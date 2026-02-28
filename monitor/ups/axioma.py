@@ -158,21 +158,21 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
         # H HHHH AC output rating apparent power H is an Integer ranging from 0 to 9. The unit is VA.
         # I IIII AC output rating active power I is an Integer ranging from 0 to 9. The unit is W.
         # J JJ.J Battery rating voltage J is an Integer ranging from 0 to 9. The units is V.
-        self.icBatteryStopDischarging = float(v[8])     # K KK.K Battery re-charge voltage K is an Integer ranging from 0 to 9. The units is V.
+        self.icBatteryStopDischarging = float(v[8]) # K KK.K Battery re-charge voltage K is an Integer ranging from 0 to 9. The units is V.
         # l JJ.J Battery under voltage J is an Integer ranging from 0 to 9. The units is V.
         # M KK.K Battery bulk voltage K is an Integer ranging from 0 to 9. The units is V
-        self.ccBatteryFloatVoltage = float(v[11])       # LL.L Battery float voltage L is an Integer ranging from 0 to 9. The units is V.
+        self.ccBatteryFloatVoltage = float(v[11])   # LL.L Battery float voltage L is an Integer ranging from 0 to 9. The units is V.
         # O O Battery type 0: AGM 1: Flooded 2: User 3: Pylon 5: Weco 6: Soltaro 8: Lib 9: Lic
-        self.icMaxUtiChargeCurrent = int(v[13])         # P PP Max AC charging current P is an Integer ranging from 0 to 9 The units is A. If the max AC charging current is greater than 99A, then return to PPP
-        # Q QQ0 Max charging current Q is an Integer ranging from 0 to 9. The units is A.
+        self.icMaxUtiChargeCurrent = int(v[13])     # P PP Max AC charging current P is an Integer ranging from 0 to 9 The units is A. If the max AC charging current is greater than 99A, then return to PPP
+        self.icMaxChargeCurrent = int(v[14])        # Q QQ0 Max charging current Q is an Integer ranging from 0 to 9. The units is A.
         # O O Input voltage range 0: Appliance 1: UPS
-        self.icEnergyUse = icEnergyUses[int(v[16])]     # P P Output source priority 0: UtilitySolarBat 1: SolarUtilityBat 2: SolarBatUtility
+        self.icEnergyUse = icEnergyUses[int(v[16])] # P P Output source priority 0: UtilitySolarBat 1: SolarUtilityBat 2: SolarBatUtility
         self.icChargerSourcePriority = icChargerSourcePriorities[int(v[17])] # Q Q Charger source priority 1: Solar first 2: Solar + Utility 3: Only solar charging permitted
         # R R Parallel max num R is an Integer ranging from 0 to 9. 
         # S SS Machine type 00: Grid tie; 01: Off Grid; 10: Hybrid.
         # T T Topology 0: transformerless 1: transformer
         # U U Output mode 00: single machine output 01: parallel output 02: Phase 1 of 3 Phase output 03: Phase 2 of 3 Phase output 04: Phase 3 of 3 Phase output 05: Phase 1 of 2 Phase output 06: Phase 2 of 2 Phase output (120°) 07: Phase 2 of 2 Phase output (180°)
-        self.icBatteryStopCharging = float(v[22])       # V VV.V Battery re-discharge voltage V is an Integer ranging from 0 to 9. The unit is V.
+        self.icBatteryStopCharging = float(v[22])   # V VV.V Battery re-discharge voltage V is an Integer ranging from 0 to 9. The unit is V.
         # W W PV OK condition for parallel 0: As long as one unit of inverters has connect PV, parallel system willconsider PV OK; 1: Only All of inverters have connect PV, parallel system will consider PV OK
         # X X PV power balance 0: PV input max current will be the max charged current; 1: PV input max power will be the sum of the max charged power and loads power.
         # Y YYY Max. charging time at C.V stage (only 48V model)

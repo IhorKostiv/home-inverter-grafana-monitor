@@ -79,7 +79,7 @@ class Solcast(logger):
                 else:
                     self.LoadAverages[t] = 2 #todo: replace with actual grid tied load
 
-    def Calculate(self, CalcTime: datetime, Estimate: str, InternalConsumption: int):
+    def Calculate(self, CalcTime: datetime, Estimate: str, InternalConsumption: int, maxChargerPower: int):
         calcTime = CalcTime.strftime('%Y-%m-%dT%H:%M:%SZ')
         self.TargetDetected = None
         self.LowDetected = None
@@ -106,6 +106,9 @@ class Solcast(logger):
                         diff = diff * 1.1
                     #else:                               # charging is slower, however, at the last 5% SOC sharply goes up thus no correction
                     #    diff = diff * 0.9
+                    if diff > maxChargerPower: # capping, production could be bigger than battery can absorb
+                        self.Overproduction += diff - maxChargerPower
+                        diff = maxChargerPower
                     BatteryRemain += diff
                     if BatteryRemain > self.MaxPowerLimit:
                         self.Overproduction += BatteryRemain - self.MaxPowerLimit
@@ -157,7 +160,7 @@ if __name__ == "__main__":
             #Estimate = '(pvEstimate + pvEstimate10)/2'
             Estimate = 'pvEstimate' # seems reliable enough to use it as is
 
-        sc.Calculate(datetime.now(timezone.utc), Estimate, 80)
+        sc.Calculate(datetime.now(timezone.utc), Estimate, 80, 1000)
 
         if sc.TargetDetected is not None and (sc.LowDetected is None or sc.TargetDetected < sc.LowDetected):
             print(f"Target level shall be reached first at {dtKyiv(sc.TargetDetected)} for {Estimate}, Low at {sc.LowDetected} with {sc.Overproduction}W extra")
