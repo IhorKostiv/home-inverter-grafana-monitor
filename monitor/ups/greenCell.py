@@ -29,7 +29,7 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
     def readRegister(self, register: int, length: int, message: str):
         if hasattr(self, 'scc'): # check if we are live in production or unit testing
             r = super().readRegister(register, length)
-            self.Log(2, f"{message}: {r}")
+            self.Log(logRead, f"{message}: {r}")
         else:
             if register in utMessages:
                 r = utMessages[register]
@@ -123,7 +123,7 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
             3: "EQ"                 # "EQ charge"
         }
 
-        pv = self.readRegister(15200, 22, "PV")
+        pv = self.readRegister(15200, 20, "PV")
         if pv[1] == 2: # work mode                                    # 15201 15202 15203
             self.pvWorkState = mpptStates[pv[2]] + "-" + chargingStates[pv[3]]   
         else:

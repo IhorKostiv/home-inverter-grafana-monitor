@@ -4,28 +4,30 @@ import sys
 from datetime import datetime
 
 commands = {
-        "SBU"  : [20109, 1],
-        #"SUB"  : [],
-        "UTI"  : [20109, 3],
-        "CSO"  : [20143, 0],
-        "SNU"  : [20143, 2],
-        "OSO"  : [20143, 3]
-        #"27.8V": [],
-        #"27.9V": [],
-        #"26.6V": []
-}
+    "13.3V": [10103, 133], "13.6V": [10103, 136], "13.9V": [10103, 139], "14.0V": [10103, 140],
+    #"26.6V": [10103, 266], "27.8V": [10103, 278], "27.9V": [10103, 279], 
+    "SBU"  : [20109, 1], "UTI"  : [20109, 3], #"SUB"  : [20109, 2],
+    "LBU"  : [20112, 0], "BLU"  : [20112, 1],
+    "CSO"  : [20143, 0], "SNU"  : [20143, 2], "OSO"  : [20143, 3],
+    }
+if len(sys.argv) < 5:
+    print("Usage: modbusRW.py Port ID Baud Command|Register (Value)")
+    print("Sample:\nGreenCell inverter: modbusRW.py USB0 4 19200 ", end="")
+    for cmd in commands:
+        print(cmd, end="|")
+    print("register (value)\nMust BMS balance deviation, 15mV: modbusRW.py ACM0 1 9600 106 15")
+    exit(1)
+
 device_port = sys.argv[1]
 device_id = int(sys.argv[2])
 baud_rate = int(sys.argv[3])
-if sys.argv[4] in commands:
-    register = commands[sys.argv[4]][0]
-    value = commands[sys.argv[4]][1]
+cmd = sys.argv[4].upper()
+if cmd in commands:
+    register = commands[cmd][0]
+    value = commands[cmd][1]
 else:
-    register = int(sys.argv[4])
-    if len(sys.argv) > 5:
-        value = int(sys.argv[5])
-    else:
-        value = -1
+    register = int(cmd)
+    value = int(sys.argv[5]) if len(sys.argv) > 5 else -1
 
 SERPORT = f'/dev/tty{device_port}'
 SERTIMEOUT = 0.5

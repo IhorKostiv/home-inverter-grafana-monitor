@@ -207,11 +207,13 @@ class DataStore(object):
                 json[0]["fields"]["resourceID"] = solcastResourceID
             self.write(json)
 
-def setDefaultSettings(ds: DataStore):
+def setDefaultSettings(ds: DataStore, solcastApiKey: str, solcastResourceID: str):
     ds.saveSettingsInverter(inverterModel="Axioma", inverterNode="/dev/ttyUSB0", solarVoltageOn=140.0, solarVoltageOff=100.0, MaxUtiChargeCurent=20, MinUtiChargeCurent=2, precariousChargingEnabled=True, gridChargingEnabled=txtGCEmergency, gridChargingFloat=26.6, gridChargingBulk=27.9)
     #ds.saveSettingsInverter(inverterModel="GreenCell", inverterNode="/dev/ttyUSB0", solarVoltageOn=70, solarVoltageOff=50, MaxUtiChargeCurent=30, MinUtiChargeCurent=20, precariousChargingEnabled=False, gridChargingEnabled=txtGCNever, gridChargingFloat=26.6, gridChargingBulk=27.9)
+    #ds.saveSettingsInverter(inverterModel="GreenCell", inverterNode="/dev/ttyUSB0", solarVoltageOn=50, solarVoltageOff=40, MaxUtiChargeCurent=20, MinUtiChargeCurent=10, precariousChargingEnabled=False, gridChargingEnabled=txtGCNever, gridChargingFloat=13.3, gridChargingBulk=13.9)
     ds.saveSettingsBMS(bmsModel="MUST", bmsNode="/dev/ttyACM0", maxPowerLimit=5120, targetPower=4950, lowPower=1500, minPower=1024)
-    ds.saveSettingsSolarForecast(solarForecast="solcast", gridTied=[''], estimate="(pvEstimate+pvEstimate10)/2", gridChargingEstimate="pvEstimate")
+    # it is not expected to hard code API Key or Resource ID, only pass as paramenets for security reasons
+    ds.saveSettingsSolarForecast(solarForecast="solcast", gridTied=[''], estimate="(pvEstimate+pvEstimate10)/2", gridChargingEstimate="pvEstimate", solcastApiKey=solcastApiKey, solcastResourceID=solcastResourceID)
     ds.saveSettingsGeneral(logDetail=logRead, inverterModel="Axioma", bmsModel="MUST", solarForecast="solcast")
 
 if __name__ == "__main__":
@@ -225,8 +227,8 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         if sys.argv[1] == "CLEAR": # delete settings table to reset values
             ds.query(f"DROP MEASUREMENT settings")
-            # setDefaultSettings(ds)
-            print("Settings cleared")
+            setDefaultSettings(ds, sys.argv[2] if len(sys.argv) > 2 else "", sys.argv[3] if len(sys.argv) > 3 else "")
+            print("Settings cleared and reset to defaults")
         elif sys.argv[1] in {"Axioma", "GreenCell"} and len(sys.argv) == 11:
             # saveSettingsInverter(self, inverterModel: str, inverterNode: str, solarVoltageOn: float, solarVoltageOff: float, precariousChargingEnabled: bool, gridChargingEnabled: str, gridChargingFloat: float, gridChargingBulk: float)
             ds.saveSettingsInverter(sys.argv[1], sys.argv[2], float(sys.argv[3]), float(sys.argv[4]), int(sys.argv[5]), int(sys.argv[6]), bool(sys.argv[7] == "True"), sys.argv[8], float(sys.argv[9]), float(sys.argv[10]))
@@ -240,19 +242,18 @@ if __name__ == "__main__":
             # saveSettingsGeneral(self, logDetail: int, inverterModel: str, bmsModel: str, solarForecast: str)
             ds.saveSettingsGeneral(int(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4])
         else:
-            print(f"Unknown settings type {sys.argv[1]}")
-            print("Possible scenarios:")
-            print("python3 _data_.py InverterModel InverterNode SolarVoltageOn SolarVoltageOff MaxUtiChargeCurent MinUtiChargeCurent PrecariousChargingEnabled GridChargingEnabled GridChargingFloat GridChargingBulk")
-            print(f"python3 _data_.py {ds.InverterModel} {ds.InverterNode} {ds.SolarVoltageOn} {ds.SolarVoltageOff} {ds.MaxUtiChargeCurent} {ds.MinUtiChargeCurent} {ds.PrecariousChargingEnabled} {ds.GridChargingEnabled} {ds.GridChargingFloat} {ds.GridChargingBulk}")
-            print("\npython3 _data_.py BMSModel BMSNode MaxPowerLimit TargetPower LowPower MinPower")
-            print(f"python3 _data_.py {ds.bmsModel} {ds.bmsNode} {ds.MaxPowerLimit} {ds.TargetPower} {ds.LowPower} {ds.MinPower}")
-            print("\npython3 _data_.py solcast GridTied Estimate GridChargingEstimate SolcastApiKey SolcastResourceID")
-            # todo: solcast can have multiple fields, so that Resource IDs shall be a list
-            print(f'python3 _data_.py {ds.solarForecast} "{",".join(ds.GridTied)}" "{ds.Estimate}" "{ds.GridChargingEstimate}" {ds.solcastApiKey} {ds.solcastResourceID}')
-            print("\npython3 _data_.py LogDetail InverterModel BMSModel SolarForecast")
-            print(f'python3 _data_.py {ds.LogDetail} {ds.InverterModel} "{ds.bmsModel}" {ds.solarForecast}')
+            print(f"Unknown settings command {sys.argv[1]}")
     else:
-        setDefaultSettings(ds)        
+        print("Possible scenarios:")
+        print("python3 _data_.py InverterModel InverterNode SolarVoltageOn SolarVoltageOff MaxUtiChargeCurent MinUtiChargeCurent PrecariousChargingEnabled GridChargingEnabled GridChargingFloat GridChargingBulk")
+        print(f"python3 _data_.py {ds.InverterModel} {ds.InverterNode} {ds.SolarVoltageOn} {ds.SolarVoltageOff} {ds.MaxUtiChargeCurent} {ds.MinUtiChargeCurent} {ds.PrecariousChargingEnabled} {ds.GridChargingEnabled} {ds.GridChargingFloat} {ds.GridChargingBulk}")
+        print("\npython3 _data_.py BMSModel BMSNode MaxPowerLimit TargetPower LowPower MinPower")
+        print(f"python3 _data_.py {ds.bmsModel} {ds.bmsNode} {ds.MaxPowerLimit} {ds.TargetPower} {ds.LowPower} {ds.MinPower}")
+        # todo: solcast can have multiple fields, so that Resource IDs shall be a list
+        print("\npython3 _data_.py solcast GridTied Estimate GridChargingEstimate SolcastApiKey SolcastResourceID")
+        print(f'python3 _data_.py {ds.solarForecast} "{",".join(ds.GridTied)}" "{ds.Estimate}" "{ds.GridChargingEstimate}" {ds.solcastApiKey} {ds.solcastResourceID}')
+        print("\npython3 _data_.py LogDetail InverterModel BMSModel SolarForecast")
+        print(f'python3 _data_.py {ds.LogDetail} {ds.InverterModel} "{ds.bmsModel}" "{ds.solarForecast}"')
     '''
     ds.saveSettingsInverter("GreenCell", "/dev/ttyUSB0", 70, 50)
     ds.saveSettingsBMS("MUST", "/dev/ttyACM0", False, True, 26.6, 27.9, 5120, 4900, 1500, 1024)

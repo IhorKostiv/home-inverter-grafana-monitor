@@ -95,7 +95,7 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
             else:
                 r = utRead(cmd)
 
-        self.Log(2, f"{bytes.fromhex(cmd[:-6]).decode('utf-8')}\t{r}") # format usable for putting into Excel (hopefully)
+        self.Log(logRead, f"{bytes.fromhex(cmd[:-6]).decode('utf-8')}\t{r}") # format usable for putting into Excel (hopefully)
         
         if len(r) < 3 and not breakOnEmpty: # connection broken, reopen and re-read one more time
             self.reopenSerial()
@@ -105,7 +105,7 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
         # check CRC and re-read if not match
         crc = axiomaCRC(r[:-3])
         if r[-3:][:2] != crc: # CRC do not match, reset and re-read
-            self.Log(0, f"Bad CRC {bytes.fromhex(cmd[:-6]).decode('utf-8')}\t{r}")
+            self.Log(logError, f"Bad CRC {bytes.fromhex(cmd[:-6]).decode('utf-8')}\t{r}")
             time.sleep(1.0)
             self.reopenSerial()
             time.sleep(1.0)

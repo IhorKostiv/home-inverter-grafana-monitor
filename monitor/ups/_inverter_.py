@@ -199,7 +199,7 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
                 if self.pvChargerPower < self.iPLoad:
                     if MinDetected is not None:
                         self.BestEnergyMsg = self.addText(self.BestEnergyMsg, f"M {self.dtKyiv(MinDetected)})")
-                        self.Log(logWarning, f"!!! Battery would be depleted below minimum on {self.dtKyiv(MinDetected)}")
+                        self.Log(logDebug, f"!!! Battery would be depleted below minimum on {self.dtKyiv(MinDetected)}")
                         return -1 if self.setUtility() else 0
                     else:
                         return -1 if self.setSUB() else 0            
@@ -208,13 +208,13 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
     def setBestEnergyPVV(self, solarVoltageOn: float, solarVoltageOff: float):
         self.Log(logDebug, f"Check Solar Voltage {solarVoltageOff} > {self.pvVoltage} > {solarVoltageOn}")
         if self.icEnergyUse.upper() in {txtUTI, txtSUB}: # Utility or PV mixing mode
-            if solarVoltageOn > 1 and self.iBatteryVoltage > self.icBatteryStopCharging:
+            if solarVoltageOn > 1 and self.iBatteryVoltage >= self.icBatteryStopCharging:
                 if self.pvVoltage > solarVoltageOn: # and self.pvChargerPower > 0: # likely PV can produce more - however more sophisticated formula needed since voltage depends on power produced
-                    self.BestEnergyMsg = f"Solar ON by Voltage {self.pvVoltage} > {solarVoltageOn} V"
+                    self.BestEnergyMsg = f"ON {self.pvVoltage} > {solarVoltageOn} V"
                     return self.moreSolar()
                 # todo: mind solar use aim LBU - BLU here
                 elif self.icSolarUseAim == "LBU" and self.pvChargerPower > self.iPLoad and self.pvVoltage > solarVoltageOff: #+ self.iInternalUsePower: # PV produces enough just charging - technically charging can be delayed
-                    self.BestEnergyMsg = f"Solar ON by Power {self.pvChargerPower} > {self.iPLoad} W"
+                    self.BestEnergyMsg = f"ON {self.pvChargerPower} > {self.iPLoad} W"
                     return self.moreSolar()
             #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
         elif self.icEnergyUse.upper() in {txtSBU, txtSUB}: # PV full production mode
@@ -225,13 +225,13 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
                 else:
                     stopDischarge = self.icBatteryStopDischarging
                 if self.iPGrid >= self.iPLoad and self.iBatteryVoltage < (self.icBatteryStopCharging + stopDischarge) / 2: # working from Grid
-                    self.BestEnergyMsg = f"Solar Off by Grid {self.iPGrid} >= Load {self.iPLoad} > PV {self.pvChargerPower} W & {self.iBatteryVoltage} < avg({self.icBatteryStopCharging} {stopDischarge:.2f}) V"
+                    self.BestEnergyMsg = f"Off Grid {self.iPGrid} >= Load {self.iPLoad} > PV {self.pvChargerPower} W & {self.iBatteryVoltage} < avg({self.icBatteryStopCharging} {stopDischarge:.2f}) V"
                     return self.saveBattery()  
                 elif self.iBattPower > self.pvChargerPower and self.iBatteryVoltage <= stopDischarge: # depleting battery too much
-                    self.BestEnergyMsg = f"Solar Off by Batt {self.iBattPower} > PV {self.pvChargerPower} < Load {self.iPLoad} W & {self.iBatteryVoltage} <= {stopDischarge:.2f} V"
+                    self.BestEnergyMsg = f"Off Batt {self.iBattPower} > PV {self.pvChargerPower} < Load {self.iPLoad} W & {self.iBatteryVoltage} <= {stopDischarge:.2f} V"
                     return self.saveBattery()                    
                 elif self.pvVoltage < solarVoltageOff: # better to be more sophisticated formula accounting MPPT since voltage depend on produced power
-                    self.BestEnergyMsg = f"Solar Off by PV {self.pvVoltage} < {solarVoltageOff:.2f} V"
+                    self.BestEnergyMsg = f"Off PV {self.pvVoltage} < {solarVoltageOff:.2f} V"
                     return self.saveBattery()
         return False
 

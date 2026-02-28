@@ -163,7 +163,7 @@ if __name__ == "__main__":
         sc.Calculate(datetime.now(timezone.utc), Estimate, 80, 1000)
 
         if sc.TargetDetected is not None and (sc.LowDetected is None or sc.TargetDetected < sc.LowDetected):
-            print(f"Target level shall be reached first at {dtKyiv(sc.TargetDetected)} for {Estimate}, Low at {sc.LowDetected} with {sc.Overproduction}W extra")
+            print(f"Target level shall be reached first at {dtKyiv(sc.TargetDetected)} for {Estimate}, Low at {sc.LowDetected} with {sc.Overproduction:.0f}W extra")
         elif sc.LowDetected is not None:
             print(f"Low level could be reached first at {dtKyiv(sc.LowDetected)}, Target at {sc.TargetDetected} for {Estimate}")
             if sc.MinDetected is not None:
