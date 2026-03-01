@@ -11,9 +11,7 @@ from ups import logger
 def getSolarProductionEstimate(resourceID: str, apiKey: str) -> str:
     url = f"https://api.solcast.com.au/rooftop_sites/{resourceID}/forecasts?format=json"
     headers = {"Authorization": f"Bearer {apiKey}"}
-    
     response = requests.get(url, headers=headers)
-    
     # Check if the request was successful
     if response.status_code == 200:
         return response.text
@@ -21,7 +19,7 @@ def getSolarProductionEstimate(resourceID: str, apiKey: str) -> str:
         print(f"Error: Received status code {response.status_code}")
         print(f"Retry after {response.headers.get('Retry-After', 'N/A')}")
         return f"Error {response.status_code}" # "error: Failed to fetch data"
-    
+
 def toJson(solarData: str):
     json_body = []
     for forecast in json.loads(solarData)["forecasts"]:
@@ -60,9 +58,8 @@ class Solcast(logger):
         self.TargetPower = targetPower
         self.LowPower = lowPower
         self.MinPower = minPower 
-
         self.loadAverages(gridTied)
-    
+
     def loadAverages(self, gridTied: list = {}):
         LoadHistory = self.dataStore.query("SELECT mean(""iPLoad"") FROM ""inverter"" WHERE time >= now() - 3d GROUP BY time(30m) tz('Europe/Kiev')")
         for table in LoadHistory: # compute average load approximation for each 30min slot using last 3 days data
@@ -90,7 +87,6 @@ class Solcast(logger):
         self.Log(logDebug, f"{calcTime} Remain {BatteryRemain:.0f}W {BatteryRemain/51.2:.0f}% for {Estimate}")
 
         GenerationEstimates = self.dataStore.query(f"SELECT {Estimate} as Estimate FROM \"solcast\" WHERE time >= '{calcTime}'-30m")
-
         for table in GenerationEstimates:
             for record in table:
                 d = datetime.strptime(record['time'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
@@ -125,7 +121,6 @@ class Solcast(logger):
                         self.Log(logDebug, f"!!!\a Battery would be depleted below {self.MinPower}W at {dtKyiv(d)}")
                         break
                     self.Log(logDebug, f"{dtKyiv(d)} load {le:.0f}W gen {ge:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
-            
                 else:
                     self.Log(logDebug, f"!!!\a {dtKyiv(d)} load ?? gen {record['Estimate']:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
                     #print(f"{d.astimezone(ZoneInfo('Europe/Kyiv')).strftime('%Y-%m-%d %H:%M')} load ? gen {record['pvEstimate']:.0f}W cre {cre:.0f} {nre:.0f}W")
@@ -137,7 +132,6 @@ if __name__ == "__main__":
         ds = DataStore() # "inverter.local", 8086, "root", "root", "ups")
         solcastResponse = getSolarProductionEstimate(ds.solcastResourceID, ds.solcastApiKey)
         print(datetime.now(), " ", solcastResponse)
-
         if solcastResponse != "":
             json = toJson(solcastResponse)
             if ds.LogDetail >= logDebug:
@@ -172,5 +166,3 @@ if __name__ == "__main__":
                 print(f"!!!\a Battery would be depleted below {sc.MinPower}W at {dtKyiv(sc.MinDetected)}")
         else:
             print(f"Neither target nor low levels would be reached for {Estimate}")
-
-        

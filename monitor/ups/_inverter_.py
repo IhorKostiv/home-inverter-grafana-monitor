@@ -66,6 +66,10 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
 
         self.BestEnergyMsg: str = ""
 
+    @property
+    def icMaxChargePower(self) -> int:
+        return int(self.icMaxChargeCurrent * self.iBatteryVoltage)
+
     def _getMandatoryFields_(self) -> dict:
         return {
             "pvVoltage": self.pvVoltage,
@@ -161,7 +165,7 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
             return self.setSNU()
         else:
             return self.setOSO()
-        
+
     def setFloat(self, voltage: float):
         if self.ccBatteryFloatVoltage != voltage:
             self.Log(logWrite, f"set FLoat {voltage}V")
@@ -191,18 +195,20 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
             self.Log(logDebug, f"Target level shall be reached first at {self.dtKyiv(TargetDetected)}, Low at {LowDetected}")
             if self.icEnergyUse.upper() in {txtUTI, txtSUB}:
                 self.BestEnergyMsg = f"T {self.dtKyiv(TargetDetected)}"
-                return 1 if self.setSBU else 0
+                return 1 if self.setSBU() else 0
         elif LowDetected is not None:
             self.Log(logDebug, f"Low level could be reached first on {self.dtKyiv(LowDetected)}, Target on {TargetDetected}")
             if self.icEnergyUse.upper() in {txtSBU, txtSUB}:
                 self.BestEnergyMsg = f"L {self.dtKyiv(LowDetected)}"
                 if self.pvChargerPower < self.iPLoad:
-                    if MinDetected is not None:
-                        self.BestEnergyMsg = self.addText(self.BestEnergyMsg, f"M {self.dtKyiv(MinDetected)})")
+                    if MinDetected is not None and (TargetDetected is None or MinDetected < TargetDetected):
+                        self.BestEnergyMsg = self.addText(self.BestEnergyMsg, f"M {self.dtKyiv(MinDetected)}")
                         self.Log(logDebug, f"!!! Battery would be depleted below minimum on {self.dtKyiv(MinDetected)}")
                         return -1 if self.setUtility() else 0
                     else:
-                        return -1 if self.setSUB() else 0            
+                        return -1 if self.setSUB() else 0
+        if MinDetected is not None: # always show minimum if it was detected
+            self.BestEnergyMsg = self.addText(self.BestEnergyMsg, f"M {self.dtKyiv(MinDetected)}")
         return None
 
     def setBestEnergyPVV(self, solarVoltageOn: float, solarVoltageOff: float):

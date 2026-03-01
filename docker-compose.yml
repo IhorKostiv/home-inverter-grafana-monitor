@@ -71,4 +71,3 @@ services:
 volumes:
   metrics:
   grafana-data:
-

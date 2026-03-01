@@ -28,7 +28,7 @@ class Raspberry(device):
             return pi_info().model if pi_info().model is not None else "Unknown"
         else:
             return platform.system()
-        
+
     def readTemperature(self):
         if platform.system() == "Linux": # read Raspberry CPU temperature
             try:
@@ -39,7 +39,7 @@ class Raspberry(device):
         else:
             self.Log(logDebug, f"Platform is {platform.system()}")
             return 0.0
-    
+
     def readThrottled(self):
         flags = { # Bitmask definitions for throttled flags
             0x00001: "Under-voltage",

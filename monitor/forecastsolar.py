@@ -11,9 +11,7 @@ import os
 def solarProductionEstimate(lat: float, lon: float, dec: int, az: int, kwp: float, damping: str = "0") -> str:
     url = f"https://api.forecast.solar/estimate/watts/{lat}/{lon}/{dec}/{az}/{kwp}?damping={damping}" # &actual={actual} # <float kWh>
 #    url = f"https://api.meteosource.com/v1/solar?date={date}&lat={lat}&lon={lon}&modulePower={module_power}&orientation={orientation}&tilt={tilt}&key={api_key}"
-    
     response = requests.get(url)
-    
     # Check if the request was successful
     if response.status_code == 200:
         return response.text
@@ -21,7 +19,6 @@ def solarProductionEstimate(lat: float, lon: float, dec: int, az: int, kwp: floa
         return "" # "error: Failed to fetch data"
 
 def pvEstimate(currentTime: datetime, solarData) -> int:
-
     p1 = p2 = -2
     t1 = t2 = currentTime
     tz = get_localzone()
@@ -38,15 +35,11 @@ def pvEstimate(currentTime: datetime, solarData) -> int:
                 p2 = p
                 t2 = tt
                 break
-
 #        print(f"index {i} time {t} estimate {p}")
-
     d1 = currentTime - t1
  #   d2 = t2 - current_time
     d = t2 - t1
-
     avg = p1 + ((p2 - p1) * d1.total_seconds() / d.total_seconds()) # linear approximation
-
     print(f"estimate {avg} @ {currentTime} between {p1} @ {t1} and {p2} @ {t2}")
     return int(avg)
 

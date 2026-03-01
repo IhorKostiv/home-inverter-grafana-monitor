@@ -13,7 +13,6 @@ class bmsMUST(bms, deviceModbus): #  object to communicate with and manage MUST 
         # deviceModbus.__init__(self, logDetail, device_path, 1, 9600)
         super().__init__(logDetail = logDetail, device_path = device_path, device_id = 1, baud_rate = 9600)
         self.uKey = "MUST"
-
         self.readData()
 
     def readData(self): # read inverter control message values

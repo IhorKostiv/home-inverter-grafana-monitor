@@ -59,14 +59,14 @@ if ds.Estimate != '' and ds.bmsModel != '':
         tp = ds.TargetPower
         lp = int((ds.LowPower + ds.MinPower) / 2) # if b.bSOC < 50 else ds.MinPower
     sc = Solcast(ds, ds.MaxPowerLimit, tp, lp, ds.MinPower, ds.GridTied, ds.LogDetail)
-    sc.Calculate(datetime.now(timezone.utc), ds.Estimate, 80, inverter.icMaxChargeCurrent * inverter.iBatteryVoltage)
+    sc.Calculate(datetime.now(timezone.utc), ds.Estimate, 80, inverter.icMaxChargePower)
     be = inverter.setBestEnergySOC(sc.TargetDetected, sc.LowDetected, sc.MinDetected)
     inverter.Log(logDebug, f"{datetime.now()} Best energy result {be}")
 elif ds.SolarVoltageOn > 1 or ds.SolarVoltageOff > 1:
     inverter.setBestEnergyPVV(ds.SolarVoltageOn, ds.SolarVoltageOff)
 
 # todo: charge from grid if midnight (0..5am) and battery depleted
- 
+
 json_body = inverter.jSON()
 inverter.Log(logDebug, json_body)
 if platform.system() == "Linux": # switch it off when running on non-linux system for debug and test purposes
@@ -76,7 +76,7 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
         if ds.GridChargingEnabled in [txtGCAlways, txtGCEmergency] or ("-" in ds.GridChargingEnabled and timeInRange(ds.GridChargingEnabled)):
             if ds.Estimate != '' or ds.GridChargingEstimate != '':
                 gridChargingEstimate = ds.GridChargingEstimate if ds.GridChargingEstimate != "" else ds.Estimate
-                sc.Calculate(datetime.now(timezone.utc), gridChargingEstimate, 80, inverter.icMaxChargeCurrent * inverter.iBatteryVoltage)
+                sc.Calculate(datetime.now(timezone.utc), gridChargingEstimate, 80, inverter.icMaxChargePower)
                 if sc.LowDetected is None or (sc.TargetDetected is not None and sc.TargetDetected < sc.LowDetected): # we can live on solar (optimistic or realistic)
                     inverter.setGridCharging(txtOSO, ds.MinUtiChargeCurent) # OSO, 2A
                 else:

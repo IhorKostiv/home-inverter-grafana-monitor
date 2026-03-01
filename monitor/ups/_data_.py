@@ -38,9 +38,9 @@ class DataStore(object):
             print(f"Example: python3 {os.path.basename(sys.argv[0])} inverter.local 8086 root root ups")
             print("Or set environment variables DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME")
             exit(1)
-        
+
         return InfluxDBClient(DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME)
-    
+
     def _readDefaults_(self):
         self.LogDetail = int(os.environ.get("LOG_DETAIL", "0")) # 0 errors only, 1 +set commands, 2 +data, 3 +debug
         self.InverterModel = os.environ.get("INVERTER_MODEL", "") # "GreenCell", "Axioma"
@@ -86,7 +86,7 @@ class DataStore(object):
             self.bmsModel = point["bmsModel"]
             self.solarForecast = point["solarForecast"]
             break
-            
+
     def readInverter(self, inverterModel: str):
         if inverterModel == "":
             raise Exception("Inverter model is not specified")
@@ -102,7 +102,7 @@ class DataStore(object):
             self.GridChargingFloat = float(point["GridChargingFloat"]) #if "GridChargingFloat" in point and point["GridChargingFloat"] is not None else self.GridChargingFloat
             self.GridChargingBulk = float(point["GridChargingBulk"]) #if "GridChargingBulk" in point and point["GridChargingBulk"] is not None else self.GridChargingBulk
             break
-            
+
     def readBMS(self, bmsModel: str):
         if bmsModel == "":
             raise Exception("BMS model is not specified")
@@ -131,7 +131,7 @@ class DataStore(object):
         return self.client.query(query)     
     def write(self, json_body: dict):
         self.client.write_points(json_body)
-    
+
     def saveSettingsGeneral(self, logDetail: int, inverterModel: str, bmsModel: str, solarForecast: str):
         if logDetail != self.LogDetail or inverterModel != self.InverterModel or bmsModel != self.bmsModel or solarForecast != self.solarForecast:
             json = [
@@ -186,7 +186,7 @@ class DataStore(object):
                 }
             ]
             self.write(json)
-        
+
     def saveSettingsSolarForecast(self, solarForecast: str, gridTied: list, estimate: str, gridChargingEstimate: str, solcastApiKey: str = "", solcastResourceID: str = ""):
         if solarForecast == "":
             raise Exception("Solar forecast is not specified")

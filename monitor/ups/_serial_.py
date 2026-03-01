@@ -13,7 +13,7 @@ class deviceSerial(device): # base class for serial communication (RS232)
             self.scc = serial.Serial(device_path, baud_rate, timeout=1)
         else:
             print(f"Debugging at {platform.system()}")
-    
+
     def __del__(self):
         if hasattr(self, 'scc'):
             self.scc.close()

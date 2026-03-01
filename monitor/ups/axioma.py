@@ -71,7 +71,6 @@ def axiomaCRC(data): # CRC function for Axioma inverter
     return crc_value.to_bytes(2, byteorder='big')
 
 class Axioma(deviceSerial, inverterHybrid): # object to communicate with and manage Axioma inverter
-    
     def readSerial(self, cmd: str):
         if "utMessages" in globals() and cmd in utMessages:
             return utMessages[cmd][:-3].decode('utf-8', errors='ignore')
@@ -80,12 +79,10 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
             crc = axiomaCRC(b) # Calculate CRC and append to the message
             b_crc = (b + crc + b'\r').hex() # concatenate altogether in hex format
             return self._readSerial_(b_crc, cmdRetryCount)
-        
+
     def _readSerial_(self, cmd: str, retryCount: int, breakOnEmpty: bool = False): # read data with CRC check
-        
         if retryCount <= 0:
             raise IOError(f"Error reading RS232 port {cmd}")
-
         if hasattr(self, 'scc'): # check if we are live in production or unit testing
             time.sleep(0.5)
             r = super().readSerial(cmd)
@@ -96,12 +93,12 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
                 r = utRead(cmd)
 
         self.Log(logRead, f"{bytes.fromhex(cmd[:-6]).decode('utf-8')}\t{r}") # format usable for putting into Excel (hopefully)
-        
+
         if len(r) < 3 and not breakOnEmpty: # connection broken, reopen and re-read one more time
             self.reopenSerial()
             time.sleep(1.0)
-            return self.readSerialR(cmd, retryCount - 1, True)
-        
+            return self._readSerial_(cmd, retryCount - 1, True)
+
         # check CRC and re-read if not match
         crc = axiomaCRC(r[:-3])
         if r[-3:][:2] != crc: # CRC do not match, reset and re-read
@@ -109,20 +106,21 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
             time.sleep(1.0)
             self.reopenSerial()
             time.sleep(1.0)
-            return self.readSerialR(cmd, retryCount - 1)
+            return self._readSerial_(cmd, retryCount - 1)
 
         if r[:-3] == b'(NAK' : # if NAK received unexpectedly, try again just once to not recurse
             time.sleep(0.8)
-            return self.readSerialR(cmd, retryCount - 1)
-        
+            return self._readSerial_(cmd, retryCount - 1)
+
         return r[:-3].decode('utf-8', errors='ignore')
 
     def setSerial(self, cmd: str): # send command to change values within inverter
         return self.readSerial(cmd) == '(ACK' #, cmdRetryCount) == '(ACK'
 
-    def batCurrent(self, charge: float, discharge: float): # merge battery current into one variable instead of two
+    @staticmethod
+    def batCurrent(charge: float, discharge: float): # merge battery current into one variable instead of two
         return discharge - charge
-    
+
     def __init__(self, logDetail: int, device_path: str):
         self.iInternalUsePower = 35
         super().__init__(logDetail, device_path, 2400)
@@ -139,11 +137,11 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
 
         if self.iWorkState == "Battery": # no power is taken from Grid in Battery mode
             self.iPGrid = self.iSGrid = 2 if self.iGridVoltage > 100 else 0
-        
+
     def readQPI(self): # Device Protocol validation
         r = self.readSerial(cmdQPI) #, cmdRetryCount) # "QPI")
         return r
-    
+
     def readQPIRI(self): # Device Rating Information inquiry
         icEnergyUses = { 0: txtUTI, 1: txtSUB, 2: txtSBU }
         icChargerSourcePriorities = { 1: txtCSO, 2: txtSNU, 3: txtOSO }
@@ -183,7 +181,7 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
 
     def readQPIGS(self): # Device general status parameters inquiry
         pvWorkStates = { '000': "Off", '100': "?c", '110': "Sc", '101': "Gc", '111': "SGc" }
-    
+
         r = self.readSerial(cmdQPIGS) #, cmdRetryCount) # "QPIGS")
         v = extract_values(r)        
         self.iGridVoltage = float(v[0]) # BBB.B Grid voltage B is an Integer number 0 to 9. The units is V
@@ -231,8 +229,9 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
         self.iPInverter = int((self.pvChargerPower + self.iBattPower) * (.93 if self.pvChargerPower + self.iBattPower > 0 else 1)) # approx efficiency
         self.pvReturnGrid = int(v[23])
         # todo: there shall be more sophisticated formula accounting VA and VAr
-        self.iPGrid = int(self.iPLoad - self.iPInverter + self.iInternalUsePower - self.pvReturnGrid) # include self consumption approximate and exclude return to grid power
-        self.iPGrid = 2
+        self.iPGrid = int(self.iPLoad - self.iPInverter + self.iInternalUsePower) # - self.pvReturnGrid) # include self consumption approximate and exclude return to grid power
+        if self.iPGrid < 0: # it shall not return to grid
+            self.iPGrid = 2
         if self.iPInverter < 0: # it happens when battery is charged from grid
             self.iPInverter = 0 
         if self.iPLoad != 0: # hopefully it is proportional
@@ -334,18 +333,15 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
         r = self.setSerial(cmd)
         self.Log(logDebug, f"{cmd} set {'OK' if r else 'Fail'}")
         return r
-    """
-    POP<NN><cr>: Setting device output source priority
-    Computer: POP<NN><CRC><cr>
-    Device: (ACK<CRC><cr> if device accepts this command, otherwise, responds (NAK<CRC><cr>
-    Set output source priority, 00 for UtilitySolarBat, 01 for SolarUtilityBat, 02 for SolarBatUtility
-    """
+
+    # POP<NN><cr>: Setting device output source priority
+    # Computer: POP<NN><CRC><cr>
+    # Device: (ACK<CRC><cr> if device accepts this command, otherwise, responds (NAK<CRC><cr>
+    # Set output source priority, 00 for UtilitySolarBat, 01 for SolarUtilityBat, 02 for SolarBatUtility
     def setSBU(self): # Solar Battery Utility POP02 504f503032e20a0d -> 0x504f503032e20b0d
         return super().setSBU() and self.setCommand(cmdSBU)
-
     def setSUB(self): # Solar Utility Battery POP01 504f503031d2690d
         return super().setSUB() and self.setCommand(cmdSUB)
-
     def setUtility(self): # Utility first POP00 504f503030c2480d
         return super().setUtility() and self.setCommand(cmdUtility)
 
@@ -353,7 +349,6 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
         return super().setCSO() and self.setCommand(cmdCSO)
     def setSNU(self):
         return super().setSNU() and self.setCommand(cmdSNU)   
-
     def setOSO(self):
         return super().setOSO() and self.setCommand(cmdOSO)
 
@@ -395,7 +390,6 @@ if __name__ == "__main__": # testing and debugging
         i: inverterHybrid = Axioma(logDebug, "SIMULATOR")
         i.Log(logDebug, i.jSON())
         i.setBestEnergyPVV(145, 110)
-     
         for cmd in utMessages:
             s = utRead(cmd)
             if s.lower() == b'':

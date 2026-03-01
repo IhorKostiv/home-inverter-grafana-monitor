@@ -10,7 +10,7 @@ class Transfer:
 
     def openSource(self, srcHost: str, srcPort: int, srcUser: str, srcPassword: str, srcDB: str):
         self.src = InfluxDBClient(srcHost, srcPort, srcUser, srcPassword, srcDB)
-    
+
     def openDestination(self, dstHost: str, dstPort: int, dstUser: str, dstPassword: str, dstDB: str):
         self.dst = InfluxDBClient(dstHost, dstPort, dstUser, dstPassword, dstDB)
         # self.dst.drop_database(dstDB) # it could be nice to migrate everything at one try but
@@ -41,7 +41,7 @@ class Transfer:
                     f["iBattCurrent"] = float(0.0 if record["iBattCurrent"] is None else record["iBattCurrent"])
                 else:
                     f["iBattCurrent"] = float(round(float(record["iBattPower"] / record["iBatteryVoltage"]), 1)) # record["iBattCurrent"])
-                    
+
                 optionalValues = [ # optional fields to save space and traffic, name and null value pairs
                     ("icEnergyUse", ''),
                     ("pvWorkState", ''),
@@ -265,7 +265,7 @@ if __name__ == "__main__":
 
     invt = t.copyInverterData(tInverter, tInverter, t.getWhere(tInverter))
     bmst = t.copyBMSData(tBMS, tBMS, t.getWhere(tBMS))
-    
+
     fct = t.copyData(tForecast, tForecast, t.getWhere(tForecast))
     sct = t.copyData(tSolcast, tSolcast, t.getWhere(tSolcast))
     stt = t.copyData(tSettings, tSettings, t.getWhere(tSettings))

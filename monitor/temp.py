@@ -84,7 +84,7 @@ for table in GenerationEstimates:
                 print(f"!!!\a Battery would be depleted below {MinPower}W at {dtKyiv(d)}")
                 break
             print(f"{dtKyiv(d)} load {le:.0f}W gen {ge:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
-            
+
             '''
             if cbe is None:
                 cre += (ge - le) * 0.5
@@ -126,7 +126,7 @@ for table in GenerationEstimates:
         else:
             print(f"!!!\a {dtKyiv(d)} load ?? gen {record['Estimate']:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
             #print(f"{d.astimezone(ZoneInfo('Europe/Kyiv')).strftime('%Y-%m-%d %H:%M')} load ? gen {record['pvEstimate']:.0f}W cre {cre:.0f} {nre:.0f}W")
-                    
+
 #print(f"Low level detected at {LowDetected}, Target level detected at {TargetDetected} for {Estimate}")
 if TargetDetected is not None and (LowDetected is None or TargetDetected < LowDetected):
     print(f"Target level shall be reached first at {dtKyiv(TargetDetected)} for {Estimate}, Low at {LowDetected}")

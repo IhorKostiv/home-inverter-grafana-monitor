@@ -9,7 +9,6 @@ else:
     from ups._constants_ import *
 
 class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with and manage GreenCell inverter
-    
     def __init__(self, logDetail: int, device_path: str):
         super().__init__(logDetail, device_path, 4, 19200)
         self.uKey = "GreenCell"
@@ -41,7 +40,7 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
         cc = self.readRegister(10100, 4, "cC")
         self.ccBatteryFloatVoltage = cc[3] / 10.0  # 10103	RW	Battery float voltage	0.1V
         return cc
-        
+
     def readInverterControl(self): # read inverter control message values
         icEnergyUses = { 0: txtNil, 1: txtSBU, 2: txtSUB, 3: txtUTI, 4: txtSOL}
         icChargerSourcePriorities = { 0: txtCSO, 2: txtSNU, 3: txtOSO }
@@ -59,10 +58,10 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
                                                # 20113	RW	Inverter max discharger current	"48V:  0.1A（AC）| 12V 24V:  Null"
         self.icBatteryStopDischarging = ic[18] / 10.0 # 20118	RW	Battery stop discharging voltage	0.1V  
         self.icBatteryStopCharging = ic[19] / 10.0    # 20119	RW	Battery stop charging voltage	0.1V  
-                                               # 20125	RW	Grid max charger current set	0.1A(DC)
+        self.icMaxUtiChargeCurrent = int(ic[25] / 10) # 20125	RW	Grid max charger current set	0.1A(DC)
                                                # 20127	RW	Battery low voltage	0.1V
                                                # 20128	RW	Battery high voltage	0.1V
-                                               # 20132	RW	Max Combine charger current	0.1A(DC)(for PV;PH)
+        self.icMaxChargeCurrent = int(ic[32] / 10)    # 20132	RW	Max Combine charger current	0.1A(DC)(for PV;PH)
                                                # 20142	RW	System setting	
         self.icChargerSourcePriority = icChargerSourcePriorities[ic[43]]  # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
                                                # 20144	RW	Solar power balance	"0:SBD 1:SBE"
@@ -242,7 +241,6 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
         }
 
         i = self.readRegister(25200, 75, "I")
-       
         self.iWorkState = iWorkStates[i[1]] # 25201
                                             # 25202	RO	AC voltage grade, 230/120 V
         if i[3] == 1000:                    # 25203	RO	Rated power(VA)
@@ -309,16 +307,13 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
   
     def setSBU(self): # Solar Battery Utility
         return super().setSBU() and self.writeRegister(20109, 1)  # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
-
     def setSUB(self): # todo: Solar Utility Battery
         raise NotImplementedError("SUB is not available for this inverter") # there shall be compatiblity check since likely 48v inverter may have this function
-
     def setUtility(self): # Utility first
         return super().setUtility() and self.writeRegister(20109, 3) # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
 
     def setSNU(self):
         return super().setSNU() and self.writeRegister(20143, 2) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
-    
     def setCSO(self):
         return super().setCSO() and self.writeRegister(20143, 0) # 20143	RW	Charger source priority	"0:Soalr first  (for PV;PH) | 2:Solar and Utility(default)  (for PV;PH) | 3:Only Solar  (for PV;PH) | 2:Utility charger enable (default)  (for EP) 3:Utility charger disable   (for EP)
     def setOSO(self):
@@ -326,6 +321,18 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
 
     def setFloat(self, voltage):
         return super().setFloat(voltage) and self.writeRegister(10103, int(voltage * 10))  # 10103	RW	Battery float voltage	0.1V
+    def setGridChargingCurrent(self, current: int):
+        return super().setGridChargingCurrent(current) and self.writeRegister(20125, int(current * 10))
+    def setGridCharging(self, mode: str, current: int):
+        if super().setGridCharging(mode, current): # technically it would be good to change order based on mode, but OSO expected to push current down so not a big deal
+            if self.icMaxUtiChargeCurrent != current:
+                self.writeRegister(20125, int(current * 10))
+            if self.icChargerSourcePriority != mode:
+                valGridChargingModes = { txtCSO: 0, txtSNU: 2, txtOSO: 3 }
+                self.writeRegister(20143, valGridChargingModes[mode])
+            return True
+        else:
+            return False
 
 # unit test section
 def utRead(register: int): # ask for inverter response from console

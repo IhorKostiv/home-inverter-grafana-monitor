@@ -8,12 +8,10 @@ from dateutil import parser
 import json
 
 def pvEstimate(current_time: datetime, solar_data) -> int:
-
     p1 = 0
     t1 = current_time
     p2 = 0
     t2 = current_time
-    
     for i, t in enumerate(solar_data):
         p = solar_data[t]
         tt = parser.parse(t)
@@ -25,18 +23,13 @@ def pvEstimate(current_time: datetime, solar_data) -> int:
                 p2 = p
                 t2 = tt
                 break
-
 #        print(f"index {i} time {t} estimate {p}")
-
     d1 = current_time - t1
  #   d2 = t2 - current_time
     d = t2 - t1
-
     avg = p1 + ((p2 - p1) * d1.total_seconds() / d.total_seconds()) # linear approximation
-
  #   print(f"estimate {avg} between {p1} and {p2}")
     return avg
-
 
 DB_HOST = os.environ.get("DB_HOST", "sandbox.local")
 DB_PORT = int(os.environ.get("DB_PORT", "8086"))
@@ -57,9 +50,6 @@ if len(fl) > 0:
     while True:
         print(pvEstimate(d,js))
         d = parser.parse(input())
-
-   
-
 
 #ResultSet
 #({'('forecast', None)': [{'time': '2024-10-10T17:21:05.161364Z', 'last': "{'2024-10-09 07:36:52': 0, '2024-10-09 08:00:00': 59, '2024-10-09 09:00:00': 158, '2024-10-09 10:00:00': 266, '2024-10-09 11:00:00': 327, '2024-10-09 12:00:00': 377, '2024-10-09 13:00:00': 464, '2024-10-09 14:00:00': 533, '2024-10-09 15:00:00': 510, '2024-10-09 16:00:00': 354, '2024-10-09 17:00:00': 193, '2024-10-09 18:00:00': 114, '2024-10-09 18:45:09': 0, '2024-10-10 07:38:26': 0, '2024-10-10 08:00:00': 67, '2024-10-10 09:00:00': 240, '2024-10-10 10:00:00': 550, '2024-10-10 11:00:00': 891, '2024-10-10 12:00:00': 1145, '2024-10-10 13:00:00': 1270, '2024-10-10 14:00:00': 1168, '2024-10-10 15:00:00': 847, '2024-10-10 16:00:00': 557, '2024-10-10 17:00:00': 311, '2024-10-10 18:00:00': 159, '2024-10-10 18:43:03': 0}"}]})
