@@ -18,12 +18,12 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
         self.readPV()
         self.readInverter()
 
-        if self.iPInverter > 65000: # error, wait and re-read
-            time.sleep(10)
-            self.readChargerControl()
-            self.readInverterControl()
-            self.readPV()
-            self.readInverter()
+        #if self.iPInverter < 0: # error, wait and re-read
+        #    time.sleep(10)
+        #    self.readChargerControl()
+        #    self.readInverterControl()
+        #    self.readPV()
+        #    self.readInverter()
 
     def readRegister(self, register: int, length: int, message: str):
         if hasattr(self, 'scc'): # check if we are live in production or unit testing
@@ -127,14 +127,16 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
             self.pvWorkState = mpptStates[pv[2]] + "-" + chargingStates[pv[3]]   
         else:
             self.pvWorkState = pvWorkStates[pv[1]]
-        self.pvVoltage = pv[5] / 10.0                               # 15205
-        self.pvBatteryVoltage = pv[6] / 10.0                        # 15206
-        self.pvChargerCurrent = pv[7] / 10.0	                    # 15207
-        self.pvChargerPower = pv[8]	                                # 15208
-        self.pvRadiatorTemperature = pv[9]                          # 15209
-        self.pvError = self.bitmaskText(False, pv[13], pvErrors)         # 15213
-        self.pvWarning = self.bitmaskText(False, pv[14], pvWarnings)     # 15214
-        self.pvAccumulatedPower = (pv[17] * 1000) + (pv[18] / 10.0) # 15217 mWh, 15218 .1 KWh
+        self.pvVoltage = pv[5] / 10.0                               # 15205 PV voltage	0.1V
+        self.pvBatteryVoltage = pv[6] / 10.0                        # 15206 Battery voltage	0.1V
+        self.pvChargerCurrent = pv[7] / 10.0	                    # 15207 Charger current	0.1A
+        self.pvChargerPower = pv[8]	                                # 15208 Charger power	1W
+        self.pvRadiatorTemperature = pv[9]                          # 15209 Radiator temperature	1℃
+        self.pvError = self.bitmaskText(False, pv[13], pvErrors)     # 15213 Error message	Refer to frame Charger Error message 1
+        self.pvWarning = self.bitmaskText(False, pv[14], pvWarnings) # 15214 Warning message	Refer to frame Charger Warning message 1
+        self.BatteryVoltageGrade = pv[15]                           # 15215	BattVol Grade	1V
+        # 15216	Rated Current	0.1A
+        self.pvAccumulatedPower = (pv[17] * 1000) + (pv[18] / 10.0) # 15217 Accumulated PV power high mWh, 15218 Accumulated PV power low .1 KWh
         return pv
   
     def readInverter(self): # read Inverter message values

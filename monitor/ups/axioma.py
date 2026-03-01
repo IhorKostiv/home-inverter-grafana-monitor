@@ -102,7 +102,7 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
         # check CRC and re-read if not match
         crc = axiomaCRC(r[:-3])
         if r[-3:][:2] != crc: # CRC do not match, reset and re-read
-            self.Log(logWarning, f"Bad CRC for {cmd} {bytes.fromhex(cmd[:-6]).decode('utf-8')}\t{r}")
+            self.Log(logWarning, f"Bad CRC for {bytes.fromhex(cmd[:-6]).decode('utf-8')}\t{r}")
             time.sleep(1.0)
             self.reopenSerial()
             time.sleep(1.0)
@@ -155,7 +155,7 @@ class Axioma(deviceSerial, inverterHybrid): # object to communicate with and man
         # F FF.F AC output rating current F is an Integer ranging from 0 to 9. The unit is A.
         # H HHHH AC output rating apparent power H is an Integer ranging from 0 to 9. The unit is VA.
         # I IIII AC output rating active power I is an Integer ranging from 0 to 9. The unit is W.
-        # J JJ.J Battery rating voltage J is an Integer ranging from 0 to 9. The units is V.
+        self.BatteryVoltageGrade = float(v[9])      # J JJ.J Battery rating voltage J is an Integer ranging from 0 to 9. The units is V.
         self.icBatteryStopDischarging = float(v[8]) # K KK.K Battery re-charge voltage K is an Integer ranging from 0 to 9. The units is V.
         # l JJ.J Battery under voltage J is an Integer ranging from 0 to 9. The units is V.
         # M KK.K Battery bulk voltage K is an Integer ranging from 0 to 9. The units is V

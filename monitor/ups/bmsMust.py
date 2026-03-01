@@ -50,7 +50,7 @@ class bmsMUST(bms, deviceModbus): #  object to communicate with and manage MUST 
             0x1000: "MOSFET high temperature protection",
             0x2000: "environment high temperature protection",
             0x4000: "environment low temperature protection",
-            0x8000: "unknown protection 15"
+            0x8000: "protection"
             }
         bFaults = {
             0x01: "charging MOSFET fault",

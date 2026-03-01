@@ -92,8 +92,10 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
                 inverter.setGridCharging(txtSNU if ds.GridChargingEnabled in [txtGCAlways] else txtCSO, ds.MaxUtiChargeCurent)
         elif ds.GridChargingEnabled == txtGCNoSolar:
             inverter.setGridCharging(txtCSO, ds.MaxUtiChargeCurent)
+            tp = ds.TargetPower
         else:
             inverter.setGridCharging(txtOSO, ds.MinUtiChargeCurent)
+            tp = ds.TargetPower
 
         if ds.PrecariousChargingEnabled:
             equalized = b.bBalance == "" # overbalancing hurts # todo: implement timeout for balancing
@@ -107,7 +109,7 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
             elif currentPower >= ds.MaxPowerLimit and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat: #  and equalized:
                 inverter.Log(logDebug, f"Charging limit {currentPower:.1f}>={ds.MaxPowerLimit}W")
                 inverter.setFloat(ds.GridChargingFloat)
-            elif inverter.pvChargerPower <= 0 and inverter.icChargerSourcePriority != txtOSO and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat:
+            elif inverter.pvChargerPower <= 0 and inverter.icChargerSourcePriority == txtOSO and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat:
                 inverter.Log(logDebug, f"Charging stop {inverter.pvChargerPower:.1f}<=0W {inverter.icChargerSourcePriority}")
                 inverter.setFloat(ds.GridChargingFloat)
 

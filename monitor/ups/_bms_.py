@@ -28,8 +28,8 @@ class bms(device): # base class for battery management system
 
     @property
     def CurrentPower(self):
-        return self.bVoltage * self.bRemain
-    
+        return int(self.bRemain * 25.6) # self.bVoltage
+
     def _getMandatoryFields_(self) -> dict:
         return {
             "bCurrent": self.bCurrent,

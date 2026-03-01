@@ -65,10 +65,11 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
         self.iBattCurrent: int = 0
 
         self.BestEnergyMsg: str = ""
+        self.BatteryVoltageGrade: float = 0.0
 
     @property
     def icMaxChargePower(self) -> int:
-        return int(self.icMaxChargeCurrent * self.iBatteryVoltage)
+        return int(self.icMaxChargeCurrent * self.BatteryVoltageGrade * 1.0666) # 12V LiFePo4 rated 12.8, 24 is 25.6, 48 is 51.2
 
     def _getMandatoryFields_(self) -> dict:
         return {
