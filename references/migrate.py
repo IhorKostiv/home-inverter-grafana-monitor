@@ -261,7 +261,7 @@ if __name__ == "__main__":
     tSettings = "settings"
     t = Transfer()
     t.openSource("inverter.local", "8086", "root", "root", "ups")
-    t.openDestination("inverter.local", "8086", "root", "root", "ups1")
+    t.openDestination("localhost", "8086", "root", "root", "ups1")
 
     invt = t.copyInverterData(tInverter, tInverter, t.getWhere(tInverter))
     bmst = t.copyBMSData(tBMS, tBMS, t.getWhere(tBMS))

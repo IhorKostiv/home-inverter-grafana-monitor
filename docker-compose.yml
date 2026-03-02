@@ -13,6 +13,7 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: root
       DB_NAME: ups1
+      # the rest normally is provided from DB
       LOG_DETAIL: "2"
       USB_DEVICE: "/dev/ttyUSB0"
       INVERTER_MODEL: "Axioma"
