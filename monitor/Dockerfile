@@ -10,5 +10,5 @@ COPY ups /monitor/ups
 COPY solcast.py /monitor
 
 RUN echo "* * * * * python3 /monitor/monitor.py" >> /etc/crontabs/root && crontab -l
-RUN echo "33 4,7,10,13,16 * * * python3 /monitor/solcast.py apiKey resourceID" >> /etc/crontabs/root && crontab -l
+RUN echo "33 4,7,10,13,16 * * * python3 /monitor/solcast.py" >> /etc/crontabs/root && crontab -l
 CMD crond -f -l 8

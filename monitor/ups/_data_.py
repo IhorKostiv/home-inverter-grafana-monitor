@@ -217,13 +217,10 @@ def setDefaultSettings(ds: DataStore, solcastApiKey: str, solcastResourceID: str
     ds.saveSettingsGeneral(logDetail=logRead, inverterModel="Axioma", bmsModel="MUST", solarForecast="solcast")
 
 if __name__ == "__main__":
-    ds: DataStore = DataStore("inverter.local", 8086, "root", "root", "ups1")
-    #print(f"LogDetail {ds.LogDetail}")
-    #print(f"InverterNode {ds.InverterNode} Model {ds.InverterModel} SolarVoltageOn {ds.SolarVoltageOn} SolarVoltageOff {ds.SolarVoltageOff}")
-    #print(f"PrecariousChargingEnabled {ds.PrecariousChargingEnabled} GridChargingEnabled {ds.GridChargingEnabled} GridChargingFloat {ds.GridChargingFloat} GridChargingBulk {ds.GridChargingBulk}")
-    #print(f"bmsNode {ds.bmsNode} bmsModel {ds.bmsModel} MaxPowerLimit {ds.MaxPowerLimit} TargetPower {ds.TargetPower} LowPower {ds.LowPower} MinPower {ds.MinPower}")
-    #print(f"GridTied {ds.GridTied} Estimate {ds.Estimate} GridChargingEstimate {ds.GridChargingEstimate} solcastApiKey {ds.solcastApiKey} solcastResourceID {ds.solcastResourceID}")
-
+    server = "localhost"
+    print(f"Open {server}")
+    ds: DataStore = DataStore(server, 8086, "root", "root", "ups1")
+    
     if len(sys.argv) > 1:
         if sys.argv[1] == "CLEAR": # delete settings table to reset values
             ds.query(f"DROP MEASUREMENT settings")
@@ -254,9 +251,3 @@ if __name__ == "__main__":
         print(f'python3 _data_.py {ds.solarForecast} "{",".join(ds.GridTied)}" "{ds.Estimate}" "{ds.GridChargingEstimate}" {ds.solcastApiKey} {ds.solcastResourceID}')
         print("\npython3 _data_.py LogDetail InverterModel BMSModel SolarForecast")
         print(f'python3 _data_.py {ds.LogDetail} {ds.InverterModel} "{ds.bmsModel}" "{ds.solarForecast}"')
-    '''
-    ds.saveSettingsInverter("GreenCell", "/dev/ttyUSB0", 70, 50)
-    ds.saveSettingsBMS("MUST", "/dev/ttyACM0", False, True, 26.6, 27.9, 5120, 4900, 1500, 1024)
-    ds.saveSettingsSolarForecast("solcast", [], "(pvEstimate+pvEstimate10)/2", "pvEstimate")
-    ds.saveSettingsGeneral(logRead, "GreenCell", "MUST", "solcast")
-    '''
