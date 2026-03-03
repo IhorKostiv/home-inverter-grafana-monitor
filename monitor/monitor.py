@@ -40,13 +40,13 @@ if ds.bmsModel in SUPPORTED_BMS: # initialize BMS if configured, read data and w
     ds.write(json_body)
     currentPower = b.CurrentPower
 elif ds.bmsModel != "": # if BMS model is not empty but unsupported, print error and exit
-    print(f"Error: Unknown BMS model: {ds.bmsModel}")
+    ds.Log(logError, f"Unknown BMS model: {ds.bmsModel}")
     exit(1)
 else: # no BMS configured, set SOC to -1 to indicate unknown state
     currentPower = -1
 
 if ds.InverterModel not in SUPPORTED_INVERTERS:
-    print(f"Error: Unknown inverter model: {ds.InverterModel}")
+    ds.Log(logError, f"Unknown inverter model: {ds.InverterModel}")
     exit(1)
 
 inverter: inverterMgr = SUPPORTED_INVERTERS[ds.InverterModel](ds.LogDetail, ds.InverterNode)
@@ -97,8 +97,9 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
             inverter.setGridCharging(txtOSO, ds.MinUtiChargeCurent)
             tp = ds.TargetPower
 
-        if ds.PrecariousChargingEnabled:
+        if ds.PrecariousChargingEnabled: # todo: if protection kicks in, decrease bulk voltage by .1v; increase it by .1 v if no charge current, no balancing and not yet at the target, that may require also decreasing charging current
             equalized = b.bBalance == "" # overbalancing hurts # todo: implement timeout for balancing
+            inverter.Log(logDebug, f"Precarious {tp} {currentPower} {ds.MaxPowerLimit}Wh PV {inverter.pvChargerPower}W {inverter.icChargerSourcePriority} {equalized} {ds.GridChargingFloat} {inverter.ccBatteryFloatVoltage} {ds.GridChargingBulk}V {b.bCurrent}A")
             if currentPower < tp and (inverter.pvChargerPower > 0 or inverter.icChargerSourcePriority != txtOSO) and inverter.ccBatteryFloatVoltage < ds.GridChargingBulk:
                 inverter.Log(logDebug, f"Charging start {currentPower:.1f}<{tp}W {inverter.pvChargerPower:.1f}>0W {inverter.icChargerSourcePriority}")
                 inverter.setFloat(ds.GridChargingBulk) # 27.9 makes 100% sharply, 27.8 up to 91% charge

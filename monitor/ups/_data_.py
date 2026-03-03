@@ -2,13 +2,15 @@ import os
 import sys
 from influxdb import InfluxDBClient
 if __name__ == "__main__":
+    from __init__ import logger
     from _constants_ import *
 else:
+    from ups import logger
     from ups._constants_ import *
 
 constMeasurement = "settings"
 
-class DataStore(object):
+class DataStore(logger):
     def __init__(self, DB_HOST=None, DB_PORT=None, DB_USERNAME=None, DB_PASSWORD=None, DB_NAME=None):
         self._readDefaults_()
         self.client = self._getClient_(DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME)
@@ -150,6 +152,12 @@ class DataStore(object):
     def saveSettingsInverter(self, inverterModel: str, inverterNode: str, solarVoltageOn: float, solarVoltageOff: float, MaxUtiChargeCurent: int, MinUtiChargeCurent: int, precariousChargingEnabled: bool, gridChargingEnabled: str, gridChargingFloat: float, gridChargingBulk: float):
         if inverterModel == "":
             raise Exception("Inverter model is not specified")
+        if (solarVoltageOn != 0 and solarVoltageOn <= solarVoltageOff) or solarVoltageOn < 0 or solarVoltageOff < 0:
+            raise Exception(f"Invalid inverter solar on/off settings, expected {solarVoltageOn} > {solarVoltageOff}")
+        if MaxUtiChargeCurent < MinUtiChargeCurent:
+            raise Exception(f"Invalid inverter charge current, expected {MaxUtiChargeCurent} > {MinUtiChargeCurent}")
+        if precariousChargingEnabled and gridChargingFloat >= gridChargingBulk:
+            raise Exception(f"Invalid precarious charging settings, expected {gridChargingFloat} < {gridChargingBulk}")
         if inverterModel != self.InverterModel or inverterNode != self.InverterNode or solarVoltageOn != self.SolarVoltageOn or solarVoltageOff != self.SolarVoltageOff  or MaxUtiChargeCurent != self.MaxUtiChargeCurent or MinUtiChargeCurent != self.MinUtiChargeCurent or precariousChargingEnabled != self.PrecariousChargingEnabled or gridChargingEnabled != self.GridChargingEnabled or gridChargingFloat != self.GridChargingFloat or gridChargingBulk != self.GridChargingBulk:
             json = [
                 {
@@ -172,6 +180,8 @@ class DataStore(object):
     def saveSettingsBMS(self, bmsModel: str, bmsNode: str, maxPowerLimit: int, targetPower: int, lowPower: int, minPower: int):
         if bmsModel == "":
             raise Exception("BMS model is not specified")
+        if not ((maxPowerLimit == 0 and targetPower == 0 and lowPower == 0 and minPower == 0) or (maxPowerLimit > targetPower > lowPower > minPower)):
+            raise Exception(f"Invalid BMS settings, expected {maxPowerLimit} > {targetPower} > {lowPower} > {minPower}")
         if bmsModel != self.bmsModel or bmsNode != self.bmsNode or maxPowerLimit != self.MaxPowerLimit or targetPower != self.TargetPower or lowPower != self.LowPower or minPower != self.MinPower:
             json = [
                 {
@@ -207,14 +217,14 @@ class DataStore(object):
                 json[0]["fields"]["resourceID"] = solcastResourceID
             self.write(json)
 
-def setDefaultSettings(ds: DataStore, solcastApiKey: str, solcastResourceID: str):
-    ds.saveSettingsInverter(inverterModel="Axioma", inverterNode="/dev/ttyUSB0", solarVoltageOn=140.0, solarVoltageOff=100.0, MaxUtiChargeCurent=20, MinUtiChargeCurent=2, precariousChargingEnabled=True, gridChargingEnabled=txtGCEmergency, gridChargingFloat=26.6, gridChargingBulk=27.9)
-    #ds.saveSettingsInverter(inverterModel="GreenCell", inverterNode="/dev/ttyUSB0", solarVoltageOn=70, solarVoltageOff=50, MaxUtiChargeCurent=30, MinUtiChargeCurent=20, precariousChargingEnabled=False, gridChargingEnabled=txtGCNever, gridChargingFloat=26.6, gridChargingBulk=27.9)
-    #ds.saveSettingsInverter(inverterModel="GreenCell", inverterNode="/dev/ttyUSB0", solarVoltageOn=50, solarVoltageOff=40, MaxUtiChargeCurent=20, MinUtiChargeCurent=10, precariousChargingEnabled=False, gridChargingEnabled=txtGCNever, gridChargingFloat=13.3, gridChargingBulk=13.9)
-    ds.saveSettingsBMS(bmsModel="MUST", bmsNode="/dev/ttyACM0", maxPowerLimit=5120, targetPower=4950, lowPower=1500, minPower=1024)
-    # it is not expected to hard code API Key or Resource ID, only pass as paramenets for security reasons
-    ds.saveSettingsSolarForecast(solarForecast="solcast", gridTied=[''], estimate="(pvEstimate+pvEstimate10)/2", gridChargingEstimate="pvEstimate", solcastApiKey=solcastApiKey, solcastResourceID=solcastResourceID)
-    ds.saveSettingsGeneral(logDetail=logRead, inverterModel="Axioma", bmsModel="MUST", solarForecast="solcast")
+    def setDefaultSettings(self, solcastApiKey: str, solcastResourceID: str):
+        ds.saveSettingsInverter(inverterModel="Axioma", inverterNode="/dev/ttyUSB0", solarVoltageOn=140.0, solarVoltageOff=100.0, MaxUtiChargeCurent=20, MinUtiChargeCurent=2, precariousChargingEnabled=True, gridChargingEnabled=txtGCEmergency, gridChargingFloat=26.6, gridChargingBulk=27.9)
+        #ds.saveSettingsInverter(inverterModel="GreenCell", inverterNode="/dev/ttyUSB0", solarVoltageOn=70, solarVoltageOff=50, MaxUtiChargeCurent=30, MinUtiChargeCurent=20, precariousChargingEnabled=False, gridChargingEnabled=txtGCNever, gridChargingFloat=26.6, gridChargingBulk=27.9)
+        #ds.saveSettingsInverter(inverterModel="GreenCell", inverterNode="/dev/ttyUSB0", solarVoltageOn=50, solarVoltageOff=40, MaxUtiChargeCurent=20, MinUtiChargeCurent=10, precariousChargingEnabled=False, gridChargingEnabled=txtGCNever, gridChargingFloat=13.3, gridChargingBulk=13.9)
+        ds.saveSettingsBMS(bmsModel="MUST", bmsNode="/dev/ttyACM0", maxPowerLimit=5120, targetPower=4950, lowPower=1500, minPower=1024)
+        # it is not expected to hard code API Key or Resource ID, only pass as paramenets for security reasons
+        ds.saveSettingsSolarForecast(solarForecast="solcast", gridTied=[''], estimate="(pvEstimate+pvEstimate10)/2", gridChargingEstimate="pvEstimate", solcastApiKey=solcastApiKey, solcastResourceID=solcastResourceID)
+        ds.saveSettingsGeneral(logDetail=logRead, inverterModel="Axioma", bmsModel="MUST", solarForecast="solcast")
 
 if __name__ == "__main__":
     server = "localhost"
@@ -224,7 +234,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         if sys.argv[1] == "CLEAR": # delete settings table to reset values
             ds.query(f"DROP MEASUREMENT settings")
-            setDefaultSettings(ds, sys.argv[2] if len(sys.argv) > 2 else "", sys.argv[3] if len(sys.argv) > 3 else "")
+            ds.setDefaultSettings(sys.argv[2] if len(sys.argv) > 2 else "", sys.argv[3] if len(sys.argv) > 3 else "")
             print("Settings cleared and reset to defaults")
         elif sys.argv[1] in {"Axioma", "GreenCell"} and len(sys.argv) == 11:
             # saveSettingsInverter(self, inverterModel: str, inverterNode: str, solarVoltageOn: float, solarVoltageOff: float, precariousChargingEnabled: bool, gridChargingEnabled: str, gridChargingFloat: float, gridChargingBulk: float)

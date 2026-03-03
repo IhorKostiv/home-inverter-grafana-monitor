@@ -3,8 +3,10 @@ import time
 import minimalmodbus
 if __name__ == "_modbus_":
     from __init__ import device
+    from _constants_ import logWarning
 else:
     from ups import device
+    from ups._constants_ import logWarning
 
 class deviceModbus(device): # base class for modbus communication (USB)
     def __init__(self, logDetail: int, device_path: str, device_id: int, baud_rate: int, **kwargs):
@@ -15,7 +17,7 @@ class deviceModbus(device): # base class for modbus communication (USB)
             self.scc.serial.timeout = 0.5
             self.scc.debug = logDetail >= 3
         else:
-            print(f"Debugging at {platform.system()}")
+            self.Log(logWarning, f"Debugging at {platform.system()}")
 
     def __del__(self):
         if hasattr(self, 'scc'):

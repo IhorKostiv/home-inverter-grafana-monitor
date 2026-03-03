@@ -3,8 +3,10 @@ import time
 import serial
 if __name__ == "_serial_":
     from __init__ import device
+    from _constants_ import logWarning
 else:
     from ups import device
+    from ups._constants_ import logWarning
 
 class deviceSerial(device): # base class for serial communication (RS232)
     def __init__(self, logDetail: int, device_path: str, baud_rate: int, **kwargs):
@@ -12,7 +14,7 @@ class deviceSerial(device): # base class for serial communication (RS232)
         if platform.system() == "Linux": # switch it off when running on non-linux system for debug and test purposes
             self.scc = serial.Serial(device_path, baud_rate, timeout=1)
         else:
-            print(f"Debugging at {platform.system()}")
+            self.Log(logWarning, f"Platform is {platform.system()}")
 
     def __del__(self):
         if hasattr(self, 'scc'):

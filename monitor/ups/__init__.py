@@ -7,7 +7,7 @@ class logger(object):
 
     def Log(self, logLevel: int, message: str): # log 0-Error, 1-Write, 2-Read, 3-Debug
         if self.logDetail >= logLevel:
-            print(f"{logLevel}> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\t{message}")
+            print(f"{logLevel}> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\t{message}", flush=True)
 
 class device(logger): # base class for everything
     def __init__(self, logDetail: int, **kwargs):

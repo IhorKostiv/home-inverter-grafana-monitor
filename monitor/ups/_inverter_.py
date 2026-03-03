@@ -19,7 +19,7 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
             except:
                 self.rpiTemperature: float = 0.0
         else:
-            print(f"Platform is {platform.system()}")
+            self.Log(logWarning, f"Platform is {platform.system()}")
             self.rpiTemperature: float = 0.0
 
         self.ccBatteryFloatVoltage: float = 0.0

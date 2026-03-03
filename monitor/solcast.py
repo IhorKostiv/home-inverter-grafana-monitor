@@ -116,11 +116,11 @@ class Solcast(logger):
                     if self.TargetDetected is None and BatteryRemain >= self.TargetPower and diff > 0:
                         self.TargetDetected = d
                         self.Log(logDebug, f"Target level detected at {dtKyiv(self.TargetDetected)} for {Estimate}")
+                    self.Log(logDebug, f"{dtKyiv(d)} load {le:.0f}W gen {ge:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
                     if BatteryRemain <= self.MinPower:
                         self.MinDetected = d
                         self.Log(logDebug, f"!!!\a Battery would be depleted below {self.MinPower}W at {dtKyiv(d)}")
                         break
-                    self.Log(logDebug, f"{dtKyiv(d)} load {le:.0f}W gen {ge:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
                 else:
                     self.Log(logDebug, f"!!!\a {dtKyiv(d)} load ?? gen {record['Estimate']:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
                     #print(f"{d.astimezone(ZoneInfo('Europe/Kyiv')).strftime('%Y-%m-%d %H:%M')} load ? gen {record['pvEstimate']:.0f}W cre {cre:.0f} {nre:.0f}W")
@@ -130,6 +130,8 @@ if __name__ == "__main__":
     # refer to https://toolkit.solcast.com.au/ for details
     if len(sys.argv) in [1, 6]: # retrieve solcast data and save to DB for further use
         ds = DataStore() # "inverter.local", 8086, "root", "root", "ups")
+        if len(sys.argv) == 6:
+            ds.LogDetail = logDebug
         solcastResponse = getSolarProductionEstimate(ds.solcastResourceID, ds.solcastApiKey)
         print(datetime.now(), " ", solcastResponse)
         if solcastResponse != "":
