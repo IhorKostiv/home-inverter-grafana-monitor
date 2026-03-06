@@ -207,7 +207,8 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
                         self.Log(logDebug, f"!!! Battery would be depleted below minimum on {self.dtKyiv(MinDetected)}")
                         return -1 if self.setUtility() else 0
                     else:
-                        return -1 if self.setSUB() else 0
+                        if TargetDetected is None:
+                            return -1 if self.setSUB() else 0
         if MinDetected is not None: # always show minimum if it was detected
             self.BestEnergyMsg = self.addText(self.BestEnergyMsg, f"M {self.dtKyiv(MinDetected)}")
         return None
@@ -220,7 +221,7 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
                     self.BestEnergyMsg = f"ON {self.pvVoltage} > {solarVoltageOn} V"
                     return self.moreSolar()
                 # todo: mind solar use aim LBU - BLU here
-                elif self.icSolarUseAim == "LBU" and self.pvChargerPower > self.iPLoad and self.pvVoltage > solarVoltageOff: #+ self.iInternalUsePower: # PV produces enough just charging - technically charging can be delayed
+                elif self.icSolarUseAim == "LBU" and self.pvVoltage > solarVoltageOff and self.pvChargerPower > self.iPLoad: #+ self.iInternalUsePower: # PV produces enough just charging - technically charging can be delayed
                     self.BestEnergyMsg = f"ON {self.pvChargerPower} > {self.iPLoad} W"
                     return self.moreSolar()
             #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged

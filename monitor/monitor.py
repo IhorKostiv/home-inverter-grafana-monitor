@@ -99,9 +99,9 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
 
         if ds.PrecariousChargingEnabled: # todo: if protection kicks in, decrease bulk voltage by .1v; increase it by .1 v if no charge current, no balancing and not yet at the target, that may require also decreasing charging current
             equalized = b.bBalance == "" # overbalancing hurts # todo: implement timeout for balancing
-            inverter.Log(logDebug, f"Precarious {tp} {currentPower} {ds.MaxPowerLimit}Wh PV {inverter.pvChargerPower}W {inverter.icChargerSourcePriority} {equalized} {ds.GridChargingFloat} {inverter.ccBatteryFloatVoltage} {ds.GridChargingBulk}V {b.bCurrent}A")
-            if currentPower < tp and (inverter.pvChargerPower > 0 or inverter.icChargerSourcePriority != txtOSO) and inverter.ccBatteryFloatVoltage < ds.GridChargingBulk:
-                inverter.Log(logDebug, f"Charging start {currentPower:.1f}<{tp}W {inverter.pvChargerPower:.1f}>0W {inverter.icChargerSourcePriority}")
+            inverter.Log(logDebug, f"Precarious {tp} {currentPower} {ds.MaxPowerLimit}Wh PV {inverter.pvChargerPower}W {inverter.icChargerSourcePriority} EQ:{equalized} {ds.GridChargingFloat} {inverter.ccBatteryFloatVoltage} {ds.GridChargingBulk}V {b.bCurrent}A")
+            if currentPower < tp and (inverter.pvChargerPower > 1 or inverter.icChargerSourcePriority != txtOSO) and inverter.ccBatteryFloatVoltage < ds.GridChargingBulk:
+                inverter.Log(logDebug, f"Charging start {currentPower:.1f}<{tp}W {inverter.pvChargerPower:.1f}>1W {inverter.icChargerSourcePriority}")
                 inverter.setFloat(ds.GridChargingBulk) # 27.9 makes 100% sharply, 27.8 up to 91% charge
                 # use SNU for 27.8 and then decrease current to 2 or 10A until reach target
             elif currentPower > tp and b.bCurrent <= 0 and equalized and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat: #bms current is reverse; wait until balanced
@@ -116,6 +116,7 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
 
     elif ds.InverterModel == "GreenCell": # workaround for GreenCell inverter inability to properly charge battery from grid
         if ds.GridChargingEnabled in [txtGCAlways, txtGCEmergency] or ("-" in ds.GridChargingEnabled and timeInRange(ds.GridChargingEnabled)):
+            inverter.Log(logDebug, f"GCC {ds.GridChargingFloat} {inverter.iBatteryVoltage} {ds.GridChargingBulk}V {inverter.iRadiatorTemperature} {inverter.rpiTemperature}C {inverter.icChargerSourcePriority} {inverter.pvVoltage}V")
             #if inverter.iBatteryVoltage <= 13.0 and inverter.iBattPower <= 0: # honestly SNU is not working for this inverter
             #    inverter.setSNU()
             if inverter.iBatteryVoltage < ds.GridChargingFloat and inverter.iBattPower <= 0 and inverter.pvVoltage < 14 and inverter.icChargerSourcePriority == txtOSO:

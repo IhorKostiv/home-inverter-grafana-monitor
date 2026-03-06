@@ -110,16 +110,16 @@ class Solcast(logger):
                         self.Overproduction += BatteryRemain - self.MaxPowerLimit
                         BatteryRemain = self.MaxPowerLimit
                         #print(f"Battery shall be fully charged at {d} UTC")
+                    self.Log(logDebug, f"{dtKyiv(d)} load {le:.0f}W gen {ge:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
                     if self.LowDetected is None and BatteryRemain <= self.LowPower:
                         self.LowDetected = d
-                        self.Log(logDebug, f"Low level detected at {dtKyiv(self.LowDetected)} for {Estimate}")
+                        self.Log(logDebug, f"Low level detected by {dtKyiv(self.LowDetected)} for {Estimate}")
                     if self.TargetDetected is None and BatteryRemain >= self.TargetPower and diff > 0:
                         self.TargetDetected = d
-                        self.Log(logDebug, f"Target level detected at {dtKyiv(self.TargetDetected)} for {Estimate}")
-                    self.Log(logDebug, f"{dtKyiv(d)} load {le:.0f}W gen {ge:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
+                        self.Log(logDebug, f"Target level detected by {dtKyiv(self.TargetDetected)} for {Estimate}")
                     if BatteryRemain <= self.MinPower:
                         self.MinDetected = d
-                        self.Log(logDebug, f"!!!\a Battery would be depleted below {self.MinPower}W at {dtKyiv(d)}")
+                        self.Log(logDebug, f"!!!\a Battery would be depleted below {self.MinPower}W by {dtKyiv(d)}")
                         break
                 else:
                     self.Log(logDebug, f"!!!\a {dtKyiv(d)} load ?? gen {record['Estimate']:.0f}W Remain {BatteryRemain:.0f}W {BatteryRemain/51.20:.0f}%")
@@ -144,7 +144,7 @@ if __name__ == "__main__":
         else:
             print(f"{logError}> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\tError reading forecast for {ds.solcastResourceID}")
     else: # calculate which targets are met
-        ds = DataStore("inverter.local", 8086, "root", "root", "ups")
+        ds = DataStore("localhost", 8086, "root", "root", "ups1")
         gridTied = ds.GridTied # os.environ.get("GRID_TIED", "").split(",") 
         sc = Solcast(ds, ds.MaxPowerLimit, ds.TargetPower, ds.LowPower, ds.MinPower, gridTied, logDebug)
         #gridTied = os.environ.get("GRID_TIED", "20:00,20:30,21:00,21:30,22:00,22:30,23:00,23:30,00:00,00:30,01:00,01:30,02:00,02:30,03:00,03:30").split(",")

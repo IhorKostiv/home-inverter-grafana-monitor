@@ -49,7 +49,7 @@ def sendMessage(msg: str):
             print(f"Wait {s}s...")
             time.sleep(s)
 
-        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\tSending to RS232 (hex): {hex_message}")
+        print(f"{datetime.now()}\tSending to RS232 {bytes.fromhex(hex_message[:-6]).decode('utf-8')} 0x{hex_message}")
         if platform.system() == "Linux":
             # Open the RS232 port
             ser = serial.Serial('/dev/ttyUSB0', baudrate=2400, timeout=1)
@@ -59,7 +59,7 @@ def sendMessage(msg: str):
             ser.flush()
             response = ser.readline()
             hex_response = response.hex() # binascii.hexlify(response).decode('utf-8')
-            print(f"Response from RS232: {response}\nHex : {hex_response}")
+            print(f"{datetime.now()}\tResponse from RS232: {response}\nHex : {hex_response}")
             # Close the RS232 port
             ser.close()
             print("RS232 port closed.")
@@ -69,6 +69,7 @@ def translateComand(cmd: str):
         "UTI"  : "POP00", "SUB"  : "POP01", "SBU"  : "POP02", 
         "CSO"  : "PCP01", "SNU"  : "PCP02", "OSO"  : "PCP03",
           "0A" : "MUCHGC000", "2A" : "MUCHGC002", "10A" : "MUCHGC010", "20A" : "MUCHGC020", "30A" : "MUCHGC030", "40A" : "MUCHGC040",
+        "10AA" : "MNCHGC010", "20AA" : "MNCHGC020", "30AA" : "MNCHGC030", "40AA" : "MNCHGC040",
         "26.6V": "PBFT26.6", "27.8V": "PBFT27.8", "27.9V": "PBFT27.9",
     }
     if cmd.upper() in commands:

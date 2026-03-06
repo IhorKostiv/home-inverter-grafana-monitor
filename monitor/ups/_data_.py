@@ -219,8 +219,8 @@ class DataStore(logger):
 
     def setDefaultSettings(self, solcastApiKey: str, solcastResourceID: str):
         ds.saveSettingsInverter(inverterModel="Axioma", inverterNode="/dev/ttyUSB0", solarVoltageOn=140.0, solarVoltageOff=100.0, MaxUtiChargeCurent=20, MinUtiChargeCurent=2, precariousChargingEnabled=True, gridChargingEnabled=txtGCEmergency, gridChargingFloat=26.6, gridChargingBulk=27.9)
-        #ds.saveSettingsInverter(inverterModel="GreenCell", inverterNode="/dev/ttyUSB0", solarVoltageOn=70, solarVoltageOff=50, MaxUtiChargeCurent=30, MinUtiChargeCurent=20, precariousChargingEnabled=False, gridChargingEnabled=txtGCNever, gridChargingFloat=26.6, gridChargingBulk=27.9)
-        #ds.saveSettingsInverter(inverterModel="GreenCell", inverterNode="/dev/ttyUSB0", solarVoltageOn=50, solarVoltageOff=40, MaxUtiChargeCurent=20, MinUtiChargeCurent=10, precariousChargingEnabled=False, gridChargingEnabled=txtGCNever, gridChargingFloat=13.3, gridChargingBulk=13.9)
+        #ds.saveSettingsInverter(inverterModel="GreenCell", inverterNode="/dev/ttyUSB0", solarVoltageOn=70, solarVoltageOff=50, MaxUtiChargeCurent=30, MinUtiChargeCurent=20, precariousChargingEnabled=False, gridChargingEnabled=txtGCEmergency, gridChargingFloat=26.6, gridChargingBulk=27.9)
+        #ds.saveSettingsInverter(inverterModel="GreenCell", inverterNode="/dev/ttyUSB0", solarVoltageOn=50, solarVoltageOff=40, MaxUtiChargeCurent=20, MinUtiChargeCurent=10, precariousChargingEnabled=False, gridChargingEnabled=txtGCEmergency, gridChargingFloat=13.3, gridChargingBulk=13.9)
         ds.saveSettingsBMS(bmsModel="MUST", bmsNode="/dev/ttyACM0", maxPowerLimit=5120, targetPower=4950, lowPower=1500, minPower=1024)
         # it is not expected to hard code API Key or Resource ID, only pass as paramenets for security reasons
         ds.saveSettingsSolarForecast(solarForecast="solcast", gridTied=[''], estimate="(pvEstimate+pvEstimate10)/2", gridChargingEstimate="pvEstimate", solcastApiKey=solcastApiKey, solcastResourceID=solcastResourceID)
