@@ -232,7 +232,7 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
                     stopDischarge = self.icBatteryStopDischarging - (self.iBattCurrent / 50) 
                 else:
                     stopDischarge = self.icBatteryStopDischarging
-                if self.iPGrid >= self.iPLoad and self.iBatteryVoltage < stopDischarge #(self.icBatteryStopCharging + stopDischarge) / 2: # working from Grid
+                if self.iPGrid >= self.iPLoad and self.iBatteryVoltage < stopDischarge: #(self.icBatteryStopCharging + stopDischarge) / 2: # working from Grid
                     self.BestEnergyMsg = f"Off Grid {self.iPGrid} >= Load {self.iPLoad} > PV {self.pvChargerPower} W & {self.iBatteryVoltage} < avg({self.icBatteryStopCharging} {stopDischarge:.2f}) V"
                     return self.saveBattery()
                 elif self.iBattPower > self.pvChargerPower and self.iBatteryVoltage < stopDischarge: # depleting battery too much

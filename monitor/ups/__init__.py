@@ -3,10 +3,10 @@ from zoneinfo import ZoneInfo
 
 class logger(object):
     def __init__(self, logDetail: int, **kwargs):
-        self.logDetail: int = logDetail
+        self.LogDetail: int = logDetail
 
     def Log(self, logLevel: int, message: str): # log 0-Error, 1-Write, 2-Read, 3-Debug
-        if self.logDetail >= logLevel:
+        if self.LogDetail >= logLevel:
             print(f"{logLevel}> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\t{message}", flush=True)
 
 class device(logger): # base class for everything

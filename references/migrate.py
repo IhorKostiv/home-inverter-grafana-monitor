@@ -260,7 +260,7 @@ if __name__ == "__main__":
     tSolcast = "solcast"
     tSettings = "settings"
     t = Transfer()
-    t.openSource("inverter.local", "8086", "root", "root", "ups")
+    t.openSource("localhost", "8086", "root", "root", "ups")
     t.openDestination("localhost", "8086", "root", "root", "ups1")
 
     invt = t.copyInverterData(tInverter, tInverter, t.getWhere(tInverter))

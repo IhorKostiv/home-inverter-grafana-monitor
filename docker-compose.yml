@@ -22,6 +22,8 @@ services:
       SOLAR_VOLTAGE_OFF: 100 # approx. inverter min MPPT voltage
 #      SOLAR_VOLTAGE_ON: 70 #70 # approx. 90% of field idle voltage
 #      SOLAR_VOLTAGE_OFF: 50 #50 #55 #50 # 57 # inverter min MPPT voltage
+#      SOLAR_VOLTAGE_ON: 43 #43 #44 approx. 90% of field idle voltage 43-44 summer 46-47 winter
+#      SOLAR_VOLTAGE_OFF: 30 #37 #30 #35 #15 approx. field MPPT voltage 30 summer 35 winter
       PRECARIOUS_CHARGING_ENABLED: "False" # use with caution, enable at your own risk
       GRID_CHARGING_ENABLED: "False"
       GRID_CHARGING_FLOAT: 26.6
