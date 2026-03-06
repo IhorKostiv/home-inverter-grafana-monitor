@@ -104,7 +104,7 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
                 inverter.Log(logDebug, f"Charging start {currentPower:.1f}<{tp}W {inverter.pvChargerPower:.1f}>1W {inverter.icChargerSourcePriority}")
                 inverter.setFloat(ds.GridChargingBulk) # 27.9 makes 100% sharply, 27.8 up to 91% charge
                 # use SNU for 27.8 and then decrease current to 2 or 10A until reach target
-            elif currentPower > tp and b.bCurrent <= 0 and equalized and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat: #bms current is reverse; wait until balanced
+            elif currentPower >= tp and b.bCurrent <= 0 and equalized and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat: #bms current is reverse; wait until balanced
                 inverter.Log(logDebug, f"Charging complete {currentPower:.1f}>{tp}W {b.bCurrent:.1f}A")
                 inverter.setFloat(ds.GridChargingFloat)
             elif currentPower >= ds.MaxPowerLimit and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat: #  and equalized:

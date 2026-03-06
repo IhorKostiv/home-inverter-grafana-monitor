@@ -5,7 +5,7 @@ import json
 import sys
 
 from ups._data_ import DataStore
-from ups._constants_ import logError, logRead, logDebug 
+from ups._constants_ import logError, logWrite, logRead, logDebug
 from ups import logger
 
 def getSolarProductionEstimate(resourceID: str, apiKey: str) -> str:
@@ -133,21 +133,19 @@ if __name__ == "__main__":
         if len(sys.argv) == 6:
             ds.LogDetail = logDebug
         solcastResponse = getSolarProductionEstimate(ds.solcastResourceID, ds.solcastApiKey)
-        print(datetime.now(), " ", solcastResponse)
+        ds.Log(logRead, f"solcast {solcastResponse}")
         if solcastResponse != "":
             json = toJson(solcastResponse)
-            if ds.LogDetail >= logDebug:
-                print(datetime.now(), " ", json)
+            ds.Log(logDebug, json)
             ds.write(json)
-            if ds.LogDetail >= logRead:
-                print(f"{logRead}> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\tSolcast data updated for {ds.solcastResourceID}")
+            ds.Log(logWrite, f"Solcast data updated for {ds.solcastResourceID}")
         else:
-            print(f"{logError}> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\tError reading forecast for {ds.solcastResourceID}")
+            ds.Log(logError, f"Error reading forecast for {ds.solcastResourceID}")
     else: # calculate which targets are met
         ds = DataStore("localhost", 8086, "root", "root", "ups1")
         gridTied = ds.GridTied # os.environ.get("GRID_TIED", "").split(",") 
         sc = Solcast(ds, ds.MaxPowerLimit, ds.TargetPower, ds.LowPower, ds.MinPower, gridTied, logDebug)
-        #gridTied = os.environ.get("GRID_TIED", "20:00,20:30,21:00,21:30,22:00,22:30,23:00,23:30,00:00,00:30,01:00,01:30,02:00,02:30,03:00,03:30").split(",")
+        #gridTied = os.environ.get("GRID_TIED", "21:30,22:00,22:30,23:00,23:30,00:00,00:30,01:00,01:30,02:00,02:30,03:00,03:30").split(",")
         if len(sys.argv) > 1:
             Estimate = sys.argv[1]
         else:

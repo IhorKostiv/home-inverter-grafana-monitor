@@ -47,7 +47,7 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
         icSolarUseAims = { 0: txtLBU, 1: txtBLU }
 
         ic = self.readRegister(20100, 45, "iC")
-                                               # 20101	RW	Inverter offgrid work enable	0：OFF 1：ON  
+                                               # 20101	RW	Inverter offgrid work enable	0: OFF 1: ON
                                                # 20102	RW	Inverter output voltage Set	220.0V-240.0V
                                                # 20103	RW	Inverter output frequency Set	50.00Hz/60.00Hz
                                                # 20104	RW	Inverter search mode enable	0：OFF 1：ON  
@@ -55,9 +55,9 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
         self.icEnergyUse = icEnergyUses[ic[9]] # 20109	RW	Energy use mode	"48V:1:SBU;2:SUB;3:UTI;4:SOL (for PV;PH) |  1:BAU; 3:UTI;4:BOU (for EP) | 12V 24V:1:SBU;;3:UTI;4:SOL (for PV;PH) | 1:BU; 3:UTI (for EP)
                                                # 20111	RW	Grid protect standard	0：VDE4105; 1：UPS  ;  2：home ;3:GEN
         self.icSolarUseAim = icSolarUseAims[ic[12]] # 20112	RW	SolarUse Aim	"0:LBU  1:BLU(defalut)(for PV;PH) | 0:LB  1:LU(defalut)  (for EP)"
-                                               # 20113	RW	Inverter max discharger current	"48V:  0.1A（AC）| 12V 24V:  Null"
-        self.icBatteryStopDischarging = ic[18] / 10.0 # 20118	RW	Battery stop discharging voltage	0.1V  
-        self.icBatteryStopCharging = ic[19] / 10.0    # 20119	RW	Battery stop charging voltage	0.1V  
+                                               # 20113	RW	Inverter max discharger current	"48V:  0.1A (AC) | 12V 24V:  Null"
+        self.icBatteryStopDischarging = ic[18] / 10.0 # 20118	RW	Battery stop discharging voltage	0.1V
+        self.icBatteryStopCharging = ic[19] / 10.0    # 20119	RW	Battery stop charging voltage	0.1V
         self.icMaxUtiChargeCurrent = int(ic[25] / 10) # 20125	RW	Grid max charger current set	0.1A(DC)
                                                # 20127	RW	Battery low voltage	0.1V
                                                # 20128	RW	Battery high voltage	0.1V
