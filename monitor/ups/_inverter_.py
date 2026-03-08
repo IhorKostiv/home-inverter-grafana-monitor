@@ -111,6 +111,7 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
             ("bRadiatorTemperature", 0),
             ("pvReturnGrid", 0),
             ("icChargerSourcePriority", ""),
+            ("icSolarUseAim", ""),
             ("BestEnergyMsg", "")
         ]
 
@@ -156,17 +157,6 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
         else:
             return False
 
-    def moreSolar(self):
-        self.Log(logDebug, self.BestEnergyMsg)
-        return self.setOSO()
-
-    def saveBattery(self, intenseCharge: bool = False):
-        self.Log(logDebug, f"Save Battery {self.BestEnergyMsg} {intenseCharge}")
-        if intenseCharge:
-            return self.setSNU()
-        else:
-            return self.setOSO()
-
     def setFloat(self, voltage: float):
         if self.ccBatteryFloatVoltage != voltage:
             self.Log(logWrite, f"set FLoat {voltage}V")
@@ -190,13 +180,15 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
 
     # todo: Solar Use Aim LBU - BLU depending on battery SOC and future estimate
     # todo: Charger source priority OSO - SNU - CSO depending on battery SOC and tomorrow estimate
+    def setBestEnergy(self, be: int | None):
+        pass
 
     def setBestEnergySOC(self, TargetDetected: datetime, LowDetected: datetime, MinDetected: datetime):
         if TargetDetected is not None and (LowDetected is None or TargetDetected < LowDetected):
             self.Log(logDebug, f"Target level shall be reached first at {self.dtKyiv(TargetDetected)}, Low at {LowDetected}")
             if self.icEnergyUse.upper() in {txtUTI, txtSUB}:
                 self.BestEnergyMsg = f"T {self.dtKyiv(TargetDetected)}"
-                return 1 if self.setSBU() else 0
+                return self.setBestEnergy(1)
         elif LowDetected is not None:
             self.Log(logDebug, f"Low level could be reached first on {self.dtKyiv(LowDetected)}, Target on {TargetDetected}")
             if self.icEnergyUse.upper() in {txtSBU, txtSUB}:
@@ -205,10 +197,10 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
                     if MinDetected is not None and (TargetDetected is None or MinDetected < TargetDetected):
                         self.BestEnergyMsg = self.addText(self.BestEnergyMsg, f"M {self.dtKyiv(MinDetected)}")
                         self.Log(logDebug, f"!!! Battery would be depleted below minimum on {self.dtKyiv(MinDetected)}")
-                        return -1 if self.setUtility() else 0
+                        return self.setBestEnergy(-2)
                     else:
                         if TargetDetected is None:
-                            return -1 if self.setSUB() else 0
+                            return self.setBestEnergy(-1)
         if MinDetected is not None: # always show minimum if it was detected
             self.BestEnergyMsg = self.addText(self.BestEnergyMsg, f"M {self.dtKyiv(MinDetected)}")
         return None
@@ -219,11 +211,11 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
             if solarVoltageOn > 1 and self.iBatteryVoltage >= self.icBatteryStopCharging:
                 if self.pvVoltage > solarVoltageOn: # and self.pvChargerPower > 0: # likely PV can produce more - however more sophisticated formula needed since voltage depends on power produced
                     self.BestEnergyMsg = f"ON {self.pvVoltage} > {solarVoltageOn} V"
-                    return self.moreSolar()
+                    return self.setBestEnergy(1)
                 # todo: mind solar use aim LBU - BLU here
                 elif self.icSolarUseAim == "LBU" and self.pvVoltage > solarVoltageOff and self.pvChargerPower > self.iPLoad + 50: #+ self.iInternalUsePower: # PV produces enough just charging - technically charging can be delayed
                     self.BestEnergyMsg = f"ON {self.pvChargerPower} > {self.iPLoad} W"
-                    return self.moreSolar()
+                    return self.setBestEnergy(1)
             #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
         elif self.icEnergyUse.upper() in {txtSBU, txtSUB}: # PV full production mode
             if solarVoltageOff > 1 and self.pvChargerPower < self.iPLoad: # solar power not enough
@@ -232,41 +224,32 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
                     stopDischarge = self.icBatteryStopDischarging - (self.iBattCurrent / 50) 
                 else:
                     stopDischarge = self.icBatteryStopDischarging
-                if self.iPGrid >= self.iPLoad and self.iBatteryVoltage < stopDischarge: #(self.icBatteryStopCharging + stopDischarge) / 2: # working from Grid
+                    self.Log(logDebug, f"Sol {solarVoltageOff:.1f} Batt {stopDischarge:.2f}V")
+                if self.iPGrid >= self.iPLoad and self.iBatteryVoltage <= stopDischarge: #(self.icBatteryStopCharging + stopDischarge) / 2: # working from Grid
                     self.BestEnergyMsg = f"Off Grid {self.iPGrid} >= Load {self.iPLoad} > PV {self.pvChargerPower} W & {self.iBatteryVoltage} < avg({self.icBatteryStopCharging} {stopDischarge:.2f}) V"
-                    return self.saveBattery()
-                elif self.iBattPower > self.pvChargerPower and self.iBatteryVoltage < stopDischarge: # depleting battery too much
+                    return self.setBestEnergy(-2)
+                elif self.iBattPower > self.pvChargerPower and self.iBatteryVoltage <= stopDischarge: # depleting battery too much
                     self.BestEnergyMsg = f"Off Batt {self.iBattPower} > PV {self.pvChargerPower} < Load {self.iPLoad} W & {self.iBatteryVoltage} <= {stopDischarge:.2f} V"
-                    return self.saveBattery()
+                    return self.setBestEnergy(-2)
                 elif self.pvVoltage < solarVoltageOff: # better to be more sophisticated formula accounting MPPT since voltage depend on produced power
                     self.BestEnergyMsg = f"Off PV {self.pvVoltage} < {solarVoltageOff:.2f} V"
-                    return self.saveBattery()
-        return False
+                    return self.setBestEnergy(-1)
+        return None
 
 class inverterOffGrid(inverterMgr): # base class for off grid type invertors
-    def moreSolar(self):
-        #if self.pvChargerPower > self.iPLoad:
-        #    if self.iBatteryVoltage > (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2:
-        #        return super().moreSolar() and self.setSBU()
-        #else:
-        #    if self.iBatteryVoltage >= self.ccBatteryFloatVoltage: # still may  prevent going to battery by SOC
-                return super().moreSolar() and self.setSBU()
-    def saveBattery(self, intenseCharge: bool = False):
-        return super().saveBattery(intenseCharge) and self.setUtility()
-
+    def setBestEnergy(self, be: int | None):
+        if be is not None:
+            if be > 0:    return be if self.setSBU() else 0
+            elif be < 0:  return be if self.setUtility() else 0
+        return None
+    
 class inverterHybrid(inverterMgr): # base class for hybrid type invertors
-    def moreSolar(self):
-        self.Log(logDebug, f"More Solar {self.iBatteryVoltage} ~ avg({self.icBatteryStopCharging} {self.icBatteryStopDischarging}) V")
-        if self.iBatteryVoltage > (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2:
-            return super().moreSolar() and self.setSBU()
-        else:
-            return super().moreSolar() and self.setSUB()
-    def saveBattery(self, intenseCharge: bool = False):
-        self.Log(logDebug, f"Save Battery {self.iBatteryVoltage} ~ avg({self.icBatteryStopCharging} {self.icBatteryStopDischarging}) V")
-        if self.iBatteryVoltage < (self.icBatteryStopCharging + self.icBatteryStopDischarging) / 2:
-            return super().saveBattery(intenseCharge) and self.setUtility()
-        else:
-            return super().saveBattery(intenseCharge) and self.setSUB()
+    def setBestEnergy(self, be: int | None):
+        if be is not None:
+            if be == 1:     return 1 if self.setSBU() else 0
+            elif be == -1:  return -1 if self.setSUB() else 0
+            elif be == -2:  return -2 if self.setUtility() else 0
+        return None
 
 if __name__ == "__main__":
     i = inverterMgr(logDebug)

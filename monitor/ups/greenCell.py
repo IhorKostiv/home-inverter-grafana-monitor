@@ -38,7 +38,7 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
 
     def readChargerControl(self):
         cc = self.readRegister(10100, 4, "cC")
-        self.ccBatteryFloatVoltage = cc[3] / 10.0  # 10103	RW	Battery float voltage	0.1V
+        self.ccBatteryFloatVoltage = float(cc[3] / 10.0)  # 10103	RW	Battery float voltage	0.1V
         return cc
 
     def readInverterControl(self): # read inverter control message values
@@ -56,8 +56,8 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
                                                # 20111	RW	Grid protect standard	0：VDE4105; 1：UPS  ;  2：home ;3:GEN
         self.icSolarUseAim = icSolarUseAims[ic[12]] # 20112	RW	SolarUse Aim	"0:LBU  1:BLU(defalut)(for PV;PH) | 0:LB  1:LU(defalut)  (for EP)"
                                                # 20113	RW	Inverter max discharger current	"48V:  0.1A (AC) | 12V 24V:  Null"
-        self.icBatteryStopDischarging = ic[18] / 10.0 # 20118	RW	Battery stop discharging voltage	0.1V
-        self.icBatteryStopCharging = ic[19] / 10.0    # 20119	RW	Battery stop charging voltage	0.1V
+        self.icBatteryStopDischarging = float(ic[18] / 10.0) # 20118	RW	Battery stop discharging voltage	0.1V
+        self.icBatteryStopCharging = float(ic[19] / 10.0)    # 20119	RW	Battery stop charging voltage	0.1V
         self.icMaxUtiChargeCurrent = int(ic[25] / 10) # 20125	RW	Grid max charger current set	0.1A(DC)
                                                # 20127	RW	Battery low voltage	0.1V
                                                # 20128	RW	Battery high voltage	0.1V
@@ -127,14 +127,14 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
             self.pvWorkState = mpptStates[pv[2]] + "-" + chargingStates[pv[3]]   
         else:
             self.pvWorkState = pvWorkStates[pv[1]]
-        self.pvVoltage = pv[5] / 10.0                               # 15205 PV voltage	0.1V
-        self.pvBatteryVoltage = pv[6] / 10.0                        # 15206 Battery voltage	0.1V
-        self.pvChargerCurrent = pv[7] / 10.0	                    # 15207 Charger current	0.1A
-        self.pvChargerPower = pv[8]	                                # 15208 Charger power	1W
-        self.pvRadiatorTemperature = pv[9]                          # 15209 Radiator temperature	1℃
+        self.pvVoltage = float(pv[5] / 10.0)                        # 15205 PV voltage	0.1V
+        self.pvBatteryVoltage = float(pv[6] / 10.0)                 # 15206 Battery voltage	0.1V
+        self.pvChargerCurrent = float(pv[7] / 10.0)                 # 15207 Charger current	0.1A
+        self.pvChargerPower = int(pv[8])                            # 15208 Charger power	1W
+        self.pvRadiatorTemperature = int(pv[9])                     # 15209 Radiator temperature	1℃
         self.pvError = self.bitmaskText(False, pv[13], pvErrors)     # 15213 Error message	Refer to frame Charger Error message 1
         self.pvWarning = self.bitmaskText(False, pv[14], pvWarnings) # 15214 Warning message	Refer to frame Charger Warning message 1
-        self.BatteryVoltageGrade = pv[15]                           # 15215	BattVol Grade	1V
+        self.BatteryVoltageGrade = int(pv[15])                       # 15215	BattVol Grade	1V
         # 15216	Rated Current	0.1A
         self.pvAccumulatedPower = (pv[17] * 1000) + (pv[18] / 10.0) # 15217 Accumulated PV power high mWh, 15218 Accumulated PV power low .1 KWh
         return pv
