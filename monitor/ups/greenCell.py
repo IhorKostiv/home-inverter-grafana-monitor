@@ -248,11 +248,13 @@ class GreenCell(deviceModbus, inverterOffGrid): #  object to communicate with an
         if i[3] == 1000:                    # 25203	RO	Rated power(VA)
             iInternalUsePower = 25
         else:
-            iInternalUsePower = 50 if i[1] == 4 else 100
+            iInternalUsePower = 50 # if i[1] == 4 else 100
                                             # 25204	RO	reserved
         self.iBatteryVoltage = i[5] / 10.0  # 25205: ["Battery voltage", 0.1, "V"],
         self.iVoltage = i[6] / 10.0         # 25206: ["Inverter voltage", 0.1, "V"],
         self.iGridVoltage = i[7] / 10.0     # 25207: ["Grid voltage", 0.1, "V"],
+        if self.iGridVoltage < 100:
+            iInternalUsePower = 0
                                             # 25208: ["BUS voltage", 0.1, "V"],
                                             # 25209: ["Control current", 0.1, "A"],
                                             # 25210: ["Inverter current", 0.1, "A"],

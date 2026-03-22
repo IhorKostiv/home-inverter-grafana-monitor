@@ -159,7 +159,7 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
 
     def setFloat(self, voltage: float):
         if self.ccBatteryFloatVoltage != voltage:
-            self.Log(logWrite, f"set FLoat {voltage}V")
+            self.Log(logWrite, f"set Float {voltage}V")
             return True
         else:
             return False
@@ -208,12 +208,12 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
     def setBestEnergyPVV(self, solarVoltageOn: float, solarVoltageOff: float):
         self.Log(logDebug, f"Check Solar Voltage {solarVoltageOff} > {self.pvVoltage} > {solarVoltageOn}")
         if self.icEnergyUse.upper() in {txtUTI, txtSUB}: # Utility or PV mixing mode
-            if solarVoltageOn > 1 and self.iBatteryVoltage >= self.icBatteryStopCharging:
-                if self.pvVoltage > solarVoltageOn: # and self.pvChargerPower > 0: # likely PV can produce more - however more sophisticated formula needed since voltage depends on power produced
+            if solarVoltageOn > 1:
+                if self.pvVoltage > solarVoltageOn and (self.iBatteryVoltage >= self.icBatteryStopCharging or self.icSolarUseAim == "LBU"): # and self.pvChargerPower > 0: # likely PV can produce more - however more sophisticated formula needed since voltage depends on power produced
                     self.BestEnergyMsg = f"ON {self.pvVoltage} > {solarVoltageOn} V"
                     return self.setBestEnergy(1)
                 # todo: mind solar use aim LBU - BLU here
-                elif self.icSolarUseAim == "LBU" and self.pvVoltage > solarVoltageOff and self.pvChargerPower > self.iPLoad + 50: #+ self.iInternalUsePower: # PV produces enough just charging - technically charging can be delayed
+                elif self.icSolarUseAim == "LBU" and self.pvVoltage > solarVoltageOff and self.pvChargerPower > self.iPGrid: # PV produces enough just charging - technically charging can be delayed
                     self.BestEnergyMsg = f"ON {self.pvChargerPower} > {self.iPLoad} W"
                     return self.setBestEnergy(1)
             #elif : # more than equalization and pv > avg(on, off) meaning battery is overcharged
