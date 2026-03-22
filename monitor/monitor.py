@@ -98,8 +98,8 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
             tp = ds.TargetPower
 
         if ds.PrecariousChargingEnabled: # todo: if protection kicks in, decrease bulk voltage by .1v; increase it by .1 v if no charge current, no balancing and not yet at the target, that may require also decreasing charging current
-            equalized = b.bBalance == "" # overbalancing hurts # todo: implement timeout for balancing
-            inverter.Log(logDebug, f"Precarious {tp} {currentPower} {ds.MaxPowerLimit}Wh PV {inverter.pvChargerPower}W {inverter.icChargerSourcePriority} EQ:{b.bBalance} {equalized} {ds.GridChargingFloat} {inverter.ccBatteryFloatVoltage} {ds.GridChargingBulk}V {b.bCurrent}A")
+            # overbalancing hurts thus balancing possible only while charging and not longer
+            inverter.Log(logDebug, f"Precarious {tp} {currentPower} {ds.MaxPowerLimit}Wh PV {inverter.pvChargerPower}W {inverter.icChargerSourcePriority} EQ:{b.bBalance} {ds.GridChargingFloat} {inverter.ccBatteryFloatVoltage} {ds.GridChargingBulk}V {b.bCurrent}A")
             if currentPower < tp and inverter.iBatteryVoltage <= ds.GridChargingFloat and (inverter.pvChargerPower > 1 or inverter.icChargerSourcePriority != txtOSO) and inverter.ccBatteryFloatVoltage < ds.GridChargingBulk:
                 inverter.Log(logDebug, f"Charging start {currentPower:.1f}<{tp}W {inverter.pvChargerPower:.1f}>1W {inverter.icChargerSourcePriority}")
                 inverter.setFloat(ds.GridChargingBulk) # 27.9 makes 100% sharply, 27.8 up to 91% charge
@@ -107,10 +107,10 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
             elif inverter.iBatteryVoltage >= ds.GridChargingBulk and b.bCurrent <= 0.0:
                 inverter.Log(logDebug, f"Charging protection {inverter.iBatteryVoltage}V {b.bCurrent:.1f}A")
                 inverter.setFloat(ds.GridChargingFloat)
-            elif currentPower >= tp and b.bCurrent <= 0.0 and equalized and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat: #bms current is reverse; wait until balanced
+            elif currentPower >= tp and b.bCurrent <= 0.0 and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat: #bms current is reverse; never wait until balanced
                 inverter.Log(logDebug, f"Charging complete {currentPower:.1f}>{tp}W {b.bCurrent:.1f}A")
                 inverter.setFloat(ds.GridChargingFloat)
-            elif currentPower >= ds.MaxPowerLimit and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat: #  and equalized:
+            elif currentPower >= ds.MaxPowerLimit and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat: #  do not wait for equalized
                 inverter.Log(logDebug, f"Charging limit {currentPower:.1f}>={ds.MaxPowerLimit}W")
                 inverter.setFloat(ds.GridChargingFloat)
             elif inverter.pvVoltage < ds.SolarVoltageOff and inverter.pvChargerPower <= 0 and inverter.icChargerSourcePriority == txtOSO and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat:

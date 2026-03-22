@@ -70,7 +70,7 @@ def translateComand(cmd: str):
         "CSO"  : "PCP01", "SNU"  : "PCP02", "OSO"  : "PCP03",
           "0A" : "MUCHGC000", "2A" : "MUCHGC002", "10A" : "MUCHGC010", "20A" : "MUCHGC020", "30A" : "MUCHGC030", "40A" : "MUCHGC040",
         "10AA" : "MNCHGC010", "20AA" : "MNCHGC020", "30AA" : "MNCHGC030", "40AA" : "MNCHGC040",
-        "26.6V": "PBFT26.6", "27.8V": "PBFT27.8", "27.9V": "PBFT27.9",
+        "26.6V": "PBFT26.6", "26.7V": "PBFT26.7", "27.8V": "PBFT27.8", "27.9V": "PBFT27.9", "28.0V": "PBFT28.0",
     }
     if cmd.upper() in commands:
         return commands[cmd.upper()]
