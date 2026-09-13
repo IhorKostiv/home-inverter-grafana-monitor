@@ -183,7 +183,7 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
     def setBestEnergy(self, be: int | None):
         pass
 
-    def setBestEnergySOC(self, TargetDetected: datetime, LowDetected: datetime, MinDetected: datetime):
+    def setBestEnergySOC(self, TargetDetected: datetime, LowDetected: datetime, MinDetected: datetime, charged: bool):
         if TargetDetected is not None and (LowDetected is None or TargetDetected < LowDetected):
             self.Log(logDebug, f"Target level shall be reached first at {self.dtKyiv(TargetDetected)}, Low at {LowDetected}")
             if self.icEnergyUse.upper() in {txtUTI, txtSUB}:
@@ -192,15 +192,18 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
         elif LowDetected is not None:
             self.Log(logDebug, f"Low level could be reached first on {self.dtKyiv(LowDetected)}, Target on {TargetDetected}")
             if self.icEnergyUse.upper() in {txtSBU, txtSUB}:
-                self.BestEnergyMsg = f"L {self.dtKyiv(LowDetected)}"
+                self.BestEnergyMsg = f"L {self.dtKyiv(LowDetected)}" if MinDetected is None else f"M {self.dtKyiv(MinDetected)}"
                 if self.pvChargerPower < self.iPLoad:
-                    if MinDetected is not None and (TargetDetected is None or MinDetected < TargetDetected):
+                    if MinDetected is not None and TargetDetected is None:
                         self.BestEnergyMsg = self.addText(self.BestEnergyMsg, f"M {self.dtKyiv(MinDetected)}")
                         self.Log(logDebug, f"!!! Battery would be depleted below minimum on {self.dtKyiv(MinDetected)}")
-                        return self.setBestEnergy(-2)
+                        now = datetime.now(MinDetected.tzinfo) if MinDetected.tzinfo is not None else datetime.now()
+                        return self.setBestEnergy(-1 if charged or MinDetected > now + timedelta(hours=24) else -2)
                     else:
                         if TargetDetected is None:
                             return self.setBestEnergy(-1)
+            elif charged:
+                return self.setBestEnergy(-1)
         if MinDetected is not None: # always show minimum if it was detected
             self.BestEnergyMsg = self.addText(self.BestEnergyMsg, f"M {self.dtKyiv(MinDetected)}")
         return None
@@ -223,7 +226,7 @@ class inverterMgr(device): # base class for smarter solar power and battery mana
                 if self.iBattCurrent > 0 and self.icBatteryStopCharging - self.icBatteryStopDischarging > 1: # mind 1V voltage drop under 50A high load for non-Li batteries
                     stopDischarge = self.icBatteryStopDischarging - (self.iBattCurrent / 50) 
                 else:
-                    stopDischarge = self.icBatteryStopDischarging
+                    stopDischarge = self.icBatteryStopDischarging - (0.1 if self.icSolarUseAim == "LBU" else 0)
                     self.Log(logDebug, f"Sol {solarVoltageOff:.1f} Batt {stopDischarge:.2f}V")
                 if self.iPGrid >= self.iPLoad and self.iBatteryVoltage <= stopDischarge: #(self.icBatteryStopCharging + stopDischarge) / 2: # working from Grid
                     self.BestEnergyMsg = f"Off Grid {self.iPGrid} >= Load {self.iPLoad} > PV {self.pvChargerPower} W & {self.iBatteryVoltage} < avg({self.icBatteryStopCharging} {stopDischarge:.2f}) V"

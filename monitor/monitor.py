@@ -60,7 +60,7 @@ if ds.Estimate != '' and ds.bmsModel != '':
         lp = int((ds.LowPower + ds.MinPower) / 2) # if b.bSOC < 50 else ds.MinPower
     sc = Solcast(ds, ds.MaxPowerLimit, tp, lp, ds.MinPower, ds.GridTied, ds.LogDetail)
     sc.Calculate(datetime.now(timezone.utc), ds.Estimate, 80, inverter.icMaxChargePower)
-    be = inverter.setBestEnergySOC(sc.TargetDetected, sc.LowDetected, sc.MinDetected)
+    be = inverter.setBestEnergySOC(sc.TargetDetected, sc.LowDetected, sc.MinDetected, b.CurrentPower >= tp)
     inverter.Log(logDebug, f"Best energy result {be}")
 elif ds.SolarVoltageOn > 1 or ds.SolarVoltageOff > 1:
     inverter.setBestEnergyPVV(ds.SolarVoltageOn, ds.SolarVoltageOff)
@@ -98,10 +98,10 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
             tp = ds.TargetPower
 
         if ds.PrecariousChargingEnabled: # todo: if protection kicks in, decrease bulk voltage by .1v; increase it by .1 v if no charge current, no balancing and not yet at the target, that may require also decreasing charging current
-            # overbalancing hurts thus balancing possible only while charging and not longer
-            inverter.Log(logDebug, f"Precarious {tp} {currentPower} {ds.MaxPowerLimit}Wh PV {inverter.pvChargerPower}W {inverter.icChargerSourcePriority} EQ:{b.bBalance} {ds.GridChargingFloat} {inverter.ccBatteryFloatVoltage} {ds.GridChargingBulk}V {b.bCurrent}A")
-            if currentPower < tp and inverter.iBatteryVoltage <= ds.GridChargingFloat and (inverter.pvChargerPower > 1 or inverter.icChargerSourcePriority != txtOSO) and inverter.ccBatteryFloatVoltage < ds.GridChargingBulk:
-                inverter.Log(logDebug, f"Charging start {currentPower:.1f}<{tp}W {inverter.pvChargerPower:.1f}>1W {inverter.icChargerSourcePriority}")
+            equalized = b.bBalance == "" # overbalancing hurts # todo: implement timeout for balancing
+            inverter.Log(logDebug, f"Precarious {tp} {currentPower} {ds.MaxPowerLimit}Wh PV {inverter.pvChargerPower}W {inverter.pvVoltage}V {inverter.icChargerSourcePriority} EQ:{b.bBalance} {ds.GridChargingFloat} {inverter.ccBatteryFloatVoltage} {ds.GridChargingBulk}V {b.bCurrent}A")
+            if currentPower < tp and inverter.iBatteryVoltage <= ds.GridChargingFloat and (inverter.pvChargerPower > 1 or inverter.pvVoltage > ds.SolarVoltageOff or inverter.icChargerSourcePriority != txtOSO) and inverter.ccBatteryFloatVoltage < ds.GridChargingBulk:
+                inverter.Log(logDebug, f"Charging start {currentPower:.1f}<{tp}W {inverter.pvChargerPower:.1f}>0W {inverter.icChargerSourcePriority}")
                 inverter.setFloat(ds.GridChargingBulk) # 27.9 makes 100% sharply, 27.8 up to 91% charge
                 # use SNU for 27.8 and then decrease current to 2 or 10A until reach target
             elif inverter.iBatteryVoltage >= ds.GridChargingBulk and b.bCurrent <= 0.0:
@@ -124,7 +124,7 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
             #    inverter.setSNU()
             if inverter.iBatteryVoltage < ds.GridChargingFloat and inverter.iBattPower <= 0 and inverter.pvVoltage < 14 and inverter.icChargerSourcePriority == txtOSO:
                 inverter.setCSO() # todo: not to trigger it on discharging - measue when battery is calm
-            elif inverter.iBatteryVoltage >= ds.GridChargingBulk and inverter.iRadiatorTemperature < inverter.rpiTemperature:
+            elif inverter.iBatteryVoltage > ds.GridChargingBulk or (inverter.iBatteryVoltage >= ds.GridChargingBulk and inverter.iRadiatorTemperature < inverter.rpiTemperature):
                 inverter.setOSO()
                 if ds.PrecariousChargingEnabled and inverter.ccBatteryFloatVoltage > ds.GridChargingFloat:
                     inverter.setFloat(ds.GridChargingFloat)

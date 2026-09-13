@@ -114,7 +114,8 @@ class Solcast(logger):
                         self.Log(logDebug, f"Low level detected by {dtKyiv(self.LowDetected)} for {Estimate}")
                     if self.TargetDetected is None and BatteryRemain >= self.TargetPower and diff > 0:
                         self.TargetDetected = d
-                        self.Log(logDebug, f"Target level detected by {dtKyiv(self.TargetDetected)} for {Estimate}")
+                        self.Log(logDebug, f"Target level detected at {dtKyiv(self.TargetDetected)} for {Estimate}")
+                    self.Log(logDebug, f"{dtKyiv(d)} load {le:.0f} gen {ge:.0f} diff {diff:.0f} remain {BatteryRemain:.0f} {BatteryRemain/51.20:.0f}%")
                     if BatteryRemain <= self.MinPower:
                         self.MinDetected = d
                         self.Log(logDebug, f"!!!\a Battery would be depleted below {self.MinPower}W by {dtKyiv(d)}")
@@ -164,12 +165,12 @@ if __name__ == "__main__":
             #Estimate = '(pvEstimate + pvEstimate10)/2'
             Estimate = 'pvEstimate' # seems reliable enough to use it as is
 
-        sc.Calculate(datetime.now(timezone.utc), Estimate, 80, 40*25.6)
+        sc.Calculate(datetime.now(timezone.utc), Estimate, 60, 30*25.6)
 
         if sc.TargetDetected is not None and (sc.LowDetected is None or sc.TargetDetected < sc.LowDetected):
             print(f"Target level shall be reached first at {dtKyiv(sc.TargetDetected)} for {Estimate}, Low at {sc.LowDetected} with {sc.Overproduction:.0f}W extra")
         elif sc.LowDetected is not None:
-            print(f"Low level could be reached first at {dtKyiv(sc.LowDetected)}, Target at {sc.TargetDetected} for {Estimate}")
+            print(f"Low level could be reached first at {dtKyiv(sc.LowDetected)}, Target at {sc.TargetDetected} for {Estimate} with {sc.Overproduction:.0f}W extra")
             if sc.MinDetected is not None:
                 print(f"!!!\a Battery would be depleted below {sc.MinPower}W at {dtKyiv(sc.MinDetected)}")
         else:
