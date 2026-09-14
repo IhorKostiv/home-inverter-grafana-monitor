@@ -98,10 +98,10 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
             tp = ds.TargetPower
 
         if ds.PrecariousChargingEnabled: # todo: if protection kicks in, decrease bulk voltage by .1v; increase it by .1 v if no charge current, no balancing and not yet at the target, that may require also decreasing charging current
-            equalized = b.bBalance == "" # overbalancing hurts # todo: implement timeout for balancing
+            # overbalancing hurts # todo: implement timeout for balancing
             inverter.Log(logDebug, f"Precarious {tp} {currentPower} {ds.MaxPowerLimit}Wh PV {inverter.pvChargerPower}W {inverter.pvVoltage}V {inverter.icChargerSourcePriority} EQ:{b.bBalance} {ds.GridChargingFloat} {inverter.ccBatteryFloatVoltage} {ds.GridChargingBulk}V {b.bCurrent}A")
             if currentPower < tp and inverter.iBatteryVoltage <= ds.GridChargingFloat and (inverter.pvChargerPower > 1 or inverter.pvVoltage > ds.SolarVoltageOff or inverter.icChargerSourcePriority != txtOSO) and inverter.ccBatteryFloatVoltage < ds.GridChargingBulk:
-                inverter.Log(logDebug, f"Charging start {currentPower:.1f}<{tp}W {inverter.pvChargerPower:.1f}>0W {inverter.icChargerSourcePriority}")
+                inverter.Log(logDebug, f"Charging start {currentPower:.1f}<{tp}W {inverter.pvChargerPower:.1f}>1W {inverter.icChargerSourcePriority}")
                 inverter.setFloat(ds.GridChargingBulk) # 27.9 makes 100% sharply, 27.8 up to 91% charge
                 # use SNU for 27.8 and then decrease current to 2 or 10A until reach target
             elif inverter.iBatteryVoltage >= ds.GridChargingBulk and b.bCurrent <= 0.0:
