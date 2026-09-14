@@ -98,7 +98,7 @@ if platform.system() == "Linux": # switch it off when running on non-linux syste
             tp = ds.TargetPower
 
         if ds.PrecariousChargingEnabled: # todo: if protection kicks in, decrease bulk voltage by .1v; increase it by .1 v if no charge current, no balancing and not yet at the target, that may require also decreasing charging current
-            # overbalancing hurts # todo: implement timeout for balancing
+            # overbalancing hurts; balancing is possible only while charging; TODO: implement timeout
             inverter.Log(logDebug, f"Precarious {tp} {currentPower} {ds.MaxPowerLimit}Wh PV {inverter.pvChargerPower}W {inverter.pvVoltage}V {inverter.icChargerSourcePriority} EQ:{b.bBalance} {ds.GridChargingFloat} {inverter.ccBatteryFloatVoltage} {ds.GridChargingBulk}V {b.bCurrent}A")
             if currentPower < tp and inverter.iBatteryVoltage <= ds.GridChargingFloat and (inverter.pvChargerPower > 1 or inverter.pvVoltage > ds.SolarVoltageOff or inverter.icChargerSourcePriority != txtOSO) and inverter.ccBatteryFloatVoltage < ds.GridChargingBulk:
                 inverter.Log(logDebug, f"Charging start {currentPower:.1f}<{tp}W {inverter.pvChargerPower:.1f}>1W {inverter.icChargerSourcePriority}")
